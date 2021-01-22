@@ -1,3 +1,8 @@
+"""
+Processes raw CSV files into chunks, which are saved as HDF5 files.
+Run with
+`python build_dataset.py path/to/config.json`
+"""
 import os
 import sys
 import json
@@ -5,29 +10,42 @@ import pandas
 import numpy
 
 
-def get_cont_chunks(df, date_col, maxStep, minDuration):
-    """Find continuous blocks of time in a given array."""
-    timeArray = df[date_col]
-    # indexes where a discontinuity in time occurs
-    idxs = numpy.where(numpy.diff(timeArray) > maxStep)[0]
-    if len(idxs) == 0:
-        # trick: add a last time sample with a huge jump to make the routine
-        # consider a contiguous block as a single block of data
-        timeArray_hack = numpy.concatenate([timeArray, 1e45])
-        numpy.where(numpy.diff(timeArray_hack) > maxStep)[0]
-        return [0, timeArray.size]
-    print("found {} discontinuities".format(len(idxs)))
+def get_cont_chunks(csv_df, date_col, max_step, min_duration):
+    """
+    Finds contiguous blocks of time in a given array.
 
-    leftIdx = 0
-    rightIdx = -1
+    :param pandas.core.frame.DataFrame csv_df: pandas dataframe containing the
+        csv time series data
+    :param str date_col: The name of the column in the dataframe containing the
+        datetime information
+    :param int max_step: The maximum amount of time in seconds allowed between
+        datapoints of the same chunk
+    :param int min_duration: The minimum amount of time in seconds for that
+        a contiguous chunk of data should be
+    :return: a Pandas IntervalArray containing the pairs of start and stop
+        times defining each chunk.
+    :rtype: pandas.core.arrays.interval.IntervalArray
+    """
+    time_array = csv_df[date_col]
+    # indexes where a discontinuity in time occurs
+    idxs = numpy.where(numpy.diff(time_array) > max_step)[0]
     interval_list = list()
-    for idx in idxs:
-        rightIdx = idx
-        duration = timeArray[rightIdx] - timeArray[leftIdx]
-        if duration > minDuration:
-            interv = pandas.Interval(timeArray[leftIdx], timeArray[rightIdx])
-            interval_list.append(interv)
-        leftIdx = rightIdx + 1
+    total_disc_idxs = len(idxs)
+    print("found {} discontinuities".format(total_disc_idxs))
+    if total_disc_idxs == 0:
+        # in this case, our entire dataset is a continuous chunk
+        interval_list.append(pandas.Interval(time_array[0], time_array[-1]))
+    else:
+        # in this case, we need to add our chunks to interval_list one by one
+        left_idx = 0
+        right_idx = -1
+        for idx in idxs:
+            right_idx = idx
+            duration = time_array[right_idx] - time_array[left_idx]
+            if duration > min_duration:
+                interv = pandas.Interval(time_array[left_idx], time_array[right_idx])
+                interval_list.append(interv)
+            left_idx = right_idx + 1
     intervals = pandas.arrays.IntervalArray(interval_list)
     return intervals
 
@@ -60,13 +78,15 @@ if __name__ == "__main__":
         fpath = source_info["file"]
         field_list = source_info["field_list"]
         cos_sin_fields = source_info.get("cos_sin_fields", None)
-        date_col = source_info.get("date_time_column_name", "Date time")
+        date_col_name = source_info.get("date_time_column_name", "Date time")
         date_fmt = source_info.get("date_time_column_format", "%Y-%m-%dT%H:%M:%S")
         data = pandas.read_csv(fpath)
         data = data.dropna()
         data = data.reset_index(drop=True)
-        data["master_datetime"] = pandas.to_datetime(data[date_col], format=date_fmt)
-        data = data.drop([date_col], axis=1)
+        data["master_datetime"] = pandas.to_datetime(
+            data[date_col_name], format=date_fmt
+        )
+        data = data.drop([date_col_name], axis=1)
         # transform fields to cos/sin
         if cos_sin_fields is not None:
             for func, pname in zip([numpy.cos, numpy.sin], ["Cosine", "Sine"]):
