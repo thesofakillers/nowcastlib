@@ -70,33 +70,34 @@ if __name__ == "__main__":
     min_date = pandas.to_datetime(chunk_config.get("min_date", "1900-01-01T00:00:00"))
     max_date = pandas.to_datetime(chunk_config.get("max_date", "2100-12-31T00:00:00"))
 
-    # load data
+    # will be [df1, df2, df3, ...,dfN] for N data sources
     dfs = list()
+    # will be [chunks1, chunks2, chunk3, ..., chunksN] for N data sources
+    # chunks_i itself is an array of pandas Intervals outlining contig blocks
     cont_date_intervals = list()
     for source_name, source_info in source_configs.items():
         print("[INFO] loading source {}".format(source_name))
-        fpath = source_info["file"]
-        field_list = source_info["field_list"]
-        cos_sin_fields = source_info.get("cos_sin_fields", None)
         date_col_name = source_info.get("date_time_column_name", "Date time")
         date_fmt = source_info.get("date_time_column_format", "%Y-%m-%dT%H:%M:%S")
-        data = pandas.read_csv(fpath)
+        # read data, dropping NaN rows and parsing the date column.
+        data = pandas.read_csv(source_info["file"])
         data = data.dropna()
         data = data.reset_index(drop=True)
         data["master_datetime"] = pandas.to_datetime(
             data[date_col_name], format=date_fmt
         )
         data = data.drop([date_col_name], axis=1)
-        # transform fields to cos/sin
+        # transform fields to cos/sin if requested in config
+        cos_sin_fields = source_info.get("cos_sin_fields", None)
         if cos_sin_fields is not None:
             for func, pname in zip([numpy.cos, numpy.sin], ["Cosine", "Sine"]):
-                for fname in cos_sin_fields:
-                    new_fname = pname + " " + fname
-                    field_data = data[fname]
-                    if "deg" in fname:
-                        field_data = field_data * numpy.pi / 180.0
-                    data[new_fname] = field_data
-        # find continuous chunks of data
+                for field_name in cos_sin_fields:
+                    new_field_name = pname + " " + field_name
+                    field_data = data[field_name]
+                    if "deg" in field_name:
+                        field_data = numpy.radians(field_data)
+                    data[new_field_name] = field_data
+        # find contiguous chunks of data
         chunks = get_cont_chunks(
             data,
             "master_datetime",
