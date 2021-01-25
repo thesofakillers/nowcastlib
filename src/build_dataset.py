@@ -50,32 +50,31 @@ def get_cont_chunks(csv_df, date_col, max_step, min_duration):
     return intervals
 
 
-if __name__ == "__main__":
+def process_input_sources(source_config, chunk_config):
+    """
+    Processes a series of input CSV data sources.
+    * date columns are parsed
+    * gaps are dropped
+    * cosine and sine fields are calculated if specified
+    * contiguous chunks of data are recognized
 
-    # read in positional parameters: TODO, change by actual parse_args!
-    config_path = sys.argv[1]
-
-    # ugly configuration loading code
-    config_file = open(config_path, "r")
-    ds_config = json.loads(config_file.read())
-    data_config = ds_config["dataset"]
-    config_file.close()
-    chunk_config = data_config.get("chunk_config")
-    training_config = data_config.get("training_config")
-    source_configs = data_config.get("data_sources")
-    hdf5_path = os.path.join(chunk_config["path_to_hdf5"], chunk_config["tag"])
-    sample_spacing_min = chunk_config["sample_spacing"]
-    min_chunk_duration_sec = chunk_config["min_chunk_duration_sec"]
-    max_sync_block_dt_sec = chunk_config["max_delta_between_blocks_sec"]
-    min_date = pandas.to_datetime(chunk_config.get("min_date", "1900-01-01T00:00:00"))
-    max_date = pandas.to_datetime(chunk_config.get("max_date", "2100-12-31T00:00:00"))
-
+    :param dict source_config: dictionary where each key corresponds to configuration
+        for an input data source.
+    :param dict chunk_config: dictionary where we specify parameters for defining
+        contiguous blocks of data.
+    :return: (dfs, cont_date_intervals)
+        * dfs is a list of dataframes containing the data, each corresponding to an
+          input source
+        * cont_data_intervals is a list of pandas IntervalArrays, specifying the
+          contiguous chunks found for each data source.
+    :rtype: tuple
+    """
     # will be [df1, df2, df3, ...,dfN] for N data sources
     dfs = list()
     # will be [chunks1, chunks2, chunk3, ..., chunksN] for N data sources
     # chunks_i itself is an array of pandas Intervals outlining contig blocks
     cont_date_intervals = list()
-    for source_name, source_info in source_configs.items():
+    for source_name, source_info in source_config.items():
         print("[INFO] loading source {}".format(source_name))
         date_col_name = source_info.get("date_time_column_name", "Date time")
         date_fmt = source_info.get("date_time_column_format", "%Y-%m-%dT%H:%M:%S")
@@ -96,16 +95,40 @@ if __name__ == "__main__":
                     field_data = data[field_name]
                     if "deg" in field_name:
                         field_data = numpy.radians(field_data)
-                    data[new_field_name] = field_data
+                    data[new_field_name] = func(field_data)
         # find contiguous chunks of data
         chunks = get_cont_chunks(
             data,
             "master_datetime",
-            pandas.Timedelta(max_sync_block_dt_sec, unit="s"),
-            pandas.Timedelta(min_chunk_duration_sec, unit="s"),
+            pandas.Timedelta(chunk_config["max_delta_between_blocks_sec"], unit="s"),
+            pandas.Timedelta(chunk_config["min_chunk_duration_sec"], unit="s"),
         )
         dfs.append(data)
         cont_date_intervals.append(chunks)
+
+    return dfs, cont_date_intervals
+
+
+if __name__ == "__main__":
+
+    # read in positional parameters: TODO, change by actual parse_args!
+    config_path = sys.argv[1]
+
+    # ugly configuration loading code
+    config_file = open(config_path, "r")
+    ds_config = json.loads(config_file.read())
+    data_config = ds_config["dataset"]
+    config_file.close()
+    chunk_config = data_config.get("chunk_config")
+    training_config = data_config.get("training_config")
+    source_configs = data_config.get("data_sources")
+    hdf5_path = os.path.join(chunk_config["path_to_hdf5"], chunk_config["tag"])
+    sample_spacing_min = chunk_config["sample_spacing"]
+    min_date = pandas.to_datetime(chunk_config.get("min_date", "1900-01-01T00:00:00"))
+    max_date = pandas.to_datetime(chunk_config.get("max_date", "2100-12-31T00:00:00"))
+
+    # process each data source and collect processing results.
+    dfs, cont_date_intervals = process_input_sources(source_configs, chunk_config)
 
     hdfs = pandas.HDFStore(hdf5_path)
     ik = 0
