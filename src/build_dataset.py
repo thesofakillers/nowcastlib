@@ -62,18 +62,18 @@ def process_input_sources(source_config, chunk_config):
         for an input data source.
     :param dict chunk_config: dictionary where we specify parameters for defining
         contiguous blocks of data.
-    :return: (dfs, cont_date_intervals)
+    :return: (data_dfs, contiguous_chunks_list)
         * dfs is a list of dataframes containing the data, each corresponding to an
           input source
-        * cont_data_intervals is a list of pandas IntervalArrays, specifying the
+        * contiguous_chunks_list is a list of pandas IntervalArrays, specifying the
           contiguous chunks found for each data source.
     :rtype: tuple
     """
     # will be [df1, df2, df3, ...,dfN] for N data sources
-    dfs = list()
+    data_dfs = list()
     # will be [chunks1, chunks2, chunk3, ..., chunksN] for N data sources
     # chunks_i itself is an array of pandas Intervals outlining contig blocks
-    cont_date_intervals = list()
+    contiguous_chunks_list = list()
     for source_name, source_info in source_config.items():
         print("[INFO] loading source {}".format(source_name))
         date_col_name = source_info.get("date_time_column_name", "Date time")
@@ -103,10 +103,10 @@ def process_input_sources(source_config, chunk_config):
             pandas.Timedelta(chunk_config["max_delta_between_blocks_sec"], unit="s"),
             pandas.Timedelta(chunk_config["min_chunk_duration_sec"], unit="s"),
         )
-        dfs.append(data)
-        cont_date_intervals.append(chunks)
+        data_dfs.append(data)
+        contiguous_chunks_list.append(chunks)
 
-    return dfs, cont_date_intervals
+    return data_dfs, contiguous_chunks_list
 
 
 if __name__ == "__main__":
@@ -127,59 +127,62 @@ if __name__ == "__main__":
     min_date = pandas.to_datetime(chunk_config.get("min_date", "1900-01-01T00:00:00"))
     max_date = pandas.to_datetime(chunk_config.get("max_date", "2100-12-31T00:00:00"))
 
-    # process each data source and collect processing results.
+    # process each data source by computing cos/sin fields and finding contiguous chunks.
     dfs, cont_date_intervals = process_input_sources(source_configs, chunk_config)
 
+    # find overlapping contiguous chunks and merge datasets.
     hdfs = pandas.HDFStore(hdf5_path)
-    ik = 0
     n_samples = 0
-    data_overlaps = list()
-    intervals_i = cont_date_intervals[0]
-    for inter_i in intervals_i:
-        n_source_overlaps = 0
-        interval_overlaps = list()
-        # check if interval overlaps with the rest of the data sources
-        for intervals_j in cont_date_intervals[1::]:
-            source_overlaps = list()
-            overlap_mask = intervals_j.overlaps(inter_i)
-            overlap_inter = intervals_j[overlap_mask]
-            if len(overlap_inter) > 0:
-                n_source_overlaps += 1
-                # find overlaps
-                for overlap in overlap_inter:
-                    o_left = max(inter_i.left, overlap.left)
-                    o_right = min(inter_i.right, overlap.right)
-                    source_overlaps.append(
+    # use the first source as base reference
+    base_intervals = cont_date_intervals[0]
+    # compare each interval to all other intervals in all other sources in search of overlaps
+    for i, base_interval in enumerate(base_intervals):
+        n_sources_overlapping = 0
+        src_overlaps = list()
+        for src_intervals in cont_date_intervals[1:]:
+            overlap_intervals = list()
+            found_intervals = src_intervals[src_intervals.overlaps(base_interval)]
+            if len(found_intervals) > 0:
+                # this source overlaps at least once, so count it
+                n_sources_overlapping += 1
+                # define shared intervals based on overlaps
+                for interval in found_intervals:
+                    o_left = max(base_interval.left, interval.left)
+                    o_right = min(base_interval.right, interval.right)
+                    overlap_intervals.append(
                         pandas.Interval(o_left, o_right, closed="neither")
                     )
-            interval_overlaps.append(source_overlaps)
-        interval_overlaps.append(source_overlaps)
-        # if true, interval overlaps with all data sources
-        if n_source_overlaps != len(source_configs.keys()) - 1:
+            src_overlaps.append(overlap_intervals)
+        src_overlaps.insert(0, src_overlaps[0])
+        # skip this interval if it doesn't overlap with ALL sources.
+        if n_sources_overlapping != len(source_configs.keys()) - 1:
             continue
         # build dataframe with overlapping data from all sources
         resample_ok = True
         all_slices = list()
-        for src_idx, src_os in enumerate(interval_overlaps):
-            df = dfs[src_idx]
-            # fix: use first slice only
-            src_o = src_os[0]
-            odf = df[
-                (df["master_datetime"] > src_o.left)
-                & (df["master_datetime"] < src_o.right)
+        for j, df in enumerate(dfs):
+            # TODO: address that we always only use the first interval, see issue #5
+            indexing_interval = src_overlaps[j][0]
+            indexed_df = df[
+                (df["master_datetime"] > indexing_interval.left)
+                & (df["master_datetime"] < indexing_interval.right)
             ]
-            odf = odf.set_index(pandas.DatetimeIndex(odf["master_datetime"]))
-            odf = odf.drop(["master_datetime"], axis=1)
-            odf = odf.dropna()
+            indexed_df = indexed_df.set_index(
+                pandas.DatetimeIndex(indexed_df["master_datetime"])
+            )
+            indexed_df = indexed_df.drop(["master_datetime"], axis=1)
+            indexed_df = indexed_df.dropna()
             try:
-                df_slice = odf.resample(sample_spacing_min, closed=None).bfill()
-                all_slices.append(df_slice)
+                # resample to and impute to make the data regular
+                indexed_df = indexed_df.resample(sample_spacing_min).bfill()
+                all_slices.append(indexed_df)
             except:
                 resample_ok = False
                 print("fail")
                 break
         if resample_ok:
-            synced_df = pandas.concat(all_slices, axis=1, join="inner")
+            # concatenate the slices horizontally, inner join only keeps overlap rows
+            synced_df = pandas.concat(all_slices, axis="columns", join="inner")
             if len(synced_df) > 1:
                 # transform datetime to cos/sin day
                 datetime = synced_df.index.to_series()
@@ -187,7 +190,7 @@ if __name__ == "__main__":
                     continue
                 if datetime.iloc[-1] > max_date:
                     continue
-                print(datetime.iloc[0], "to", datetime.iloc[-1])
+                print(datetime.iloc[0], "-", datetime.iloc[-1])
                 sec_day = (datetime - datetime.dt.normalize()) / pandas.Timedelta(
                     seconds=1
                 )
@@ -195,9 +198,9 @@ if __name__ == "__main__":
                 sin_sec_day = numpy.sin(2 * numpy.pi * sec_day.values / 86400.0)
                 synced_df["Cosine Day"] = cos_sec_day
                 synced_df["Sine Day"] = sin_sec_day
-                synced_df.to_hdf(hdfs, "chunk_{:d}".format(ik), format="table")
+                # finally, append to hdf
+                synced_df.to_hdf(hdfs, "chunk_{:d}".format(i), format="table")
                 n_samples += len(synced_df)
                 print(n_samples)
         else:
             print("resampled failed, ignoring chunk")
-        ik += 1
