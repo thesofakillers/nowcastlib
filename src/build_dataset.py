@@ -183,7 +183,10 @@ if __name__ == "__main__":
         if resample_ok:
             # concatenate the slices horizontally, inner join only keeps overlap rows
             synced_df = pandas.concat(all_slices, axis="columns", join="inner")
-            if len(synced_df) > 1:
+            # we need to check once again whether our minimum chunk length is respected
+            if (
+                synced_df.index.max() - synced_df.index.min()
+            ).total_seconds() > chunk_config["min_chunk_duration_sec"]:
                 # transform datetime to cos/sin day
                 datetime = synced_df.index.to_series()
                 if datetime.iloc[0] < min_date:
