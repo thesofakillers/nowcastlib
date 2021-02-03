@@ -6,204 +6,226 @@ Run with
 import os
 import sys
 import json
-import pandas
-import numpy
+import pandas as pd
+import numpy as np
 
 
-def get_cont_chunks(csv_df, date_col, max_step, min_duration):
+def compute_trig_fields(input_df, fields_to_compute=[]):
     """
-    Finds contiguous blocks of time in a given array.
+    For a time series pandas dataframe, computes the Cosine and Sine of the seconds of the
+    day of each data point. Also optionally computes the Cosine and Sine equivalent
+    additional fields if requested. The computed fields are added to the dataframe which
+    is returned with the new fields included.
 
-    :param pandas.core.frame.DataFrame csv_df: pandas dataframe containing the
-        csv time series data
-    :param str date_col: The name of the column in the dataframe containing the
-        datetime information
-    :param int max_step: The maximum amount of time in seconds allowed between
-        datapoints of the same chunk
-    :param int min_duration: The minimum amount of time in seconds for that
-        a contiguous chunk of data should be
-    :return: a Pandas IntervalArray containing the pairs of start and stop
-        times defining each chunk.
-    :rtype: pandas.core.arrays.interval.IntervalArray
+    :param pandas.core.frame.DataFrane input_df: The dataframe to process
+    :param list[string] fields_to_compute: default []. List of the names of the additional
+        fields for which we wish to compute Cosine and Sine equivalents
+    :return: The original dataframe with the addition of the newly computed fields
+    :rtype: pandas.core.frame.DataFrame
     """
-    time_array = csv_df[date_col]
-    # indexes where a discontinuity in time occurs
-    idxs = numpy.where(numpy.diff(time_array) > max_step)[0]
-    interval_list = list()
-    total_disc_idxs = len(idxs)
-    print("found {} discontinuities".format(total_disc_idxs))
-    if total_disc_idxs == 0:
-        # in this case, our entire dataset is a continuous chunk
-        interval_list.append(pandas.Interval(time_array[0], time_array[-1]))
-    else:
-        # in this case, we need to add our chunks to interval_list one by one
-        left_idx = 0
-        right_idx = -1
-        for idx in idxs:
-            right_idx = idx
-            duration = time_array[right_idx] - time_array[left_idx]
-            if duration > min_duration:
-                interv = pandas.Interval(time_array[left_idx], time_array[right_idx])
-                interval_list.append(interv)
-            left_idx = right_idx + 1
-    intervals = pandas.arrays.IntervalArray(interval_list)
-    return intervals
+    # get at which second of the day each data point occured
+    datetime = input_df.index.to_series()
+    day_seconds = (datetime - datetime.dt.normalize()).dt.total_seconds()
+
+    for func, func_name in zip([np.cos, np.sin], ["Cosine", "Sine"]):
+        # first, compute trig _time_ equivalents
+        trig_day_name = "{} Day".format(func_name)
+        input_df[trig_day_name] = func((2 * np.pi * day_seconds.values) / 86400.0)
+        # we can then tackle custom requested fields if any
+        for field_name in fields_to_compute:
+            new_field_name = "{} {}".format(func_name, field_name)
+            field_data = input_df[field_name]
+            if "deg" in field_name:
+                field_data = np.radians(field_data)
+            input_df[new_field_name] = func(field_data)
+
+    return input_df
 
 
-def process_input_sources(source_config, chunk_config):
+def bfill_nan(input_array):
     """
-    Processes a series of input CSV data sources.
-    * date columns are parsed
-    * gaps are dropped
-    * cosine and sine fields are calculated if specified
-    * contiguous chunks of data are recognized
+    Backward-fills NaNs in array
+    Consider the array        [NaN, NaN, 4, 0, 0, NaN, 7, 0]
+    The function will out put [4, 4, 4, 0, 0, 7, 7, 0]
 
-    :param dict source_config: dictionary where each key corresponds to configuration
-        for an input data source.
-    :param dict chunk_config: dictionary where we specify parameters for defining
-        contiguous blocks of data.
-    :return: (data_dfs, contiguous_chunks_list)
-        * dfs is a list of dataframes containing the data, each corresponding to an
-          input source
-        * contiguous_chunks_list is a list of pandas IntervalArrays, specifying the
-          contiguous chunks found for each data source.
-    :rtype: tuple
+    Note, NaNs at the end of the array will remain untouched
     """
-    # will be [df1, df2, df3, ...,dfN] for N data sources
-    data_dfs = list()
-    # will be [chunks1, chunks2, chunk3, ..., chunksN] for N data sources
-    # chunks_i itself is an array of pandas Intervals outlining contig blocks
-    contiguous_chunks_list = list()
-    for source_name, source_info in source_config.items():
-        print("[INFO] loading source {}".format(source_name))
-        date_col_name = source_info.get("date_time_column_name", "Date time")
-        date_fmt = source_info.get("date_time_column_format", "%Y-%m-%dT%H:%M:%S")
-        # read data, dropping NaN rows and parsing the date column.
-        data = pandas.read_csv(source_info["file"])
-        data = data.dropna()
-        data = data.reset_index(drop=True)
-        data["master_datetime"] = pandas.to_datetime(
-            data[date_col_name], format=date_fmt
-        )
-        data = data.drop([date_col_name], axis=1)
-        # transform fields to cos/sin if requested in config
-        cos_sin_fields = source_info.get("cos_sin_fields", None)
-        if cos_sin_fields is not None:
-            for func, pname in zip([numpy.cos, numpy.sin], ["Cosine", "Sine"]):
-                for field_name in cos_sin_fields:
-                    new_field_name = pname + " " + field_name
-                    field_data = data[field_name]
-                    if "deg" in field_name:
-                        field_data = numpy.radians(field_data)
-                    data[new_field_name] = func(field_data)
-        # find contiguous chunks of data
-        chunks = get_cont_chunks(
-            data,
-            "master_datetime",
-            pandas.Timedelta(chunk_config["max_delta_between_blocks_sec"], unit="s"),
-            pandas.Timedelta(chunk_config["min_chunk_duration_sec"], unit="s"),
-        )
-        data_dfs.append(data)
-        contiguous_chunks_list.append(chunks)
+    mask = np.isnan(input_array)
+    # get index array, but mark the NaNs with a very large number
+    idx = np.where(~mask, np.arange(mask.shape[0]), mask.shape[0] - 1)
+    # backfill minima
+    idx = np.minimum.accumulate(idx[::-1], axis=0)[::-1]
+    # can now use this backfilled index array as a map on our original
+    return input_array[idx]
 
-    return data_dfs, contiguous_chunks_list
+
+# https://stackoverflow.com/a/54512613/9889508
+def compute_large_gap_mask(data_array, max_gap):
+    """
+    Computes a mask (boolean NumPy array) outlining where there aren't large gaps in the
+    data, as defined by `max_gap`
+
+    :param numpy.ndarray data_array: The array on which we want to compute the mask
+    :param int max_gap: the maximum number of consecutive NaNs before defining the
+                        section to be a large gap
+    :return: The mask, a boolean numpy.ndarray, where False indicates that the current
+             index is part of a large gap.
+    :rtype: numpy.ndarray
+    """
+    # where are the NaNs?
+    isnan = np.isnan(data_array)
+    # how many NaNs so far?
+    cumsum = np.cumsum(isnan).astype("int")
+    # for each non-nan indices, find the cum sum of nans since the last non-nan index
+    diff = np.zeros_like(data_array)
+    diff[~isnan] = np.diff(cumsum[~isnan], prepend=0)
+    # set the nan indices to nan
+    diff[isnan] = np.nan
+    # backfill nan blocks by setting each nan index to the cum. sum of nans for that block
+    diff = bfill_nan(diff)
+    # handle NaN end
+    final_nan_check = np.isnan(diff)
+    if final_nan_check.any():
+        if np.isnan(diff[-(max_gap + 1) :]).all():
+            diff[final_nan_check] = max_gap + 1
+        else:
+            diff[final_nan_check] = 0
+    # finally compute mask: False where large gaps - True elsewhere
+    return (diff < max_gap) | ~isnan
+
+
+def compute_dataframe_mask(input_df, max_gap, additional_cols_n=0, column_names=None):
+    """
+    Computes a mask (numpy.ndarray with dtype=boolean) shaped like `data_df` outlining
+    where _all_ columns overlap (i.e. are not NaN), ignoring data gaps smaller than
+    `max_gap`
+
+    :param pandas.core.frame.DataFrame input_df: The dataframe upon which to compute the
+        mask
+    :param int max_gap: The maximum number of consecutive NaNs that we ignore before
+        considering this a gap
+    :param int additional_cols_n: default 0. The number of additional columns that may
+        be computed before applying the mask, and therefore need to be considered such
+        that the mask shape matches the (future) dataframe shape
+    :param list[string] column_names: default None. The list of column names to use for
+        checking overlap. If not specified, all columns will be checked. It is highly
+        recommended to specify `column_names` if your dataframe is made of multiple data
+        sources each with multiple columns. In this case you only need to check one column
+        from each data source
+
+    :return: 2-dimensional (tiled) numpy array of the same shape as data_df, to be used as
+        an argument to pandas.core.frame.DataFrame.where() or .mask()
+    :rtype: numpy.ndarray
+    """
+    if column_names is None:
+        column_names = input_df.columns
+    # collect gap masks for each specified column
+    gap_masks = []
+    for col_name in column_names:
+        mask = compute_large_gap_mask(input_df[col_name].values, max_gap)
+        gap_masks.append(mask)
+    # find the intersection of all these masks, to only keep overlapping points
+    computed_mask = np.logical_and.reduce(gap_masks)
+    # we need to reshape our final_mask such that it matches our data_df's shape.
+    computed_mask = np.tile(
+        computed_mask, (len(input_df.columns) + additional_cols_n, 1)
+    ).transpose()
+    return computed_mask
+
+
+def make_chunks(input_df, min_length):
+    """
+    Given a sparse pandas DataFrame (i.e. data interrupted by NaNs), splits the
+    DataFrame into the non-sparse chunks.
+
+    :param pandas.core.frame.DataFrame input_df: the sparse dataframe we wish to process
+    :param int min_length: the minimum length a portion of data must be to be
+        considered a chunk
+    :return: A list, where each element is a DataFrame corresponding to a chunk of the
+        original
+    :rtype: list[pandas.core.frame.DataFrame]
+    """
+    sparse_ts = input_df.iloc[:, 0].astype(pd.SparseDtype("float"))
+    # extract block length and locations
+    block_locs = zip(
+        sparse_ts.values.sp_index.to_block_index().blocs,
+        sparse_ts.values.sp_index.to_block_index().blengths,
+    )
+    # use these to index our dataframe and populate our chunk list
+    blocks = [
+        input_df.iloc[start : (start + length - 1)]
+        for (start, length) in block_locs
+        if length >= min_length
+    ]
+    return blocks
 
 
 if __name__ == "__main__":
 
-    # read in positional parameters: TODO, change by actual parse_args!
     config_path = sys.argv[1]
+    print("[INFO] parsing config from {}".format(config_path))
+    with open(config_path) as f:
+        config = json.load(f)
 
-    # ugly configuration loading code
-    config_file = open(config_path, "r")
-    ds_config = json.loads(config_file.read())
-    data_config = ds_config["dataset"]
-    config_file.close()
-    chunk_config = data_config.get("chunk_config")
-    training_config = data_config.get("training_config")
-    source_configs = data_config.get("data_sources")
+    dataset_config = config["dataset"]
+    source_config = dataset_config["data_sources"]
+    chunk_config = dataset_config["chunk_config"]
+    min_chunk_duration_sec = chunk_config["min_chunk_duration_sec"]
+    max_spacing_secs = chunk_config["max_delta_between_blocks_sec"]
+    sample_spacing = chunk_config["sample_spacing"]
+
+    data_dfs = []
+    req_trig_fields = []
+    for source_name, source_info in source_config.items():
+        # check if this source requests trig fields, so we can compute them later
+        cos_sin_fields = source_info.get("cos_sin_fields", None)
+        if cos_sin_fields is not None:
+            for field in cos_sin_fields:
+                req_trig_fields.append(field)
+        print("[INFO] loading source {}".format(source_name))
+        data_df = pd.read_csv(
+            source_info["file"],
+            index_col=source_info["date_time_column_name"],
+            parse_dates=False,
+        )
+        data_df.index = pd.to_datetime(
+            data_df.index, format=source_info["date_time_column_format"]
+        )
+        data_df.index.name = None
+        # only keep requested fields, and drop NaNs
+        data_df = data_df[source_info["field_list"]]
+        data_df.dropna()
+        # resample, ensuring to floor to the nearest `sample_spacing` to ensure overlap
+        data_df = data_df.resample(
+            sample_spacing, origin=data_df.index[0].floor(sample_spacing)
+        ).mean()
+        data_dfs.append(data_df)
+
+    print("[INFO] Synchronizing data sources")
+    synced_df = pd.concat(data_dfs, axis=1, join="inner")
+
+    print("[INFO] Finding overlapping chunks and large gaps")
+    sample_spacing_secs = synced_df.index.freq.delta.seconds
+    max_spacing_steps = int(max_spacing_secs / sample_spacing_secs)
+    final_mask = compute_dataframe_mask(
+        synced_df,
+        max_spacing_steps,
+        2 * len(req_trig_fields) + 2,
+        [df.columns[0] for df in data_dfs],
+    )
+
+    print("[INFO] Imputing small gaps")
+    interpolated_df = synced_df.interpolate("linear", limit_direction="both")
+    interpolated_df = compute_trig_fields(interpolated_df, req_trig_fields)
+
+    chunked_df = interpolated_df.where(final_mask)
+
+    print("[INFO] Splitting data into chunks")
+    min_chunk_length = int(min_chunk_duration_sec / sample_spacing_secs)
+    chunks = make_chunks(chunked_df, min_chunk_length)
+
+    print("[INFO] Saving chunks to HDF5")
     hdf5_path = os.path.join(chunk_config["path_to_hdf5"], chunk_config["tag"])
-    sample_spacing_min = chunk_config["sample_spacing"]
-    min_date = pandas.to_datetime(chunk_config.get("min_date", "1900-01-01T00:00:00"))
-    max_date = pandas.to_datetime(chunk_config.get("max_date", "2100-12-31T00:00:00"))
-
-    # process each data source by computing cos/sin fields and finding contiguous chunks.
-    dfs, cont_date_intervals = process_input_sources(source_configs, chunk_config)
-
-    # find overlapping contiguous chunks and merge datasets.
-    hdfs = pandas.HDFStore(hdf5_path)
-    n_samples = 0
-    # use the first source as base reference
-    base_intervals = cont_date_intervals[0]
-    # compare each interval to all other intervals in all other sources in search of overlaps
-    for i, base_interval in enumerate(base_intervals):
-        n_sources_overlapping = 0
-        src_overlaps = list()
-        for src_intervals in cont_date_intervals[1:]:
-            overlap_intervals = list()
-            found_intervals = src_intervals[src_intervals.overlaps(base_interval)]
-            if len(found_intervals) > 0:
-                # this source overlaps at least once, so count it
-                n_sources_overlapping += 1
-                # define shared intervals based on overlaps
-                for interval in found_intervals:
-                    o_left = max(base_interval.left, interval.left)
-                    o_right = min(base_interval.right, interval.right)
-                    overlap_intervals.append(
-                        pandas.Interval(o_left, o_right, closed="neither")
-                    )
-            src_overlaps.append(overlap_intervals)
-        src_overlaps.insert(0, src_overlaps[0])
-        # skip this interval if it doesn't overlap with ALL sources.
-        if n_sources_overlapping != len(source_configs.keys()) - 1:
-            continue
-        # build dataframe with overlapping data from all sources
-        resample_ok = True
-        all_slices = list()
-        for j, df in enumerate(dfs):
-            # TODO: address that we always only use the first interval, see issue #5
-            indexing_interval = src_overlaps[j][0]
-            indexed_df = df[
-                (df["master_datetime"] > indexing_interval.left)
-                & (df["master_datetime"] < indexing_interval.right)
-            ]
-            indexed_df = indexed_df.set_index(
-                pandas.DatetimeIndex(indexed_df["master_datetime"])
-            )
-            indexed_df = indexed_df.drop(["master_datetime"], axis=1)
-            indexed_df = indexed_df.dropna()
-            try:
-                # resample to and impute to make the data regular
-                indexed_df = indexed_df.resample(sample_spacing_min).bfill()
-                all_slices.append(indexed_df)
-            except:
-                resample_ok = False
-                print("fail")
-                break
-        if resample_ok:
-            # concatenate the slices horizontally, inner join only keeps overlap rows
-            synced_df = pandas.concat(all_slices, axis="columns", join="inner")
-            # we need to check once again whether our minimum chunk length is respected
-            if (
-                synced_df.index.max() - synced_df.index.min()
-            ).total_seconds() > chunk_config["min_chunk_duration_sec"]:
-                # transform datetime to cos/sin day
-                datetime = synced_df.index.to_series()
-                if datetime.iloc[0] < min_date:
-                    continue
-                if datetime.iloc[-1] > max_date:
-                    continue
-                print(datetime.iloc[0], "-", datetime.iloc[-1])
-                sec_day = (datetime - datetime.dt.normalize()) / pandas.Timedelta(
-                    seconds=1
-                )
-                cos_sec_day = numpy.cos(2 * numpy.pi * sec_day.values / 86400.0)
-                sin_sec_day = numpy.sin(2 * numpy.pi * sec_day.values / 86400.0)
-                synced_df["Cosine Day"] = cos_sec_day
-                synced_df["Sine Day"] = sin_sec_day
-                # finally, append to hdf
-                synced_df.to_hdf(hdfs, "chunk_{:d}".format(i), format="table")
-                n_samples += len(synced_df)
-                print(n_samples)
-        else:
-            print("resampled failed, ignoring chunk")
+    hdfs = pd.HDFStore(hdf5_path)
+    for i, chunk in enumerate(chunks):
+        chunk.to_hdf(hdfs, "chunk_{:d}".format(i), format="table")
