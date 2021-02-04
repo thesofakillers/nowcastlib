@@ -206,7 +206,7 @@ if __name__ == "__main__":
 
     print("[INFO] Finding overlapping chunks and large gaps")
     sample_spacing_secs = synced_df.index.freq.delta.seconds
-    max_spacing_steps = int(max_spacing_secs / sample_spacing_secs)
+    max_spacing_steps = np.floor((max_spacing_secs / sample_spacing_secs))
     final_mask = compute_dataframe_mask(
         synced_df,
         max_spacing_steps,
