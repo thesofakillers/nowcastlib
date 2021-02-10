@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "nowcast-lib"
+version = "1.0.0"
+description = "🧙🔧 Utils that can be reused and shared across and beyond the ESO Nowcast project"
+authors = [
+  "Giulio Starace <giulio.starace@gmail.com>",
+  "Giulio Starace <giulio.starace@partner.eso.org>",
+]
+readme = "README.md"
+homepage = "https://gitlab.eso.org/gstarace/nowcast-lib"
+repository = "https://gitlab.eso.org/gstarace/nowcast-lib"
+keywords = ["nowcast", "turbulence", "forecasting", "data-science", "time series"]
+license = "GPL-3.0-only"
+include = ["LICENSE"]
+
+[tool.poetry.dependencies]
+python = "^3.6.9"
+pandas = "1.1.5"
+numpy = "1.18.5"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+pipreqs = "^0.4.10"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

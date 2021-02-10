@@ -1,3 +1,4 @@
 # Nowcast Lib
 
-🧙‍♂️🔧 Useful utils that can be reutilised and shared across and beyond the Nowcast project
+🧙‍♂️🔧 Utils that can be reused and shared across and beyond the Nowcast project
+
