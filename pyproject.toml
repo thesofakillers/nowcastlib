@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "nowcast-lib"
+name = "nowcastlib"
 version = "1.0.0"
 description = "🧙🔧 Utils that can be reused and shared across and beyond the ESO Nowcast project"
 authors = [
