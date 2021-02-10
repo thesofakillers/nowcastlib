@@ -1,7 +1,5 @@
 """
-Processes raw CSV files into chunks, which are saved as HDF5 files.
-Run with
-`python build_dataset.py path/to/config.json`
+Functions for processing multiple raw datasets.
 """
 import os
 import sys
@@ -158,74 +156,3 @@ def make_chunks(input_df, min_length):
         if length >= min_length
     ]
     return blocks
-
-
-if __name__ == "__main__":
-
-    config_path = sys.argv[1]
-    print("[INFO] parsing config from {}".format(config_path))
-    with open(config_path) as f:
-        config = json.load(f)
-
-    dataset_config = config["dataset"]
-    source_config = dataset_config["data_sources"]
-    chunk_config = dataset_config["chunk_config"]
-    min_chunk_duration_sec = chunk_config["min_chunk_duration_sec"]
-    max_spacing_secs = chunk_config["max_delta_between_blocks_sec"]
-    sample_spacing = chunk_config["sample_spacing"]
-
-    data_dfs = []
-    req_trig_fields = []
-    for source_name, source_info in source_config.items():
-        # check if this source requests trig fields, so we can compute them later
-        cos_sin_fields = source_info.get("cos_sin_fields", None)
-        if cos_sin_fields is not None:
-            for field in cos_sin_fields:
-                req_trig_fields.append(field)
-        print("[INFO] loading source {}".format(source_name))
-        data_df = pd.read_csv(
-            source_info["file"],
-            index_col=source_info["date_time_column_name"],
-            parse_dates=False,
-        )
-        data_df.index = pd.to_datetime(
-            data_df.index, format=source_info["date_time_column_format"]
-        )
-        data_df.index.name = None
-        # only keep requested fields, and drop NaNs
-        data_df = data_df[source_info["field_list"]]
-        data_df.dropna()
-        # resample, ensuring to floor to the nearest `sample_spacing` to ensure overlap
-        data_df = data_df.resample(
-            sample_spacing, origin=data_df.index[0].floor(sample_spacing)
-        ).mean()
-        data_dfs.append(data_df)
-
-    print("[INFO] Synchronizing data sources")
-    synced_df = pd.concat(data_dfs, axis=1, join="inner")
-
-    print("[INFO] Finding overlapping chunks and large gaps")
-    sample_spacing_secs = synced_df.index.freq.delta.seconds
-    max_spacing_steps = np.floor((max_spacing_secs / sample_spacing_secs)).astype(int)
-    final_mask = compute_dataframe_mask(
-        synced_df,
-        max_spacing_steps,
-        2 * len(req_trig_fields) + 2,
-        [df.columns[0] for df in data_dfs],
-    )
-
-    print("[INFO] Imputing small gaps")
-    interpolated_df = synced_df.interpolate("linear", limit_direction="both")
-    interpolated_df = compute_trig_fields(interpolated_df, req_trig_fields)
-
-    chunked_df = interpolated_df.where(final_mask)
-
-    print("[INFO] Splitting data into chunks")
-    min_chunk_length = int(min_chunk_duration_sec / sample_spacing_secs)
-    chunks = make_chunks(chunked_df, min_chunk_length)
-
-    print("[INFO] Saving chunks to HDF5")
-    hdf5_path = os.path.join(chunk_config["path_to_hdf5"], chunk_config["tag"])
-    hdfs = pd.HDFStore(hdf5_path)
-    for i, chunk in enumerate(chunks):
-        chunk.to_hdf(hdfs, "chunk_{:d}".format(i), format="table")
