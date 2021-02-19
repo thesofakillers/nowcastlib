@@ -4,7 +4,7 @@
 project
 
 This is a public repository hosted on GitHub via a push mirror setup in the
-internal ESO GitLab
+[internal ESO GitLab repository](https://gitlab.eso.org/gstarace/nowcastlib/)
 
 ## Installation
 
