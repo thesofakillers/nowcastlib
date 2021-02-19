@@ -10,6 +10,29 @@ Simply run
 pip install nowcastlib
 ```
 
+## Usage
+
+At the moment, Nowcast Library is simply a collection of functions dealing with
+raw time series data surrounding the ESO Nowcast project. These functions are in
+the module [`rawdata.py`](./nowcastlib/rawdata.py), and can be imported as such
+
+```python
+"""Example showing how to access compute_trig_fields function"""
+import nowcastlib as ncl
+import pandas as pd
+import numpy as np
+
+data_df = pd.DataFrame(
+    [[0, 3, 4, np.NaN], [32, 4, np.NaN, 4], [56, 8, 0, np.NaN]],
+    columns=["A", "B", "C"],
+    index=pd.date_range(start="1/1/2018", periods=4, freq="2min"),
+)
+
+result = ncl.rawdata.compute_trig_fields(data_df, ["A", "C"])
+```
+
+Documentation for each function can be found under the respective docstring.
+
 ## Development Setup
 
 This repository relies on [Poetry](https://python-poetry.org/) for tracking
