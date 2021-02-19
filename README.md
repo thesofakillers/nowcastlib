@@ -1,6 +1,10 @@
 # Nowcast Library
 
-🧙‍♂️🔧 Utils that can be reused and shared across and beyond the Nowcast project
+🧙‍♂️🔧 Utils that can be reused and shared across and beyond the ESO Nowcast
+project
+
+This is a public repository hosted on GitHub via a push mirror setup in the
+internal ESO GitLab
 
 ## Installation
 
@@ -10,7 +14,7 @@ Simply run
 pip install nowcastlib
 ```
 
-## Usage
+## Usage and Documentation
 
 At the moment, Nowcast Library is simply a collection of functions dealing with
 raw time series data surrounding the ESO Nowcast project. These functions are in
@@ -31,7 +35,7 @@ data_df = pd.DataFrame(
 result = ncl.rawdata.compute_trig_fields(data_df, ["A", "C"])
 ```
 
-Documentation for each function can be found under the respective docstring.
+Further documentation [here](https://giuliostarace.com/nowcastlib).
 
 ## Development Setup
 
