@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>nowcastlib.rawdata API documentation</title>
+<meta name="description" content="Functions for processing multiple raw datasets." />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>nowcastlib.rawdata</code></h1>
+</header>
+<section id="section-intro">
+<p>Functions for processing multiple raw datasets.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+Functions for processing multiple raw datasets.
+&#34;&#34;&#34;
+import pandas as pd
+import numpy as np
+
+
+def compute_trig_fields(input_df, fields_to_compute=[]):
+    &#34;&#34;&#34;For a time series pandas dataframe, computes the Cosine and Sine of the seconds of the
+    day of each data point. Also optionally computes the Cosine and Sine equivalent
+    additional fields if requested. The computed fields are added to the dataframe which
+    is returned with the new fields included.
+
+    Parameters
+    ----------
+    input_df : pandas.core.frame.DataFrame
+        The dataframe to process
+    fields_to_compute : list of string, default []
+        List of the names of the additional fields for which we wish to compute Cosine
+        and Sine equivalents
+
+    Returns
+    -------
+    pandas.core.frame.DataFrame
+        The original dataframe with the addition of the newly computed fields
+    &#34;&#34;&#34;
+    # get at which second of the day each data point occured
+    datetime = input_df.index.to_series()
+    day_seconds = (datetime - datetime.dt.normalize()).dt.total_seconds()
+
+    for func, func_name in zip([np.cos, np.sin], [&#34;Cosine&#34;, &#34;Sine&#34;]):
+        # first, compute trig _time_ equivalents
+        trig_day_name = &#34;{} Day&#34;.format(func_name)
+        input_df[trig_day_name] = func((2 * np.pi * day_seconds.values) / 86400.0)
+        # we can then tackle custom requested fields if any
+        for field_name in fields_to_compute:
+            new_field_name = &#34;{} {}&#34;.format(func_name, field_name)
+            field_data = input_df[field_name]
+            if &#34;deg&#34; in field_name:
+                field_data = np.radians(field_data)
+            input_df[new_field_name] = func(field_data)
+
+    return input_df
+
+
+def bfill_nan(input_array):
+    &#34;&#34;&#34;Backward-fills NaNs in numpy array
+
+    Parameters
+    ----------
+    input_array : numpy.ndarray
+
+    Returns
+    -------
+    numpy.ndarray
+
+    Notes
+    -----
+    NaNs at the end of the array will remain untouched
+
+    Examples
+    --------
+    &gt;&gt;&gt; example_array = np.array([np.nan, np.nan, 4, 0, 0, np.nan, 7, 0])
+    &gt;&gt;&gt; bfill_nan(example_array)
+    array([4., 4., 4., 0., 0., 7., 7., 0.])
+    &#34;&#34;&#34;
+    mask = np.isnan(input_array)
+    # get index array, but mark the NaNs with a very large number
+    idx = np.where(~mask, np.arange(mask.shape[0]), mask.shape[0] - 1)
+    # backfill minima
+    idx = np.minimum.accumulate(idx[::-1], axis=0)[::-1]
+    # can now use this backfilled index array as a map on our original
+    return input_array[idx]
+
+
+def compute_large_gap_mask(data_array, max_gap):
+    &#34;&#34;&#34;Computes a mask (boolean NumPy array) outlining where there aren&#39;t large gaps
+    in the data, as defined by `max_gap`
+
+    Parameters
+    ----------
+    data_array : numpy.ndarray
+        The array on which we want to compute the mask
+    max_gap : int
+        the maximum number of consecutive NaNs before defining the section to be a
+        large gap
+
+    Returns
+    -------
+    numpy.ndarray
+        The mask, a boolean numpy.ndarray, where False indicates that the current
+        index is part of a large gap.
+
+    Notes
+    -----
+    This is an adaption of [this StackOverflow post](https://stackoverflow.com/a/54512613/9889508)
+    &#34;&#34;&#34;
+    # where are the NaNs?
+    isnan = np.isnan(data_array)
+    # how many NaNs so far?
+    cumsum = np.cumsum(isnan).astype(&#34;int&#34;)
+    # for each non-nan indices, find the cum sum of nans since the last non-nan index
+    diff = np.zeros_like(data_array)
+    diff[~isnan] = np.diff(cumsum[~isnan], prepend=0)
+    # set the nan indices to nan
+    diff[isnan] = np.nan
+    # backfill nan blocks by setting each nan index to the cum. sum of nans for that block
+    diff = bfill_nan(diff)
+    # handle NaN end
+    final_nan_check = np.isnan(diff)
+    if final_nan_check.any():
+        if np.isnan(diff[-(max_gap + 1) :]).all():
+            diff[final_nan_check] = max_gap + 1
+        else:
+            diff[final_nan_check] = 0
+    # finally compute mask: False where large gaps - True elsewhere
+    return (diff &lt; max_gap) | ~isnan
+
+
+def compute_dataframe_mask(input_df, max_gap, additional_cols_n=0, column_names=None):
+    &#34;&#34;&#34;Computes a mask (numpy.ndarray with dtype=boolean) shaped like `input_df` outlining
+    where _all_ columns overlap (i.e. are not NaN), ignoring data gaps smaller than
+    `max_gap`
+
+    Parameters
+    ----------
+    input_df : pandas.core.frame.DataFrame
+        The dataframe upon which to compute the mask
+    max_gap : int
+        The maximum number of consecutive NaNs that we ignore before considering this
+        a gap
+    additional_cols_n : int, default 0
+        The number of additional columns that may be computed before applying the mask,
+        and therefore need to be considered such that the mask shape matches the
+        (future) dataframe shape
+    column_names : list of string, default None
+        The list of column names to use for checking overlap. If not specified, all
+        columns will be checked.
+
+    Returns
+    -------
+    numpy.ndarray
+        2-dimensional (tiled) numpy array of the same shape as data_df, to be used as
+        an argument to pandas.core.frame.DataFrame.where() or .mask()
+
+    Notes
+    -----
+    It is highly recommended to specify `column_names` if your dataframe is made of
+    multiple data sources each with multiple columns. In this case you only need to
+    check one column from each data source
+    &#34;&#34;&#34;
+    if column_names is None:
+        column_names = input_df.columns
+    # collect gap masks for each specified column
+    gap_masks = []
+    for col_name in column_names:
+        mask = compute_large_gap_mask(input_df[col_name].values, max_gap)
+        gap_masks.append(mask)
+    # find the intersection of all these masks, to only keep overlapping points
+    computed_mask = np.logical_and.reduce(gap_masks)
+    # we need to reshape our final_mask such that it matches our data_df&#39;s shape.
+    computed_mask = np.tile(
+        computed_mask, (len(input_df.columns) + additional_cols_n, 1)
+    ).transpose()
+    return computed_mask
+
+
+def make_chunks(input_df, min_length):
+    &#34;&#34;&#34;Given a sparse pandas DataFrame (i.e. data interrupted by NaNs), splits the
+    DataFrame into the non-sparse chunks.
+
+    Parameters
+    ----------
+    input_df : pandas.core.frame.DataFrame
+        The sparse dataframe we wish to process
+    min_length : int
+        The minimum length a portion of data must be to be considered a chunk
+
+    Returns
+    -------
+    list of pandas.core.frame.DataFrame
+        A list, where each element is a DataFrame corresponding to a chunk of the
+        original
+    &#34;&#34;&#34;
+    sparse_ts = input_df.iloc[:, 0].astype(pd.SparseDtype(&#34;float&#34;))
+    # extract block length and locations
+    block_locs = zip(
+        sparse_ts.values.sp_index.to_block_index().blocs,
+        sparse_ts.values.sp_index.to_block_index().blengths,
+    )
+    # use these to index our dataframe and populate our chunk list
+    blocks = [
+        input_df.iloc[start : (start + length - 1)]
+        for (start, length) in block_locs
+        if length &gt;= min_length
+    ]
+    return blocks</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="nowcastlib.rawdata.bfill_nan"><code class="name flex">
+<span>def <span class="ident">bfill_nan</span></span>(<span>input_array)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Backward-fills NaNs in numpy array</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>input_array</code></strong> :&ensp;<code>numpy.ndarray</code></dt>
+<dd>&nbsp;</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>numpy.ndarray</code></dt>
+<dd>&nbsp;</dd>
+</dl>
+<h2 id="notes">Notes</h2>
+<p>NaNs at the end of the array will remain untouched</p>
+<h2 id="examples">Examples</h2>
+<pre><code class="language-python-repl">&gt;&gt;&gt; example_array = np.array([np.nan, np.nan, 4, 0, 0, np.nan, 7, 0])
+&gt;&gt;&gt; bfill_nan(example_array)
+array([4., 4., 4., 0., 0., 7., 7., 0.])
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def bfill_nan(input_array):
+    &#34;&#34;&#34;Backward-fills NaNs in numpy array
+
+    Parameters
+    ----------
+    input_array : numpy.ndarray
+
+    Returns
+    -------
+    numpy.ndarray
+
+    Notes
+    -----
+    NaNs at the end of the array will remain untouched
+
+    Examples
+    --------
+    &gt;&gt;&gt; example_array = np.array([np.nan, np.nan, 4, 0, 0, np.nan, 7, 0])
+    &gt;&gt;&gt; bfill_nan(example_array)
+    array([4., 4., 4., 0., 0., 7., 7., 0.])
+    &#34;&#34;&#34;
+    mask = np.isnan(input_array)
+    # get index array, but mark the NaNs with a very large number
+    idx = np.where(~mask, np.arange(mask.shape[0]), mask.shape[0] - 1)
+    # backfill minima
+    idx = np.minimum.accumulate(idx[::-1], axis=0)[::-1]
+    # can now use this backfilled index array as a map on our original
+    return input_array[idx]</code></pre>
+</details>
+</dd>
+<dt id="nowcastlib.rawdata.compute_dataframe_mask"><code class="name flex">
+<span>def <span class="ident">compute_dataframe_mask</span></span>(<span>input_df, max_gap, additional_cols_n=0, column_names=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Computes a mask (numpy.ndarray with dtype=boolean) shaped like <code>input_df</code> outlining
+where <em>all</em> columns overlap (i.e. are not NaN), ignoring data gaps smaller than
+<code>max_gap</code></p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>input_df</code></strong> :&ensp;<code>pandas.core.frame.DataFrame</code></dt>
+<dd>The dataframe upon which to compute the mask</dd>
+<dt><strong><code>max_gap</code></strong> :&ensp;<code>int</code></dt>
+<dd>The maximum number of consecutive NaNs that we ignore before considering this
+a gap</dd>
+<dt><strong><code>additional_cols_n</code></strong> :&ensp;<code>int</code>, default <code>0</code></dt>
+<dd>The number of additional columns that may be computed before applying the mask,
+and therefore need to be considered such that the mask shape matches the
+(future) dataframe shape</dd>
+<dt><strong><code>column_names</code></strong> :&ensp;<code>list</code> of <code>string</code>, default <code>None</code></dt>
+<dd>The list of column names to use for checking overlap. If not specified, all
+columns will be checked.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>numpy.ndarray</code></dt>
+<dd>2-dimensional (tiled) numpy array of the same shape as data_df, to be used as
+an argument to pandas.core.frame.DataFrame.where() or .mask()</dd>
+</dl>
+<h2 id="notes">Notes</h2>
+<p>It is highly recommended to specify <code>column_names</code> if your dataframe is made of
+multiple data sources each with multiple columns. In this case you only need to
+check one column from each data source</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_dataframe_mask(input_df, max_gap, additional_cols_n=0, column_names=None):
+    &#34;&#34;&#34;Computes a mask (numpy.ndarray with dtype=boolean) shaped like `input_df` outlining
+    where _all_ columns overlap (i.e. are not NaN), ignoring data gaps smaller than
+    `max_gap`
+
+    Parameters
+    ----------
+    input_df : pandas.core.frame.DataFrame
+        The dataframe upon which to compute the mask
+    max_gap : int
+        The maximum number of consecutive NaNs that we ignore before considering this
+        a gap
+    additional_cols_n : int, default 0
+        The number of additional columns that may be computed before applying the mask,
+        and therefore need to be considered such that the mask shape matches the
+        (future) dataframe shape
+    column_names : list of string, default None
+        The list of column names to use for checking overlap. If not specified, all
+        columns will be checked.
+
+    Returns
+    -------
+    numpy.ndarray
+        2-dimensional (tiled) numpy array of the same shape as data_df, to be used as
+        an argument to pandas.core.frame.DataFrame.where() or .mask()
+
+    Notes
+    -----
+    It is highly recommended to specify `column_names` if your dataframe is made of
+    multiple data sources each with multiple columns. In this case you only need to
+    check one column from each data source
+    &#34;&#34;&#34;
+    if column_names is None:
+        column_names = input_df.columns
+    # collect gap masks for each specified column
+    gap_masks = []
+    for col_name in column_names:
+        mask = compute_large_gap_mask(input_df[col_name].values, max_gap)
+        gap_masks.append(mask)
+    # find the intersection of all these masks, to only keep overlapping points
+    computed_mask = np.logical_and.reduce(gap_masks)
+    # we need to reshape our final_mask such that it matches our data_df&#39;s shape.
+    computed_mask = np.tile(
+        computed_mask, (len(input_df.columns) + additional_cols_n, 1)
+    ).transpose()
+    return computed_mask</code></pre>
+</details>
+</dd>
+<dt id="nowcastlib.rawdata.compute_large_gap_mask"><code class="name flex">
+<span>def <span class="ident">compute_large_gap_mask</span></span>(<span>data_array, max_gap)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Computes a mask (boolean NumPy array) outlining where there aren't large gaps
+in the data, as defined by <code>max_gap</code></p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>data_array</code></strong> :&ensp;<code>numpy.ndarray</code></dt>
+<dd>The array on which we want to compute the mask</dd>
+<dt><strong><code>max_gap</code></strong> :&ensp;<code>int</code></dt>
+<dd>the maximum number of consecutive NaNs before defining the section to be a
+large gap</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>numpy.ndarray</code></dt>
+<dd>The mask, a boolean numpy.ndarray, where False indicates that the current
+index is part of a large gap.</dd>
+</dl>
+<h2 id="notes">Notes</h2>
+<p>This is an adaption of <a href="https://stackoverflow.com/a/54512613/9889508">this StackOverflow post</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_large_gap_mask(data_array, max_gap):
+    &#34;&#34;&#34;Computes a mask (boolean NumPy array) outlining where there aren&#39;t large gaps
+    in the data, as defined by `max_gap`
+
+    Parameters
+    ----------
+    data_array : numpy.ndarray
+        The array on which we want to compute the mask
+    max_gap : int
+        the maximum number of consecutive NaNs before defining the section to be a
+        large gap
+
+    Returns
+    -------
+    numpy.ndarray
+        The mask, a boolean numpy.ndarray, where False indicates that the current
+        index is part of a large gap.
+
+    Notes
+    -----
+    This is an adaption of [this StackOverflow post](https://stackoverflow.com/a/54512613/9889508)
+    &#34;&#34;&#34;
+    # where are the NaNs?
+    isnan = np.isnan(data_array)
+    # how many NaNs so far?
+    cumsum = np.cumsum(isnan).astype(&#34;int&#34;)
+    # for each non-nan indices, find the cum sum of nans since the last non-nan index
+    diff = np.zeros_like(data_array)
+    diff[~isnan] = np.diff(cumsum[~isnan], prepend=0)
+    # set the nan indices to nan
+    diff[isnan] = np.nan
+    # backfill nan blocks by setting each nan index to the cum. sum of nans for that block
+    diff = bfill_nan(diff)
+    # handle NaN end
+    final_nan_check = np.isnan(diff)
+    if final_nan_check.any():
+        if np.isnan(diff[-(max_gap + 1) :]).all():
+            diff[final_nan_check] = max_gap + 1
+        else:
+            diff[final_nan_check] = 0
+    # finally compute mask: False where large gaps - True elsewhere
+    return (diff &lt; max_gap) | ~isnan</code></pre>
+</details>
+</dd>
+<dt id="nowcastlib.rawdata.compute_trig_fields"><code class="name flex">
+<span>def <span class="ident">compute_trig_fields</span></span>(<span>input_df, fields_to_compute=[])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>For a time series pandas dataframe, computes the Cosine and Sine of the seconds of the
+day of each data point. Also optionally computes the Cosine and Sine equivalent
+additional fields if requested. The computed fields are added to the dataframe which
+is returned with the new fields included.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>input_df</code></strong> :&ensp;<code>pandas.core.frame.DataFrame</code></dt>
+<dd>The dataframe to process</dd>
+<dt><strong><code>fields_to_compute</code></strong> :&ensp;<code>list</code> of <code>string</code>, default <code>[]</code></dt>
+<dd>List of the names of the additional fields for which we wish to compute Cosine
+and Sine equivalents</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pandas.core.frame.DataFrame</code></dt>
+<dd>The original dataframe with the addition of the newly computed fields</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_trig_fields(input_df, fields_to_compute=[]):
+    &#34;&#34;&#34;For a time series pandas dataframe, computes the Cosine and Sine of the seconds of the
+    day of each data point. Also optionally computes the Cosine and Sine equivalent
+    additional fields if requested. The computed fields are added to the dataframe which
+    is returned with the new fields included.
+
+    Parameters
+    ----------
+    input_df : pandas.core.frame.DataFrame
+        The dataframe to process
+    fields_to_compute : list of string, default []
+        List of the names of the additional fields for which we wish to compute Cosine
+        and Sine equivalents
+
+    Returns
+    -------
+    pandas.core.frame.DataFrame
+        The original dataframe with the addition of the newly computed fields
+    &#34;&#34;&#34;
+    # get at which second of the day each data point occured
+    datetime = input_df.index.to_series()
+    day_seconds = (datetime - datetime.dt.normalize()).dt.total_seconds()
+
+    for func, func_name in zip([np.cos, np.sin], [&#34;Cosine&#34;, &#34;Sine&#34;]):
+        # first, compute trig _time_ equivalents
+        trig_day_name = &#34;{} Day&#34;.format(func_name)
+        input_df[trig_day_name] = func((2 * np.pi * day_seconds.values) / 86400.0)
+        # we can then tackle custom requested fields if any
+        for field_name in fields_to_compute:
+            new_field_name = &#34;{} {}&#34;.format(func_name, field_name)
+            field_data = input_df[field_name]
+            if &#34;deg&#34; in field_name:
+                field_data = np.radians(field_data)
+            input_df[new_field_name] = func(field_data)
+
+    return input_df</code></pre>
+</details>
+</dd>
+<dt id="nowcastlib.rawdata.make_chunks"><code class="name flex">
+<span>def <span class="ident">make_chunks</span></span>(<span>input_df, min_length)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Given a sparse pandas DataFrame (i.e. data interrupted by NaNs), splits the
+DataFrame into the non-sparse chunks.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>input_df</code></strong> :&ensp;<code>pandas.core.frame.DataFrame</code></dt>
+<dd>The sparse dataframe we wish to process</dd>
+<dt><strong><code>min_length</code></strong> :&ensp;<code>int</code></dt>
+<dd>The minimum length a portion of data must be to be considered a chunk</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list</code> of <code>pandas.core.frame.DataFrame</code></dt>
+<dd>A list, where each element is a DataFrame corresponding to a chunk of the
+original</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def make_chunks(input_df, min_length):
+    &#34;&#34;&#34;Given a sparse pandas DataFrame (i.e. data interrupted by NaNs), splits the
+    DataFrame into the non-sparse chunks.
+
+    Parameters
+    ----------
+    input_df : pandas.core.frame.DataFrame
+        The sparse dataframe we wish to process
+    min_length : int
+        The minimum length a portion of data must be to be considered a chunk
+
+    Returns
+    -------
+    list of pandas.core.frame.DataFrame
+        A list, where each element is a DataFrame corresponding to a chunk of the
+        original
+    &#34;&#34;&#34;
+    sparse_ts = input_df.iloc[:, 0].astype(pd.SparseDtype(&#34;float&#34;))
+    # extract block length and locations
+    block_locs = zip(
+        sparse_ts.values.sp_index.to_block_index().blocs,
+        sparse_ts.values.sp_index.to_block_index().blengths,
+    )
+    # use these to index our dataframe and populate our chunk list
+    blocks = [
+        input_df.iloc[start : (start + length - 1)]
+        for (start, length) in block_locs
+        if length &gt;= min_length
+    ]
+    return blocks</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="nowcastlib" href="index.html">nowcastlib</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="nowcastlib.rawdata.bfill_nan" href="#nowcastlib.rawdata.bfill_nan">bfill_nan</a></code></li>
+<li><code><a title="nowcastlib.rawdata.compute_dataframe_mask" href="#nowcastlib.rawdata.compute_dataframe_mask">compute_dataframe_mask</a></code></li>
+<li><code><a title="nowcastlib.rawdata.compute_large_gap_mask" href="#nowcastlib.rawdata.compute_large_gap_mask">compute_large_gap_mask</a></code></li>
+<li><code><a title="nowcastlib.rawdata.compute_trig_fields" href="#nowcastlib.rawdata.compute_trig_fields">compute_trig_fields</a></code></li>
+<li><code><a title="nowcastlib.rawdata.make_chunks" href="#nowcastlib.rawdata.make_chunks">make_chunks</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>
