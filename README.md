@@ -35,7 +35,7 @@ data_df = pd.DataFrame(
 result = ncl.rawdata.compute_trig_fields(data_df, ["A", "C"])
 ```
 
-Further documentation [here](https://giuliostarace.com/nowcastlib).
+Further documentation [here](https://giuliostarace.com/nowcastlib/rawdata.html).
 
 ## Development Setup
 
@@ -77,13 +77,8 @@ To publish changes follow these steps:
    your poetry repositories:
 
    ```console
-   > poetry config repositories.testpypi https://test.pypi.org/legacy/
-
-   > poetry config repositories.pypi https://pypi.org/
-
-   > poetry config --list
-   repositories.pypi.url = "https://pypi.org/"
-   repositories.testpypi.url = "https://test.pypi.org/legacy/"
+   poetry config repositories.testpypi https://test.pypi.org/legacy/
+   poetry config repositories.pypi https://pypi.org/
    ```
 
 5. Publish the repository to TestPyPi, to see that everything works as expected:
