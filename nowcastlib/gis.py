@@ -9,12 +9,19 @@ def great_circle_distance(point_a, point_b, circle_radius):
     Calculates the gcd (https://en.wikipedia.org/wiki/Great-circle_distance) between two
     points on a sphere.
 
-    :param tuple point_a: (lat_a, lon_a) -- tuple specifying latitude and longitude
-    :param tuple point_b: (lat_b, lon_b) -- tuple specifying latitude and longitude
-    :param float circle_radius: the radius of the circle upon which the points are.
+    Parameters
+    ----------
+    point_a : tuple of float
+        (lat_a, lon_a) -- tuple specifying latitude and longitude
+    point_b : tuple of float
+        (lat_b, lon_b) -- tuple specifying latitude and longitude
+    circle_radius : float
+        The radius of the circle upon which the points are.
 
-    :return: The great circle distance between the two points
-    :rtype: float
+    Returns
+    -------
+    float
+        The great circle distance between the two points
     """
     lat_a, lon_a = np.deg2rad(point_a)
     lat_b, lon_b = np.deg2rad(point_b)
@@ -30,11 +37,17 @@ def initial_bearing(point_a, point_b):
     """
     Calculates the initial bearing (also known as forward azimuth) from point_a to point_b
 
-    :param tuple point_a: (lat_a, lon_a) -- tuple specifying latitude and longitude
-    :param tuple point_b: (lat_b, lon_b) -- tuple specifying latitude and longitude
+    Parameters
+    ----------
+    point_a : tuple of float
+        (lat_a, lon_a) -- tuple specifying latitude and longitude
+    point_b : tuple of float
+        (lat_b, lon_b) -- tuple specifying latitude and longitude
 
-    :return: The initial bearing in radians
-    :rtype: float
+    Returns
+    -------
+    float
+        The initial bearing in radians
     """
     lat_a, lon_a = np.deg2rad(point_a)
     lat_b, lon_b = np.deg2rad(point_b)
