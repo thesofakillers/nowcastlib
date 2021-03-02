@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
-<title>nowcastlib API documentation</title>
-<meta name="description" content="Nowcast Library …" />
+<title>nowcastlib.utils API documentation</title>
+<meta name="description" content="Uncategorised utilities." />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -19,132 +19,110 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Package <code>nowcastlib</code></h1>
+<h1 class="title">Module <code>nowcastlib.utils</code></h1>
 </header>
 <section id="section-intro">
-<h1 id="nowcast-library">Nowcast Library</h1>
-<p>🧙‍♂️🔧 Utils that can be reused and shared across and beyond the ESO Nowcast
-project</p>
-<p>This is a public repository hosted on GitHub via a push mirror setup in the
-<a href="https://gitlab.eso.org/gstarace/nowcastlib/">internal ESO GitLab repository</a></p>
-<h2 id="installation">Installation</h2>
-<p>Simply run</p>
-<pre><code class="language-console">pip install nowcastlib
-</code></pre>
-<h2 id="usage-and-documentation">Usage and Documentation</h2>
-<p>At the moment, Nowcast Library is simply a collection of functions. Here is a
-quick example of how one may import nowcastlib and get access to one of the
-functions:</p>
-<pre><code class="language-python">&quot;&quot;&quot;Example showing how to access compute_trig_fields function&quot;&quot;&quot;
-import nowcastlib as ncl
-import pandas as pd
-import numpy as np
-
-data_df = pd.DataFrame(
-    [[0, 3, 4, np.NaN], [32, 4, np.NaN, 4], [56, 8, 0, np.NaN]],
-    columns=[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;],
-    index=pd.date_range(start=&quot;1/1/2018&quot;, periods=4, freq=&quot;2min&quot;),
-)
-
-result = ncl.rawdata.compute_trig_fields(data_df, [&quot;A&quot;, &quot;C&quot;])
-</code></pre>
-<p>Further documentation <a href="https://giuliostarace.com/nowcastlib/">here</a>.</p>
-<h2 id="development-setup">Development Setup</h2>
-<p>This repository relies on <a href="https://python-poetry.org/">Poetry</a> for tracking
-dependencies, building and publishing. It is therefore recommended that
-developers <a href="https://python-poetry.org/docs/#installation">install poetry</a> and
-make use of it throughout their development of the project.</p>
-<h3 id="dependencies">Dependencies</h3>
-<p>Make sure you are in the right Python environment and run</p>
-<pre><code class="language-console">poetry install
-</code></pre>
-<p>This reads <a href="./pyproject.toml">pyproject.toml</a>, resolves the dependencies, and
-installs them.</p>
-<h3 id="deployment">Deployment</h3>
-<p>The repository is published to <a href="https://pypi.org/">PyPi</a>, so to make it
-accessible via a <code>pip install</code> command as mentioned <a href="#install">earlier</a>.</p>
-<p>To publish changes follow these steps. Ideally this process is automated via a
-CI tool triggered by a push/merge to the master branch:</p>
-<ol>
-<li>
-<p>Optionally run
-<a href="https://python-poetry.org/docs/cli/#version"><code>poetry version</code></a> with the
-appropriate argument based on <a href="https://semver.org/">semver guidelines</a>.</p>
-</li>
-<li>
-<p>Update the documentation by running</p>
-</li>
-</ol>
-<p><code>console
-make document</code></p>
-<ol>
-<li>Prepare the package by running</li>
-</ol>
-<p><code>console
-poetry build</code></p>
-<ol>
-<li>Ensure you have <a href="https://test.pypi.org/">TestPyPi</a> and PyPi configured as
-your poetry repositories:</li>
-</ol>
-<p><code>console
-poetry config repositories.testpypi &lt;https://test.pypi.org/legacy/&gt;
-poetry config repositories.pypi &lt;https://pypi.org/&gt;</code></p>
-<ol>
-<li>Publish the repository to TestPyPi, to see that everything works as expected:</li>
-</ol>
-<p><code>console
-poetry publish -r testpypi</code></p>
-<ol>
-<li>Stage, commit and push your changes (to master) with git.</li>
-<li>Publish the repository to PyPi:</li>
-</ol>
-<p><code>console
-poetry publish -r pypi</code></p>
+<p>Uncategorised utilities.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
-.. include:: ../README.md
+Uncategorised utilities.
 &#34;&#34;&#34;
-from importlib_metadata import version
-import nowcastlib.rawdata
-import nowcastlib.gis
-import nowcastlib.signals
-import nowcastlib.utils
-import nowcastlib.dynlag
 
-__version__ = version(__package__)</code></pre>
+
+def find_closest_factor(dividend, target):
+    &#34;&#34;&#34;
+    Given a `dividend`, finds the number `x` closest to a `target` number such that
+    `dividend % x == 0`
+
+    Parameters
+    ----------
+    dividend : int
+        The number whose factors we are interested in
+    target : int
+        The number we&#39;d ideally wish to divide `dividend` by
+
+    Returns
+    -------
+    int
+        The closest number to `target` that factors `dividend`. May also simply be
+        `target` if it is already a factor.
+    &#34;&#34;&#34;
+    # ensure parameters are valid for our problem
+    assert (
+        dividend / 2 &gt;= target
+    ), &#34;Can&#39;t factor with a number greater than the dividend&#34;
+    for i in range(dividend):
+        if (dividend % (target + i)) == 0:
+            return target + i
+        elif (dividend % (target - i)) == 0:
+            return target - i
+    return None</code></pre>
 </details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt><code class="name"><a title="nowcastlib.dynlag" href="dynlag.html">nowcastlib.dynlag</a></code></dt>
+<dt id="nowcastlib.utils.find_closest_factor"><code class="name flex">
+<span>def <span class="ident">find_closest_factor</span></span>(<span>dividend, target)</span>
+</code></dt>
 <dd>
-<div class="desc"></div>
-</dd>
-<dt><code class="name"><a title="nowcastlib.gis" href="gis.html">nowcastlib.gis</a></code></dt>
-<dd>
-<div class="desc"><p>Functions for computing metrics related to Geographical information science.</p></div>
-</dd>
-<dt><code class="name"><a title="nowcastlib.rawdata" href="rawdata.html">nowcastlib.rawdata</a></code></dt>
-<dd>
-<div class="desc"><p>Functions for processing multiple raw datasets.</p></div>
-</dd>
-<dt><code class="name"><a title="nowcastlib.signals" href="signals.html">nowcastlib.signals</a></code></dt>
-<dd>
-<div class="desc"><p>Utils for working with signal processing</p></div>
-</dd>
-<dt><code class="name"><a title="nowcastlib.utils" href="utils.html">nowcastlib.utils</a></code></dt>
-<dd>
-<div class="desc"><p>Uncategorised utilities.</p></div>
+<div class="desc"><p>Given a <code>dividend</code>, finds the number <code>x</code> closest to a <code>target</code> number such that
+<code>dividend % x == 0</code></p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>dividend</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number whose factors we are interested in</dd>
+<dt><strong><code>target</code></strong> :&ensp;<code>int</code></dt>
+<dd>The number we'd ideally wish to divide <code>dividend</code> by</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int</code></dt>
+<dd>The closest number to <code>target</code> that factors <code>dividend</code>. May also simply be
+<code>target</code> if it is already a factor.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def find_closest_factor(dividend, target):
+    &#34;&#34;&#34;
+    Given a `dividend`, finds the number `x` closest to a `target` number such that
+    `dividend % x == 0`
+
+    Parameters
+    ----------
+    dividend : int
+        The number whose factors we are interested in
+    target : int
+        The number we&#39;d ideally wish to divide `dividend` by
+
+    Returns
+    -------
+    int
+        The closest number to `target` that factors `dividend`. May also simply be
+        `target` if it is already a factor.
+    &#34;&#34;&#34;
+    # ensure parameters are valid for our problem
+    assert (
+        dividend / 2 &gt;= target
+    ), &#34;Can&#39;t factor with a number greater than the dividend&#34;
+    for i in range(dividend):
+        if (dividend % (target + i)) == 0:
+            return target + i
+        elif (dividend % (target - i)) == 0:
+            return target - i
+    return None</code></pre>
+</details>
 </dd>
 </dl>
-</section>
-<section>
-</section>
-<section>
 </section>
 <section>
 </section>
@@ -152,27 +130,17 @@ __version__ = version(__package__)</code></pre>
 <nav id="sidebar">
 <h1>Index</h1>
 <div class="toc">
-<ul>
-<li><a href="#nowcast-library">Nowcast Library</a><ul>
-<li><a href="#installation">Installation</a></li>
-<li><a href="#usage-and-documentation">Usage and Documentation</a></li>
-<li><a href="#development-setup">Development Setup</a><ul>
-<li><a href="#dependencies">Dependencies</a></li>
-<li><a href="#deployment">Deployment</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
+<ul></ul>
 </div>
 <ul id="index">
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<li><h3>Super-module</h3>
 <ul>
-<li><code><a title="nowcastlib.dynlag" href="dynlag.html">nowcastlib.dynlag</a></code></li>
-<li><code><a title="nowcastlib.gis" href="gis.html">nowcastlib.gis</a></code></li>
-<li><code><a title="nowcastlib.rawdata" href="rawdata.html">nowcastlib.rawdata</a></code></li>
-<li><code><a title="nowcastlib.signals" href="signals.html">nowcastlib.signals</a></code></li>
-<li><code><a title="nowcastlib.utils" href="utils.html">nowcastlib.utils</a></code></li>
+<li><code><a title="nowcastlib" href="index.html">nowcastlib</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="nowcastlib.utils.find_closest_factor" href="#nowcastlib.utils.find_closest_factor">find_closest_factor</a></code></li>
 </ul>
 </li>
 </ul>
