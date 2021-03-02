@@ -1,3 +1,6 @@
+"""
+Functions for generating dynamically lagged time series.
+"""
 import numpy as np
 from nowcastlib.signals import gen_composite_red_noise
 
