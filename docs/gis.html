@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
-<title>nowcastlib API documentation</title>
-<meta name="description" content="Nowcast Library …" />
+<title>nowcastlib.gis API documentation</title>
+<meta name="description" content="Functions for computing metrics related to Geographical information science." />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -19,117 +19,140 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Package <code>nowcastlib</code></h1>
+<h1 class="title">Module <code>nowcastlib.gis</code></h1>
 </header>
 <section id="section-intro">
-<h1 id="nowcast-library">Nowcast Library</h1>
-<p>🧙‍♂️🔧 Utils that can be reused and shared across and beyond the ESO Nowcast
-project</p>
-<p>This is a public repository hosted on GitHub via a push mirror setup in the
-<a href="https://gitlab.eso.org/gstarace/nowcastlib/">internal ESO GitLab repository</a></p>
-<h2 id="installation">Installation</h2>
-<p>Simply run</p>
-<pre><code class="language-console">pip install nowcastlib
-</code></pre>
-<h2 id="usage-and-documentation">Usage and Documentation</h2>
-<p>At the moment, Nowcast Library is simply a collection of functions. Here is a
-quick example of how one may import nowcastlib and get access to one of the
-functions:</p>
-<pre><code class="language-python">&quot;&quot;&quot;Example showing how to access compute_trig_fields function&quot;&quot;&quot;
-import nowcastlib as ncl
-import pandas as pd
-import numpy as np
-
-data_df = pd.DataFrame(
-    [[0, 3, 4, np.NaN], [32, 4, np.NaN, 4], [56, 8, 0, np.NaN]],
-    columns=[&quot;A&quot;, &quot;B&quot;, &quot;C&quot;],
-    index=pd.date_range(start=&quot;1/1/2018&quot;, periods=4, freq=&quot;2min&quot;),
-)
-
-result = ncl.rawdata.compute_trig_fields(data_df, [&quot;A&quot;, &quot;C&quot;])
-</code></pre>
-<p>Further documentation <a href="https://giuliostarace.com/nowcastlib/rawdata.html">here</a>.</p>
-<h2 id="development-setup">Development Setup</h2>
-<p>This repository relies on <a href="https://python-poetry.org/">Poetry</a> for tracking
-dependencies, building and publishing. It is therefore recommended that
-developers <a href="https://python-poetry.org/docs/#installation">install poetry</a> and
-make use of it throughout their development of the project.</p>
-<h3 id="dependencies">Dependencies</h3>
-<p>Make sure you are in the right Python environment and run</p>
-<pre><code class="language-console">poetry install
-</code></pre>
-<p>This reads <a href="./pyproject.toml">pyproject.toml</a>, resolves the dependencies, and
-installs them.</p>
-<h3 id="deployment">Deployment</h3>
-<p>The repository is published to <a href="https://pypi.org/">PyPi</a>, so to make it
-accessible via a <code>pip install</code> command as mentioned <a href="#install">earlier</a>.</p>
-<p>To publish changes follow these steps. Ideally this process is automated via a
-CI tool triggered by a push/merge to the master branch:</p>
-<ol>
-<li>
-<p>Optionally run
-<a href="https://python-poetry.org/docs/cli/#version"><code>poetry version</code></a> with the
-appropriate argument based on <a href="https://semver.org/">semver guidelines</a>.</p>
-</li>
-<li>
-<p>Update the documentation by running</p>
-</li>
-</ol>
-<p><code>console
-make document</code></p>
-<ol>
-<li>Prepare the package by running</li>
-</ol>
-<p><code>console
-poetry build</code></p>
-<ol>
-<li>Ensure you have <a href="https://test.pypi.org/">TestPyPi</a> and PyPi configured as
-your poetry repositories:</li>
-</ol>
-<p><code>console
-poetry config repositories.testpypi &lt;https://test.pypi.org/legacy/&gt;
-poetry config repositories.pypi &lt;https://pypi.org/&gt;</code></p>
-<ol>
-<li>Publish the repository to TestPyPi, to see that everything works as expected:</li>
-</ol>
-<p><code>console
-poetry publish -r testpypi</code></p>
-<ol>
-<li>Stage, commit and push your changes (to master) with git.</li>
-<li>Publish the repository to PyPi:</li>
-</ol>
-<p><code>console
-poetry publish -r pypi</code></p>
+<p>Functions for computing metrics related to Geographical information science.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
-.. include:: ../README.md
+Functions for computing metrics related to Geographical information science.
 &#34;&#34;&#34;
-import nowcastlib.rawdata
-import nowcastlib.gis
-from importlib_metadata import version
+import numpy as np
 
-__version__ = version(__package__)</code></pre>
+
+def great_circle_distance(point_a, point_b, circle_radius):
+    &#34;&#34;&#34;
+    Calculates the gcd (https://en.wikipedia.org/wiki/Great-circle_distance) between two
+    points on a sphere.
+
+    :param tuple point_a: (lat_a, lon_a) -- tuple specifying latitude and longitude
+    :param tuple point_b: (lat_b, lon_b) -- tuple specifying latitude and longitude
+    :param float circle_radius: the radius of the circle upon which the points are.
+
+    :return: The great circle distance between the two points
+    :rtype: float
+    &#34;&#34;&#34;
+    lat_a, lon_a = np.deg2rad(point_a)
+    lat_b, lon_b = np.deg2rad(point_b)
+    delta_lon = lon_b - lon_a
+    central_angle = np.arccos(
+        np.sin(lat_a) * np.sin(lat_b)
+        + np.cos(lat_a) * np.cos(lat_b) * np.cos(delta_lon)
+    )
+    return circle_radius * central_angle
+
+
+def initial_bearing(point_a, point_b):
+    &#34;&#34;&#34;
+    Calculates the initial bearing (also known as forward azimuth) from point_a to point_b
+
+    :param tuple point_a: (lat_a, lon_a) -- tuple specifying latitude and longitude
+    :param tuple point_b: (lat_b, lon_b) -- tuple specifying latitude and longitude
+
+    :return: The initial bearing in radians
+    :rtype: float
+    &#34;&#34;&#34;
+    lat_a, lon_a = np.deg2rad(point_a)
+    lat_b, lon_b = np.deg2rad(point_b)
+    delta_lon = lon_b - lon_a
+    return np.arctan2(
+        np.sin(delta_lon) * np.cos(lat_b),
+        np.cos(lat_a) * np.sin(lat_b)
+        - np.sin(lat_a) * np.cos(lat_b) * np.cos(delta_lon),
+    )</code></pre>
 </details>
 </section>
 <section>
-<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt><code class="name"><a title="nowcastlib.gis" href="gis.html">nowcastlib.gis</a></code></dt>
+<dt id="nowcastlib.gis.great_circle_distance"><code class="name flex">
+<span>def <span class="ident">great_circle_distance</span></span>(<span>point_a, point_b, circle_radius)</span>
+</code></dt>
 <dd>
-<div class="desc"><p>Functions for computing metrics related to Geographical information science.</p></div>
+<div class="desc"><p>Calculates the gcd (<a href="https://en.wikipedia.org/wiki/Great-circle_distance">https://en.wikipedia.org/wiki/Great-circle_distance</a>) between two
+points on a sphere.</p>
+<p>:param tuple point_a: (lat_a, lon_a) &ndash; tuple specifying latitude and longitude
+:param tuple point_b: (lat_b, lon_b) &ndash; tuple specifying latitude and longitude
+:param float circle_radius: the radius of the circle upon which the points are.</p>
+<p>:return: The great circle distance between the two points
+:rtype: float</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def great_circle_distance(point_a, point_b, circle_radius):
+    &#34;&#34;&#34;
+    Calculates the gcd (https://en.wikipedia.org/wiki/Great-circle_distance) between two
+    points on a sphere.
+
+    :param tuple point_a: (lat_a, lon_a) -- tuple specifying latitude and longitude
+    :param tuple point_b: (lat_b, lon_b) -- tuple specifying latitude and longitude
+    :param float circle_radius: the radius of the circle upon which the points are.
+
+    :return: The great circle distance between the two points
+    :rtype: float
+    &#34;&#34;&#34;
+    lat_a, lon_a = np.deg2rad(point_a)
+    lat_b, lon_b = np.deg2rad(point_b)
+    delta_lon = lon_b - lon_a
+    central_angle = np.arccos(
+        np.sin(lat_a) * np.sin(lat_b)
+        + np.cos(lat_a) * np.cos(lat_b) * np.cos(delta_lon)
+    )
+    return circle_radius * central_angle</code></pre>
+</details>
 </dd>
-<dt><code class="name"><a title="nowcastlib.rawdata" href="rawdata.html">nowcastlib.rawdata</a></code></dt>
+<dt id="nowcastlib.gis.initial_bearing"><code class="name flex">
+<span>def <span class="ident">initial_bearing</span></span>(<span>point_a, point_b)</span>
+</code></dt>
 <dd>
-<div class="desc"><p>Functions for processing multiple raw datasets.</p></div>
+<div class="desc"><p>Calculates the initial bearing (also known as forward azimuth) from point_a to point_b</p>
+<p>:param tuple point_a: (lat_a, lon_a) &ndash; tuple specifying latitude and longitude
+:param tuple point_b: (lat_b, lon_b) &ndash; tuple specifying latitude and longitude</p>
+<p>:return: The initial bearing in radians
+:rtype: float</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def initial_bearing(point_a, point_b):
+    &#34;&#34;&#34;
+    Calculates the initial bearing (also known as forward azimuth) from point_a to point_b
+
+    :param tuple point_a: (lat_a, lon_a) -- tuple specifying latitude and longitude
+    :param tuple point_b: (lat_b, lon_b) -- tuple specifying latitude and longitude
+
+    :return: The initial bearing in radians
+    :rtype: float
+    &#34;&#34;&#34;
+    lat_a, lon_a = np.deg2rad(point_a)
+    lat_b, lon_b = np.deg2rad(point_b)
+    delta_lon = lon_b - lon_a
+    return np.arctan2(
+        np.sin(delta_lon) * np.cos(lat_b),
+        np.cos(lat_a) * np.sin(lat_b)
+        - np.sin(lat_a) * np.cos(lat_b) * np.cos(delta_lon),
+    )</code></pre>
+</details>
 </dd>
 </dl>
-</section>
-<section>
-</section>
-<section>
 </section>
 <section>
 </section>
@@ -137,24 +160,18 @@ __version__ = version(__package__)</code></pre>
 <nav id="sidebar">
 <h1>Index</h1>
 <div class="toc">
-<ul>
-<li><a href="#nowcast-library">Nowcast Library</a><ul>
-<li><a href="#installation">Installation</a></li>
-<li><a href="#usage-and-documentation">Usage and Documentation</a></li>
-<li><a href="#development-setup">Development Setup</a><ul>
-<li><a href="#dependencies">Dependencies</a></li>
-<li><a href="#deployment">Deployment</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
+<ul></ul>
 </div>
 <ul id="index">
-<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<li><h3>Super-module</h3>
 <ul>
-<li><code><a title="nowcastlib.gis" href="gis.html">nowcastlib.gis</a></code></li>
-<li><code><a title="nowcastlib.rawdata" href="rawdata.html">nowcastlib.rawdata</a></code></li>
+<li><code><a title="nowcastlib" href="index.html">nowcastlib</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="nowcastlib.gis.great_circle_distance" href="#nowcastlib.gis.great_circle_distance">great_circle_distance</a></code></li>
+<li><code><a title="nowcastlib.gis.initial_bearing" href="#nowcastlib.gis.initial_bearing">initial_bearing</a></code></li>
 </ul>
 </li>
 </ul>
