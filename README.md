@@ -16,9 +16,9 @@ pip install nowcastlib
 
 ## Usage and Documentation
 
-At the moment, Nowcast Library is simply a collection of functions dealing with
-raw time series data surrounding the ESO Nowcast project. These functions are in
-the module [`rawdata.py`](./nowcastlib/rawdata.py), and can be imported as such
+At the moment, Nowcast Library is simply a collection of functions. Here is a
+quick example of how one may import nowcastlib and get access to one of the
+functions:
 
 ```python
 """Example showing how to access compute_trig_fields function"""
@@ -60,13 +60,19 @@ installs them.
 The repository is published to [PyPi](https://pypi.org/), so to make it
 accessible via a `pip install` command as mentioned [earlier](#install).
 
-To publish changes follow these steps:
+To publish changes follow these steps. Ideally this process is automated via a
+CI tool triggered by a push/merge to the master branch:
 
-1. Changes should be merged into the master branch. Ideally this process is
-   automated via a CI tool.
-2. Optionally run
+1. Optionally run
    [`poetry version`](https://python-poetry.org/docs/cli/#version) with the
    appropriate argument based on [semver guidelines](https://semver.org/).
+
+2. Update the documentation by running
+
+   ```console
+   make document
+   ```
+
 3. Prepare the package by running
 
    ```console
@@ -87,7 +93,8 @@ To publish changes follow these steps:
    poetry publish -r testpypi
    ```
 
-6. Publish the repository to PyPi:
+6. Stage, commit and push your changes (to master) with git.
+7. Publish the repository to PyPi:
 
    ```console
    poetry publish -r pypi
