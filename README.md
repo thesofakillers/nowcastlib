@@ -35,7 +35,7 @@ data_df = pd.DataFrame(
 result = ncl.rawdata.compute_trig_fields(data_df, ["A", "C"])
 ```
 
-Further documentation [here](https://giuliostarace.com/nowcastlib/rawdata.html).
+Further documentation [here](https://giuliostarace.com/nowcastlib/).
 
 ## Development Setup
 
