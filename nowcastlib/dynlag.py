@@ -76,6 +76,5 @@ def dynamically_lag(input_signal, wind_speed, wind_alignment, distance):
     nan_mask = (target_idx < 0) | (target_idx >= total_steps) | target_idx.isna()
     # temporarily set nan indices to 0, to be able to use them.
     target_idx[nan_mask] = 0
-    perturbed_series = simulate_perturbations(input_signal[target_idx.values], 0.3, 0.1)
-    target_series = np.where(nan_mask, np.nan, perturbed_series)
+    target_series = np.where(nan_mask, np.nan, input_signal[target_idx.values])
     return target_series
