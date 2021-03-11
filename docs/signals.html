@@ -89,7 +89,27 @@ def gen_composite_red_noise(noise_length, component_length, normed=True):
     if normed:
         red_noise_comps = np.apply_along_axis(normalize_signal, 1, red_noise_comps)
     # remember to flatten before returning since we&#39;re actually working in 1D
-    return red_noise_comps.flatten()</code></pre>
+    return red_noise_comps.flatten()
+
+
+def add_noise(input_signal, noise_signal, snr_db):
+    &#34;&#34;&#34;
+    Adds a noise signal to an input signal at a given signal-to-noise ratio.
+
+    Parameters
+    ----------
+    input_signal : numpy.ndarray
+        The input signal to which we wish to add noise
+    noise_signal : numpy.ndarray
+        The noise signal that we wish to add to `input_signal`
+    snr_db : float
+        The desired signal-to-noise ratio in decibels (dB)
+    &#34;&#34;&#34;
+    snr = 10 ** (snr_db / 10)
+    signal_energy = np.sum(input_signal ** 2)
+    noise_energy = np.sum(noise_signal ** 2)
+    noise_scalar = np.sqrt(signal_energy / (snr * noise_energy))
+    return input_signal + noise_scalar * noise_signal</code></pre>
 </details>
 </section>
 <section>
@@ -99,6 +119,44 @@ def gen_composite_red_noise(noise_length, component_length, normed=True):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="nowcastlib.signals.add_noise"><code class="name flex">
+<span>def <span class="ident">add_noise</span></span>(<span>input_signal, noise_signal, snr_db)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Adds a noise signal to an input signal at a given signal-to-noise ratio.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>input_signal</code></strong> :&ensp;<code>numpy.ndarray</code></dt>
+<dd>The input signal to which we wish to add noise</dd>
+<dt><strong><code>noise_signal</code></strong> :&ensp;<code>numpy.ndarray</code></dt>
+<dd>The noise signal that we wish to add to <code>input_signal</code></dd>
+<dt><strong><code>snr_db</code></strong> :&ensp;<code>float</code></dt>
+<dd>The desired signal-to-noise ratio in decibels (dB)</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_noise(input_signal, noise_signal, snr_db):
+    &#34;&#34;&#34;
+    Adds a noise signal to an input signal at a given signal-to-noise ratio.
+
+    Parameters
+    ----------
+    input_signal : numpy.ndarray
+        The input signal to which we wish to add noise
+    noise_signal : numpy.ndarray
+        The noise signal that we wish to add to `input_signal`
+    snr_db : float
+        The desired signal-to-noise ratio in decibels (dB)
+    &#34;&#34;&#34;
+    snr = 10 ** (snr_db / 10)
+    signal_energy = np.sum(input_signal ** 2)
+    noise_energy = np.sum(noise_signal ** 2)
+    noise_scalar = np.sqrt(signal_energy / (snr * noise_energy))
+    return input_signal + noise_scalar * noise_signal</code></pre>
+</details>
+</dd>
 <dt id="nowcastlib.signals.gen_composite_red_noise"><code class="name flex">
 <span>def <span class="ident">gen_composite_red_noise</span></span>(<span>noise_length, component_length, normed=True)</span>
 </code></dt>
@@ -220,6 +278,7 @@ amplitude of 1.</dd>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="nowcastlib.signals.add_noise" href="#nowcastlib.signals.add_noise">add_noise</a></code></li>
 <li><code><a title="nowcastlib.signals.gen_composite_red_noise" href="#nowcastlib.signals.gen_composite_red_noise">gen_composite_red_noise</a></code></li>
 <li><code><a title="nowcastlib.signals.normalize_signal" href="#nowcastlib.signals.normalize_signal">normalize_signal</a></code></li>
 </ul>

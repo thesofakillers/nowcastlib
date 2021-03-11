@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nowcastlib"
-version = "1.3.2"
+version = "2.0.0"
 description = "🧙🔧 Utils that can be reused and shared across and beyond the ESO Nowcast project"
 authors = [
   "Giulio Starace <giulio.starace@gmail.com>",
@@ -24,6 +24,11 @@ pipreqs = "^0.4.10"
 black = "^20.8b1"
 pylint = "^2.6.0"
 pdoc3 = "^0.9.2"
+jupyterlab = "^3.0.10"
+jupyterlab-code-formatter = "^1.4.4"
+matplotlib = "^3.3.4"
+seaborn = "^0.11.1"
+nbdime = "^2.1.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
