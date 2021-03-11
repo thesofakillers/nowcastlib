@@ -61,3 +61,23 @@ def gen_composite_red_noise(noise_length, component_length, normed=True):
         red_noise_comps = np.apply_along_axis(normalize_signal, 1, red_noise_comps)
     # remember to flatten before returning since we're actually working in 1D
     return red_noise_comps.flatten()
+
+
+def add_noise(input_signal, noise_signal, snr_db):
+    """
+    Adds a noise signal to an input signal at a given signal-to-noise ratio.
+
+    Parameters
+    ----------
+    input_signal : numpy.ndarray
+        The input signal to which we wish to add noise
+    noise_signal : numpy.ndarray
+        The noise signal that we wish to add to `input_signal`
+    snr_db : float
+        The desired signal-to-noise ratio in decibels (dB)
+    """
+    snr = 10 ** (snr_db / 10)
+    signal_energy = np.sum(input_signal ** 2)
+    noise_energy = np.sum(noise_signal ** 2)
+    noise_scalar = np.sqrt(signal_energy / (snr * noise_energy))
+    return input_signal + noise_scalar * noise_signal
