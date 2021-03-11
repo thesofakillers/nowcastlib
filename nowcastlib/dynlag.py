@@ -2,10 +2,10 @@
 Functions for generating dynamically lagged time series.
 """
 import numpy as np
-from nowcastlib.signals import gen_composite_red_noise
+import nowcastlib.signals as signals
 
 
-def simulate_perturbations(unperturbed_quantity, rn_weight, wn_weight):
+def simulate_perturbations(unperturbed_quantity, snr_db, rn_comp_len=0):
     """
     Simulates the perturbations in turbulence moving geographically between sites by
     adding red noise and white noise as weighted percentage errors to the input signal.
@@ -14,10 +14,11 @@ def simulate_perturbations(unperturbed_quantity, rn_weight, wn_weight):
     ----------
     unperturbed_quantity : numpy.ndarray
         The input signal we wish to perturb
-    rn_weight : float
-        Factor to scale the effect of red noise
-    wn_weight : float
-        Factor to scale the effect of white noise
+    snr_db : float
+        The desired signal to noise ratio in dB. Must be greater than 1
+    rn_comp_len : int, default 0
+        In case composite red noise is required, the desired length of each red noise
+        sub-signal. Non-composite red noise is generated if 0.
 
     Returns
     -------
@@ -27,14 +28,14 @@ def simulate_perturbations(unperturbed_quantity, rn_weight, wn_weight):
         (red_noise, white_noise) -- Tuple containing the red noise and white noise
         signals that were generated before being applied to the array
     """
-    red_noise = gen_composite_red_noise(len(unperturbed_quantity), 600)
-    white_noise = np.random.randn(len(unperturbed_quantity))
+    desired_length = len(unperturbed_quantity)
+    if rn_comp_len == 0:
+        red_noise = signals.normalize_signal(np.random.randn(desired_length).cumsum())
+    else:
+        red_noise = signals.gen_composite_red_noise(desired_length, rn_comp_len)
+    white_noise = np.random.randn(desired_length)
     return (
-        (
-            unperturbed_quantity
-            + unperturbed_quantity * (rn_weight * red_noise)
-            + unperturbed_quantity * (wn_weight * white_noise)
-        ),
+        signals.add_noise(unperturbed_quantity, red_noise + white_noise, snr_db),
         (red_noise, white_noise),
     )
 
