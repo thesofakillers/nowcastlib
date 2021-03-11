@@ -35,7 +35,11 @@ data_df = pd.DataFrame(
 result = ncl.rawdata.compute_trig_fields(data_df, ["A", "C"])
 ```
 
-Further documentation [here](https://giuliostarace.com/nowcastlib/).
+API documentation can be found [here](https://giuliostarace.com/nowcastlib/).
+
+Please refer to the
+[examples folder](https://github.com/thesofakillers/nowcastlib/examples/) on
+GitHub for example [Jupyter Notebooks](https://jupyter.org/).
 
 ## Development Setup
 
