@@ -63,6 +63,33 @@ def gen_composite_red_noise(noise_length, component_length, normed=True):
     return red_noise_comps.flatten()
 
 
+def scale_noise(input_signal, noise_signal, snr_db):
+    """
+    Appropriately scales a noise signal so that it can be applied to an input signal
+    as additive noise with a desired signal-to-noise ratio
+
+    Parameters
+    ----------
+    input_signal : numpy.ndarray
+        The input signal to which we wish to add noise
+    noise_signal : numpy.ndarray
+        The noise signal that we wish to add to `input_signal`
+    snr_db : float
+        The desired signal-to-noise ratio in decibels (dB)
+
+    Returns
+    -------
+    numpy.ndarray
+        The appropriately scaled noise signal. Adding this signal to `input_signal`
+        will cause the resulting signal to have a SNR roughly equivalent to `snr_db`
+    """
+    snr = 10 ** (snr_db / 10)
+    signal_energy = np.sum(input_signal ** 2)
+    noise_energy = np.sum(noise_signal ** 2)
+    noise_scalar = np.sqrt(signal_energy / (snr * noise_energy))
+    return noise_scalar * noise_signal
+
+
 def add_noise(input_signal, noise_signal, snr_db):
     """
     Adds a noise signal to an input signal at a given signal-to-noise ratio.
@@ -75,9 +102,11 @@ def add_noise(input_signal, noise_signal, snr_db):
         The noise signal that we wish to add to `input_signal`
     snr_db : float
         The desired signal-to-noise ratio in decibels (dB)
+
+    Returns
+    -------
+    numpy.ndarray
+        The original signal with the addition of noise at the desired SNR
     """
-    snr = 10 ** (snr_db / 10)
-    signal_energy = np.sum(input_signal ** 2)
-    noise_energy = np.sum(noise_signal ** 2)
-    noise_scalar = np.sqrt(signal_energy / (snr * noise_energy))
-    return input_signal + noise_scalar * noise_signal
+    additive_noise = scale_noise(input_signal, noise_signal, snr_db)
+    return input_signal + additive_noise
