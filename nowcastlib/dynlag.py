@@ -5,39 +5,49 @@ import numpy as np
 import nowcastlib.signals as signals
 
 
-def simulate_perturbations(unperturbed_quantity, snr_db, rn_comp_len=0):
+def simulate_perturbations(input_sig, snr_db, rn_comp_len=0, allow_neg=True):
     """
     Simulates the perturbations in turbulence moving geographically between sites by
-    adding red noise and white noise as weighted percentage errors to the input signal.
+    adding red noise and white noise to the input signal.
 
     Parameters
     ----------
-    unperturbed_quantity : numpy.ndarray
+    input_sig : numpy.ndarray
         The input signal we wish to perturb
     snr_db : float
         The desired signal to noise ratio in dB. Must be greater than 1
     rn_comp_len : int, default 0
         In case composite red noise is required, the desired length of each red noise
         sub-signal. Non-composite red noise is generated if 0.
+    allow_neg: bool, default True
+        Whether the perturbations are allowed to cause negative values in the resulting
+        signal.
 
     Returns
     -------
     numpy.ndarray
         The original signal, now perturbed
     tuple of numpy.ndarray
-        (red_noise, white_noise) -- Tuple containing the red noise and white noise
-        signals that were generated before being applied to the array
+        (red_noise, white_noise) -- Tuple containing the red noise and
+        white noise that were generated before being applied to the input signal
     """
-    desired_length = len(unperturbed_quantity)
+    desired_length = len(input_sig)
     if rn_comp_len == 0:
         red_noise = signals.normalize_signal(np.random.randn(desired_length).cumsum())
     else:
         red_noise = signals.gen_composite_red_noise(desired_length, rn_comp_len)
     white_noise = np.random.randn(desired_length)
-    return (
-        signals.add_noise(unperturbed_quantity, red_noise + white_noise, snr_db),
-        (red_noise, white_noise),
-    )
+    # here we scale the noise such that adding it will match desired SNR.
+    additive_noise = signals.scale_noise(input_sig, red_noise + white_noise, snr_db)
+    output_signal = input_sig + additive_noise
+    # flip sign on noise values that cause output to be negative
+    if not allow_neg:
+        output_signal = np.where(
+            output_signal < 0,
+            input_sig + np.abs(additive_noise),
+            output_signal,
+        )
+    return (output_signal, (red_noise, white_noise))
 
 
 def dynamically_lag(input_signal, wind_speed, wind_alignment, distance):
