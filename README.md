@@ -38,8 +38,8 @@ result = ncl.rawdata.compute_trig_fields(data_df, ["A", "C"])
 API documentation can be found [here](https://giuliostarace.com/nowcastlib/).
 
 Please refer to the
-[examples folder](https://github.com/thesofakillers/nowcastlib/examples/) on
-GitHub for example [Jupyter Notebooks](https://jupyter.org/).
+[examples folder](https://github.com/thesofakillers/nowcastlib/tree/master/examples)
+on GitHub for example [Jupyter Notebooks](https://jupyter.org/).
 
 ## Development Setup
 
