@@ -29,6 +29,7 @@ jupyterlab-code-formatter = "^1.4.4"
 matplotlib = "^3.3.4"
 seaborn = "^0.11.1"
 nbdime = "^2.1.0"
+jupyterlab-spellchecker = "^0.5.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
