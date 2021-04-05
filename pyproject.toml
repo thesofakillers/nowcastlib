@@ -32,6 +32,7 @@ nbdime = "^2.1.0"
 jupyterlab-spellchecker = "^0.5.2"
 ipympl = "^0.7.0"
 jupyter_nbextensions_configurator = "^0.4.1"
+tables = "^3.6.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
