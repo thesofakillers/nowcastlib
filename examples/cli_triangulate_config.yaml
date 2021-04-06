@@ -1,0 +1,31 @@
+input-path: "data/output/wind_and_dimm.csv"
+mask-path: "data/output/wind_and_dimm_mask.npy"
+
+index: "Date time"
+wind-speed: "Wind Speed at 30m [m/s]"
+wind-direction: "Wind Direction at 30m (0/2pi) [rad]"
+source-data: "DIMM Seeing [arcsec]"
+additional-cols:
+  ["Target RA [deg]", "Target DEC [deg]", "Wind Direction at 30m (0/360) [deg]"]
+
+target-name: "Ventarrones Seeing [arcsec]"
+
+site-a-lat: -24.6272
+site-a-lon: -70.4039
+site-b-lat: -24.351867
+site-b-lon: -70.224139
+planet-radius: 6.3710e6
+
+skip-perturbations: False
+snr-db: 8
+rn-comp-length: 600
+
+output-cols:
+  [
+    "DIMM Seeing [arcsec]",
+    "Ventarrones Seeing [arcsec]",
+    "Target RA [deg]",
+    "Target DEC [deg]",
+  ]
+
+output-path: "data/output/ventarrones_paranal_dimm.csv"

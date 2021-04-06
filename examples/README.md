@@ -21,3 +21,13 @@ submodules to simulate data at a target site given data and wind measured at
 source site. Because this relies on some knowledge of data synchronization, it
 is suggested for readers to first go over the
 [rawdata example](./rawdata.ipynb).
+
+### CLI Configurations
+
+Example configuration files for usage with the `nowcastlib` CLI tool are
+provided in the format `cli_{command}_config.toml`. For example, to start a
+triangulation process from within this `examples/` directory, one may run
+
+```console
+nowcastlib triangulate -c ./cli_triangulate_config.yaml
+```
