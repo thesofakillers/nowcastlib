@@ -16,9 +16,17 @@ pip install nowcastlib
 
 ## Usage and Documentation
 
-At the moment, Nowcast Library is simply a collection of functions. Here is a
-quick example of how one may import nowcastlib and get access to one of the
-functions:
+Nowcast Library consists in a collection of functions organized in submodules
+(API) and a tool accessible via the command line (CLI).
+
+Please refer to the
+[examples folder](https://github.com/thesofakillers/nowcastlib/tree/master/examples)
+on GitHub for usage examples.
+
+### API
+
+Here is a quick example of how one may import nowcastlib and get access to one
+of the functions:
 
 ```python
 """Example showing how to access compute_trig_fields function"""
@@ -35,11 +43,24 @@ data_df = pd.DataFrame(
 result = ncl.rawdata.compute_trig_fields(data_df, ["A", "C"])
 ```
 
-API documentation can be found [here](https://giuliostarace.com/nowcastlib/).
+More in-depth API documentation can be found
+[here](https://giuliostarace.com/nowcastlib/).
 
-Please refer to the
-[examples folder](https://github.com/thesofakillers/nowcastlib/tree/master/examples)
-on GitHub for example [Jupyter Notebooks](https://jupyter.org/).
+### CLI
+
+Some of the library's functionality is bundled in configurable subcommands
+accessible via the terminal with the command `nowcastlib`:
+
+```console
+usage: nowcastlib [-h] {triangulate} ...
+
+positional arguments:
+  {triangulate}  available commands
+    triangulate  Run `nowcastlib triangulate -h` for further help
+
+optional arguments:
+  -h, --help     show this help message and exit
+```
 
 ## Development Setup
 
