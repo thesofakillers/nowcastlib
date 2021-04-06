@@ -1,7 +1,6 @@
 """
 Command-Line interfaces for the Nowcast Library
 """
-import sys
 import numpy as np
 import pandas as pd
 import configargparse
