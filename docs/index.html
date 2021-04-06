@@ -32,9 +32,14 @@ project</p>
 <pre><code class="language-console">pip install nowcastlib
 </code></pre>
 <h2 id="usage-and-documentation">Usage and Documentation</h2>
-<p>At the moment, Nowcast Library is simply a collection of functions. Here is a
-quick example of how one may import nowcastlib and get access to one of the
-functions:</p>
+<p>Nowcast Library consists in a collection of functions organized in submodules
+(API) and a tool accessible via the command line (CLI).</p>
+<p>Please refer to the
+<a href="https://github.com/thesofakillers/nowcastlib/tree/master/examples">examples folder</a>
+on GitHub for usage examples.</p>
+<h3 id="api">API</h3>
+<p>Here is a quick example of how one may import nowcastlib and get access to one
+of the functions:</p>
 <pre><code class="language-python">&quot;&quot;&quot;Example showing how to access compute_trig_fields function&quot;&quot;&quot;
 import nowcastlib as ncl
 import pandas as pd
@@ -48,10 +53,20 @@ data_df = pd.DataFrame(
 
 result = ncl.rawdata.compute_trig_fields(data_df, [&quot;A&quot;, &quot;C&quot;])
 </code></pre>
-<p>API documentation can be found <a href="https://giuliostarace.com/nowcastlib/">here</a>.</p>
-<p>Please refer to the
-<a href="https://github.com/thesofakillers/nowcastlib/tree/master/examples">examples folder</a>
-on GitHub for example <a href="https://jupyter.org/">Jupyter Notebooks</a>.</p>
+<p>More in-depth API documentation can be found
+<a href="https://giuliostarace.com/nowcastlib/">here</a>.</p>
+<h3 id="cli">CLI</h3>
+<p>Some of the library's functionality is bundled in configurable subcommands
+accessible via the terminal with the command <code><a title="nowcastlib" href="#nowcastlib">nowcastlib</a></code>:</p>
+<pre><code class="language-console">usage: nowcastlib [-h] {triangulate} ...
+
+positional arguments:
+  {triangulate}  available commands
+    triangulate  Run `nowcastlib triangulate -h` for further help
+
+optional arguments:
+  -h, --help     show this help message and exit
+</code></pre>
 <h2 id="development-setup">Development Setup</h2>
 <p>This repository relies on <a href="https://python-poetry.org/">Poetry</a> for tracking
 dependencies, building and publishing. It is therefore recommended that
@@ -117,7 +132,11 @@ import nowcastlib.signals
 import nowcastlib.utils
 import nowcastlib.dynlag
 
-__version__ = version(__package__)</code></pre>
+__version__ = version(__package__)
+
+__pdoc__ = {
+    &#34;cli&#34;: False,
+}</code></pre>
 </details>
 </section>
 <section>
@@ -158,7 +177,11 @@ __version__ = version(__package__)</code></pre>
 <ul>
 <li><a href="#nowcast-library">Nowcast Library</a><ul>
 <li><a href="#installation">Installation</a></li>
-<li><a href="#usage-and-documentation">Usage and Documentation</a></li>
+<li><a href="#usage-and-documentation">Usage and Documentation</a><ul>
+<li><a href="#api">API</a></li>
+<li><a href="#cli">CLI</a></li>
+</ul>
+</li>
 <li><a href="#development-setup">Development Setup</a><ul>
 <li><a href="#dependencies">Dependencies</a></li>
 <li><a href="#deployment">Deployment</a></li>
