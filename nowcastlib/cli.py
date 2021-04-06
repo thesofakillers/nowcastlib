@@ -8,69 +8,67 @@ import configargparse
 import nowcastlib as ncl
 
 
-def triangulate():
+def triangulate(cparser):
     """
     Subcommand for generating triangulated data
     """
     # {{{ args/config parsing (triple curly brackets to allow vim section fold/collapse)
-    parser = configargparse.ArgParser(
-        default_config_files=[".config.yaml"],
-        config_file_parser_class=configargparse.YAMLConfigFileParser,
-    )
-    parser.add(
+    # need to manually add help argument to avoid premature parsing of it in main parser
+    cparser.add("-h", "--help", action="help", help="show this help message and exit")
+    cparser.add(
         "-c", "--config", required=True, is_config_file=True, help="config file path"
     )
     # wind data
-    parser.add("-i", "--input-path", required=True, help="path to data")
-    parser.add(
+    cparser.add("-i", "--input-path", required=True, help="path to data")
+    cparser.add(
         "-x",
         "--index",
         required=True,
         help="column to use for indexing data",
     )
-    parser.add(
+    cparser.add(
         "-m",
         "--mask-path",
         help="path to .npy file containing mask to apply to data after processing, if desired",
     )
-    parser.add(
+    cparser.add(
         "-ws",
         "--wind-speed",
         required=True,
         help="column containing wind speed data",
     )
-    parser.add(
+    cparser.add(
         "-wd",
         "--wind-direction",
         required=True,
         help="column containing wind direction data in radians",
     )
-    parser.add(
+    cparser.add(
         "-s",
         "--source-data",
         required=True,
         help="the column containing the data we will dynamically lag",
     )
-    parser.add(
+    cparser.add(
         "-acs",
         "--additional-cols",
         action="append",
         help="specify additional column to read from the data file",
     )
     # geo information
-    parser.add(
+    cparser.add(
         "--site-a-lat", type=float, required=True, help="latitude coordinate of site A"
     )
-    parser.add(
+    cparser.add(
         "--site-a-lon", type=float, required=True, help="longitude coordinate of site A"
     )
-    parser.add(
+    cparser.add(
         "--site-b-lat", type=float, required=True, help="latitude coordinate of site B"
     )
-    parser.add(
+    cparser.add(
         "--site-b-lon", type=float, required=True, help="longitude coordinate of site B"
     )
-    parser.add(
+    cparser.add(
         "-pr",
         "--planet-radius",
         type=float,
@@ -78,41 +76,41 @@ def triangulate():
         help="radius in meters of the planet",
     )
     # noise config
-    parser.add(
+    cparser.add(
         "-sp",
         "--skip-perturbations",
         default=False,
         help="whether to skip simulating perturbations",
     )
-    parser.add(
+    cparser.add(
         "-snr",
         "--snr-db",
         type=float,
         required=True,
         help="the desired signal to noise ratio in dB",
     )
-    parser.add(
+    cparser.add(
         "-rnl",
         "--rn-comp-length",
         type=int,
         help="The desired component length if composite red noise is sought",
     )
     # output config
-    parser.add(
+    cparser.add(
         "-t",
         "--target-name",
         required=True,
         help="what to name column containing dynamically lagged data",
     )
-    parser.add(
+    cparser.add(
         "-oc",
         "--output-cols",
         action="append",
         help="specify specific columns to output",
     )
-    parser.add("-o", "--output-path", required=True, help="where to save the output")
+    cparser.add("-o", "--output-path", required=True, help="where to save the output")
     # finally parse }}}
-    args = parser.parse_args()
+    args, _ = cparser.parse_known_args()
 
     print("[INFO] Reading data")
     data_df = pd.read_csv(
@@ -195,18 +193,23 @@ def triangulate():
     print("[INFO] Done.")
 
 
-def run_help():
-    print("usage: nowcastlib [-h|triangulate] [subcommand *args]")
-
-
 def main():
     """
     Function for organizing subcommands and providing help to user.
     """
-    command = None
-    if len(sys.argv) > 1:
-        command = sys.argv[1]
-    if command == None or command == "-h" or command == "--help":
-        run_help()
-    if command == "triangulate":
-        triangulate()
+    parser = configargparse.ArgParser()
+    command_parsers = parser.add_subparsers(dest="command", help="available commands")
+    triangulate_parser = command_parsers.add_parser(
+        "triangulate",
+        help="Run `nowcastlib triangulate -h` for further help",
+        default_config_files=["./.config.yaml"],
+        config_file_parser_class=configargparse.YAMLConfigFileParser,
+        add_help=False,
+    )
+    command_args, _ = parser.parse_known_args()
+
+    command = command_args.command
+    if command is None:
+        parser.print_help()
+    elif command == "triangulate":
+        triangulate(triangulate_parser)
