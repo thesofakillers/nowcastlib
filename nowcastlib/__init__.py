@@ -9,3 +9,7 @@ import nowcastlib.utils
 import nowcastlib.dynlag
 
 __version__ = version(__package__)
+
+__pdoc__ = {
+    "cli": False,
+}
