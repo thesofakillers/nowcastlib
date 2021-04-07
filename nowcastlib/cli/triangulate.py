@@ -1,3 +1,6 @@
+"""
+Triangulation Command-Line interface
+"""
 import configargparse
 import numpy as np
 import pandas as pd
