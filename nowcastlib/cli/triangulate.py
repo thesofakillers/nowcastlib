@@ -1,69 +1,72 @@
+import configargparse
 import numpy as np
 import pandas as pd
 import nowcastlib as ncl
 
 
-def triangulate(cparser):
-    """
-    Subcommand for generating triangulated data
-    """
-    # {{{ args/config parsing (triple curly brackets to allow vim section fold/collapse)
-    # need to manually add help argument to avoid premature parsing of it in main parser
-    cparser.add("-h", "--help", action="help", help="show this help message and exit")
-    cparser.add(
+def configure_parser(action_object):
+    """Configures the subparser for our triangulation command"""
+    tparser = action_object.add_parser(
+        "triangulate",
+        help="Run `nowcastlib triangulate -h` for further help",
+        default_config_files=["./.config.yaml"],
+        config_file_parser_class=configargparse.YAMLConfigFileParser,
+    )
+    # this way, can configure args from config file rather than from command line
+    tparser.add(
         "-c", "--config", required=True, is_config_file=True, help="config file path"
     )
     # wind data
-    cparser.add("-i", "--input-path", required=True, help="path to data")
-    cparser.add(
+    tparser.add("-i", "--input-path", required=True, help="path to data")
+    tparser.add(
         "-x",
         "--index",
         required=True,
         help="column to use for indexing data",
     )
-    cparser.add(
+    tparser.add(
         "-m",
         "--mask-path",
         help="path to .npy file containing mask to apply to data after processing, if desired",
     )
-    cparser.add(
+    tparser.add(
         "-ws",
         "--wind-speed",
         required=True,
         help="column containing wind speed data",
     )
-    cparser.add(
+    tparser.add(
         "-wd",
         "--wind-direction",
         required=True,
         help="column containing wind direction data in radians",
     )
-    cparser.add(
+    tparser.add(
         "-s",
         "--source-data",
         required=True,
         help="the column containing the data we will dynamically lag",
     )
-    cparser.add(
+    tparser.add(
         "-acs",
         "--additional-cols",
         action="append",
         help="specify additional column to read from the data file",
     )
     # geo information
-    cparser.add(
+    tparser.add(
         "--site-a-lat", type=float, required=True, help="latitude coordinate of site A"
     )
-    cparser.add(
+    tparser.add(
         "--site-a-lon", type=float, required=True, help="longitude coordinate of site A"
     )
-    cparser.add(
+    tparser.add(
         "--site-b-lat", type=float, required=True, help="latitude coordinate of site B"
     )
-    cparser.add(
+    tparser.add(
         "--site-b-lon", type=float, required=True, help="longitude coordinate of site B"
     )
-    cparser.add(
+    tparser.add(
         "-pr",
         "--planet-radius",
         type=float,
@@ -71,42 +74,45 @@ def triangulate(cparser):
         help="radius in meters of the planet",
     )
     # noise config
-    cparser.add(
+    tparser.add(
         "-sp",
         "--skip-perturbations",
         default=False,
         help="whether to skip simulating perturbations",
     )
-    cparser.add(
+    tparser.add(
         "-snr",
         "--snr-db",
         type=float,
         required=True,
         help="the desired signal to noise ratio in dB",
     )
-    cparser.add(
+    tparser.add(
         "-rnl",
         "--rn-comp-length",
         type=int,
         help="The desired component length if composite red noise is sought",
     )
     # output config
-    cparser.add(
+    tparser.add(
         "-t",
         "--target-name",
         required=True,
         help="what to name column containing dynamically lagged data",
     )
-    cparser.add(
+    tparser.add(
         "-oc",
         "--output-cols",
         action="append",
         help="specify specific columns to output",
     )
-    cparser.add("-o", "--output-path", required=True, help="where to save the output")
-    # finally parse }}}
-    args, _ = cparser.parse_known_args()
+    tparser.add("-o", "--output-path", required=True, help="where to save the output")
 
+
+def triangulate(args):
+    """
+    Generates triangulated data given configuration arguments
+    """
     print("[INFO] Reading data")
     data_df = pd.read_csv(
         args.input_path,
