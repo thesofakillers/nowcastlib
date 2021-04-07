@@ -11,6 +11,7 @@ def configure_parser(action_object):
     """Configures the subparser for our triangulation command"""
     tparser = action_object.add_parser(
         "triangulate",
+        description="Simulate data at a target site given wind conditions at a source site",
         help="Run `nowcastlib triangulate -h` for further help",
         default_config_files=["./.config.yaml"],
         config_file_parser_class=configargparse.YAMLConfigFileParser,

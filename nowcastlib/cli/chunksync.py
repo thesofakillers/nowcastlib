@@ -13,6 +13,7 @@ def configure_parser(action_object):
     """Configures the subparser for our chunksync command"""
     cparser = action_object.add_parser(
         "chunksync",
+        description="Synchronize datasets, find overlapping chunks and save them to hdf5",
         help="Run `nowcastlib chunksync -h` for further help",
         formatter_class=argparse.HelpFormatter,
     )

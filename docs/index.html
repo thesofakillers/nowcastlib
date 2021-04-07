@@ -58,14 +58,16 @@ result = ncl.rawdata.compute_trig_fields(data_df, [&quot;A&quot;, &quot;C&quot;]
 <h3 id="cli">CLI</h3>
 <p>Some of the library's functionality is bundled in configurable subcommands
 accessible via the terminal with the command <code><a title="nowcastlib" href="#nowcastlib">nowcastlib</a></code>:</p>
-<pre><code class="language-console">usage: nowcastlib [-h] {triangulate} ...
+<pre><code class="language-console">usage: nowcastlib [-h] {triangulate,chunksync} ...
 
 positional arguments:
-  {triangulate}  available commands
-    triangulate  Run `nowcastlib triangulate -h` for further help
+  {triangulate,chunksync}
+                        available commands
+    triangulate         Run `nowcastlib triangulate -h` for further help
+    chunksync           Run `nowcastlib chunksync -h` for further help
 
 optional arguments:
-  -h, --help     show this help message and exit
+  -h, --help            show this help message and exit
 </code></pre>
 <h2 id="development-setup">Development Setup</h2>
 <p>This repository relies on <a href="https://python-poetry.org/">Poetry</a> for tracking
