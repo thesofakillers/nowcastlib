@@ -22,6 +22,13 @@ source site. Because this relies on some knowledge of data synchronization, it
 is suggested for readers to first go over the
 [rawdata example](./rawdata.ipynb).
 
+### Signals
+
+The notebook [signals.ipynb](./signals.ipynb) demonstrates how one may use the
+[signals](../nowcastlib/signals.py) submodule to add a mixture of noise to an
+underlying signal while achieving a requested signal-to-noise ratio. Readers are
+encouraged to experiment with the `gen_composite_red_noise()` function.
+
 ### CLI Configurations
 
 Example configuration files for usage with the `nowcastlib` CLI tool are
