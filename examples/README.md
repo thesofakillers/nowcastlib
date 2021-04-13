@@ -1,7 +1,20 @@
 # Nowcast Library - Examples
 
 This directory contains a series of [Jupyter](https://jupyter.org/) notebooks
-showcasing the functionality exposed by the Nowcast Library.
+and config files showcasing the functionality exposed by the Nowcast Library.
+
+To get interactive plots when running the Jupyter notebooks, please change the
+first line from
+
+```python
+%matplotlib inline
+```
+
+to
+
+```python
+%matplotlib widget
+```
 
 ## Content
 
