@@ -75,14 +75,17 @@ def chunksync(args):
             source_info["file"],
             index_col=source_info["date_time_column_name"],
             parse_dates=False,
+            comment="#",
         )
         data_df.index = pd.to_datetime(
             data_df.index, format=source_info["date_time_column_format"]
         )
         data_df.index.name = None
-        # only keep requested fields, and drop NaNs
+        # only keep requested fields, drop NaNs and duplicates, sort by time ascending
         data_df = data_df[source_info["field_list"]]
         data_df.dropna()
+        data_df = data_df[~data_df.index.duplicated(keep="last")]
+        data_df.sort_index(inplace=True)
         # resample, ensuring to floor to the nearest `sample_spacing` to ensure overlap
         data_df = data_df.resample(
             sample_spacing, origin=data_df.index[0].floor(sample_spacing)
