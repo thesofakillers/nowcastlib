@@ -2,7 +2,7 @@
 .. include:: ../README.md
 """
 from importlib_metadata import version
-import nowcastlib.rawdata
+import nowcastlib.datasets
 import nowcastlib.gis
 import nowcastlib.signals
 import nowcastlib.utils

@@ -6,7 +6,7 @@ import argparse
 import json
 import pandas as pd
 import numpy as np
-import nowcastlib.rawdata as rawdata
+import nowcastlib.datasets as datasets
 
 
 def configure_parser(action_object):
@@ -98,7 +98,7 @@ def chunksync(args):
     print("[INFO] Finding overlapping chunks and large gaps")
     sample_spacing_secs = synced_df.index.freq.delta.seconds
     max_spacing_steps = np.floor((max_spacing_secs / sample_spacing_secs)).astype(int)
-    final_mask = rawdata.compute_dataframe_mask(
+    final_mask = datasets.compute_dataframe_mask(
         synced_df,
         max_spacing_steps,
         2 * len(req_trig_fields) + 2,
@@ -107,13 +107,13 @@ def chunksync(args):
 
     print("[INFO] Imputing small gaps")
     interpolated_df = synced_df.interpolate("linear", limit_direction="both")
-    interpolated_df = rawdata.compute_trig_fields(interpolated_df, req_trig_fields)
+    interpolated_df = datasets.compute_trig_fields(interpolated_df, req_trig_fields)
 
     chunked_df = interpolated_df.where(final_mask)
 
     print("[INFO] Splitting data into chunks")
     min_chunk_length = int(min_chunk_duration_sec / sample_spacing_secs)
-    chunks = rawdata.make_chunks(chunked_df, min_chunk_length)
+    chunks = datasets.make_chunks(chunked_df, min_chunk_length)
 
     print("[INFO] Saving chunks to HDF5")
     hdf5_path = os.path.join(chunk_config["path_to_hdf5"], chunk_config["tag"])

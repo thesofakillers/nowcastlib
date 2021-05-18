@@ -1,5 +1,5 @@
 """
-Functions for processing multiple raw datasets.
+Functions for syncing and chunking multiple datasets.
 """
 import pandas as pd
 import numpy as np

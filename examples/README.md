@@ -18,13 +18,14 @@ to
 
 ## Content
 
-### Rawdata
+### Data Processing
 
-The notebook [rawdata.ipynb](./rawdata.ipynb) serves to demonstrate the usage of
-the [rawdata](../nowcastlib/rawdata.py) submodule in the context of processing
-raw data. Particularly, the user is guided through the handling of data incoming
-from different data sources, so that it is correctly synchronized and chunked,
-while taking into account missing data and different sample rates.
+The notebook [dataprocessing.ipynb](./dataprocessing.ipynb) serves to
+demonstrate the usage of the [datasets](../nowcastlib/datasets.py) submodule in
+the context of preprocessing and syncing datasets. Particularly, the user is
+guided through the handling of data incoming from different data sources, so
+that it is correctly synchronized and chunked, while taking into account missing
+data and different sample rates.
 
 ### Triangulation
 
@@ -33,7 +34,7 @@ use the [gis](../nowcastlib/gis.py) and [dynlag](../nowcastlib/dynlag.py)
 submodules to simulate data at a target site given data and wind measured at
 source site. Because this relies on some knowledge of data synchronization, it
 is suggested for readers to first go over the
-[rawdata example](./rawdata.ipynb).
+[data processing example](./dataprocessing.ipynb).
 
 ### Signals
 

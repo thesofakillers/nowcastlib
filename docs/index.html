@@ -38,8 +38,8 @@ project</p>
 <a href="https://github.com/thesofakillers/nowcastlib/tree/master/examples">examples folder</a>
 on GitHub for usage examples.</p>
 <h3 id="api">API</h3>
-<p>Here is a quick example of how one may import nowcastlib and get access to one
-of the functions:</p>
+<p>Here is a quick example of how one may import nowcastlib and access to one of
+the functions:</p>
 <pre><code class="language-python">&quot;&quot;&quot;Example showing how to access compute_trig_fields function&quot;&quot;&quot;
 import nowcastlib as ncl
 import pandas as pd
@@ -51,7 +51,7 @@ data_df = pd.DataFrame(
     index=pd.date_range(start=&quot;1/1/2018&quot;, periods=4, freq=&quot;2min&quot;),
 )
 
-result = ncl.rawdata.compute_trig_fields(data_df, [&quot;A&quot;, &quot;C&quot;])
+result = ncl.datasets.compute_trig_fields(data_df, [&quot;A&quot;, &quot;C&quot;])
 </code></pre>
 <p>More in-depth API documentation can be found
 <a href="https://giuliostarace.com/nowcastlib/">here</a>.</p>
@@ -120,6 +120,8 @@ poetry publish -r testpypi</code></p>
 </ol>
 <p><code>console
 poetry publish -r pypi</code></p>
+<p>Upon successful deployment, the library should be available for install via
+<code>pip</code></p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -128,7 +130,7 @@ poetry publish -r pypi</code></p>
 .. include:: ../README.md
 &#34;&#34;&#34;
 from importlib_metadata import version
-import nowcastlib.rawdata
+import nowcastlib.datasets
 import nowcastlib.gis
 import nowcastlib.signals
 import nowcastlib.utils
@@ -144,6 +146,10 @@ __pdoc__ = {
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
+<dt><code class="name"><a title="nowcastlib.datasets" href="datasets.html">nowcastlib.datasets</a></code></dt>
+<dd>
+<div class="desc"><p>Functions for syncing and chunking multiple datasets.</p></div>
+</dd>
 <dt><code class="name"><a title="nowcastlib.dynlag" href="dynlag.html">nowcastlib.dynlag</a></code></dt>
 <dd>
 <div class="desc"><p>Functions for generating dynamically lagged time series.</p></div>
@@ -151,10 +157,6 @@ __pdoc__ = {
 <dt><code class="name"><a title="nowcastlib.gis" href="gis.html">nowcastlib.gis</a></code></dt>
 <dd>
 <div class="desc"><p>Functions for computing metrics related to Geographical information science.</p></div>
-</dd>
-<dt><code class="name"><a title="nowcastlib.rawdata" href="rawdata.html">nowcastlib.rawdata</a></code></dt>
-<dd>
-<div class="desc"><p>Functions for processing multiple raw datasets.</p></div>
 </dd>
 <dt><code class="name"><a title="nowcastlib.signals" href="signals.html">nowcastlib.signals</a></code></dt>
 <dd>
@@ -196,9 +198,9 @@ __pdoc__ = {
 <ul id="index">
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
+<li><code><a title="nowcastlib.datasets" href="datasets.html">nowcastlib.datasets</a></code></li>
 <li><code><a title="nowcastlib.dynlag" href="dynlag.html">nowcastlib.dynlag</a></code></li>
 <li><code><a title="nowcastlib.gis" href="gis.html">nowcastlib.gis</a></code></li>
-<li><code><a title="nowcastlib.rawdata" href="rawdata.html">nowcastlib.rawdata</a></code></li>
 <li><code><a title="nowcastlib.signals" href="signals.html">nowcastlib.signals</a></code></li>
 <li><code><a title="nowcastlib.utils" href="utils.html">nowcastlib.utils</a></code></li>
 </ul>

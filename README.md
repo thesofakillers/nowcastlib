@@ -25,8 +25,8 @@ on GitHub for usage examples.
 
 ### API
 
-Here is a quick example of how one may import nowcastlib and get access to one
-of the functions:
+Here is a quick example of how one may import nowcastlib and access to one of
+the functions:
 
 ```python
 """Example showing how to access compute_trig_fields function"""
@@ -40,7 +40,7 @@ data_df = pd.DataFrame(
     index=pd.date_range(start="1/1/2018", periods=4, freq="2min"),
 )
 
-result = ncl.rawdata.compute_trig_fields(data_df, ["A", "C"])
+result = ncl.datasets.compute_trig_fields(data_df, ["A", "C"])
 ```
 
 More in-depth API documentation can be found
@@ -126,3 +126,6 @@ CI tool triggered by a push/merge to the master branch:
    ```console
    poetry publish -r pypi
    ```
+
+Upon successful deployment, the library should be available for install via
+`pip`
