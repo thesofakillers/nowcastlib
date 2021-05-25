@@ -34,6 +34,7 @@ jupyterlab-spellchecker = "^0.5.2"
 ipympl = "^0.7.0"
 jupyter_nbextensions_configurator = "^0.4.1"
 tables = "^3.6.1"
+mypy = "^0.812"
 
 [tool.poetry.scripts]
 nowcastlib = 'nowcastlib.cli:main'
