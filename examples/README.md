@@ -18,14 +18,13 @@ to
 
 ## Content
 
-### Data Processing
+### Data Synchronization
 
-The notebook [dataprocessing.ipynb](./dataprocessing.ipynb) serves to
-demonstrate the usage of the [datasets](../nowcastlib/datasets.py) submodule in
-the context of preprocessing and syncing datasets. Particularly, the user is
-guided through the handling of data incoming from different data sources, so
-that it is correctly synchronized and chunked, while taking into account missing
-data and different sample rates.
+The notebook [datasync.ipynb](./datasync.ipynb) serves to demonstrate the usage
+of the [datasets](../nowcastlib/datasets.py) submodule in the context of syncing
+datasets. Particularly, the user is guided through the handling of data incoming
+from different data sources, so that it is correctly synchronized and chunked,
+while taking into account missing data and different sample rates.
 
 ### Triangulation
 
@@ -34,7 +33,7 @@ use the [gis](../nowcastlib/gis.py) and [dynlag](../nowcastlib/dynlag.py)
 submodules to simulate data at a target site given data and wind measured at
 source site. Because this relies on some knowledge of data synchronization, it
 is suggested for readers to first go over the
-[data processing example](./dataprocessing.ipynb).
+[data sync example](./datasync.ipynb).
 
 ### Signals
 
@@ -46,9 +45,11 @@ encouraged to experiment with the `gen_composite_red_noise()` function.
 ### CLI Configurations
 
 Example configuration files for usage with the `nowcastlib` CLI tool are
-provided in the format `cli_{command}_config.toml`. For example, to start a
-triangulation process from within this `examples/` directory, one may run
+provided in the format `cli_{command}_config.toml`. For example, from within
+this `examples/` directory, one may run
 
 ```console
 nowcastlib triangulate -c ./cli_triangulate_config.yaml
 ```
+
+to start a triangulation process.
