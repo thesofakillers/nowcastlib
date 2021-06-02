@@ -7,6 +7,7 @@ import json
 import pandas as pd
 import numpy as np
 import nowcastlib.datasets as datasets
+import nowcastlib.pipeline.preprocess as preprocess
 
 
 def configure_parser(action_object):
@@ -50,7 +51,7 @@ def chunksync(args):
             new_field_value = override[2]
             config["dataset"]["data_sources"][source_name][field_key] = new_field_value
     if args.co is not None:
-        for override in args.do:
+        for override in args.co:
             field_key = override[0]
             new_field_value = override[1]
             config["dataset"]["chunk_config"][field_key] = new_field_value
@@ -73,23 +74,18 @@ def chunksync(args):
         print("[INFO] loading source {}".format(source_name))
         data_df = pd.read_csv(
             source_info["file"],
+            usecols=[
+                source_info["date_time_column_name"],
+                *source_info["field_list"],
+            ],
             index_col=source_info["date_time_column_name"],
             parse_dates=False,
-            comment="#",
+            comment=source_info.get("comment_format", "#"),
         )
         data_df.index = pd.to_datetime(
             data_df.index, format=source_info["date_time_column_format"]
         )
-        data_df.index.name = None
-        # only keep requested fields, drop NaNs and duplicates, sort by time ascending
-        data_df = data_df[source_info["field_list"]]
-        data_df.dropna()
-        data_df = data_df[~data_df.index.duplicated(keep="last")]
-        data_df.sort_index(inplace=True)
-        # resample, ensuring to floor to the nearest `sample_spacing` to ensure overlap
-        data_df = data_df.resample(
-            sample_spacing, origin=data_df.index[0].floor(sample_spacing)
-        ).mean()
+        data_df = preprocess.preprocess(data_df, sample_spacing)
         data_dfs.append(data_df)
 
     print("[INFO] Synchronizing data sources")

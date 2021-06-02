@@ -7,6 +7,7 @@ import nowcastlib.gis
 import nowcastlib.signals
 import nowcastlib.utils
 import nowcastlib.dynlag
+import nowcastlib.pipeline
 
 __version__ = version(__package__)
 
