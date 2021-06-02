@@ -19,6 +19,7 @@ pandas = "1.1.5"
 numpy = "^1.18.5"
 ConfigArgParse = "^1.4"
 attrs = "^21.2.0"
+cattrs = "1.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
