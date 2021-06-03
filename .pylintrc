@@ -220,7 +220,7 @@ spelling-store-unknown-words=no
 
 # List of note tags to take in consideration, separated by a comma.
 notes=FIXME,
-      XXX,
+      WIP,
       TODO
 
 # Regular expression of note tags to take in consideration.
