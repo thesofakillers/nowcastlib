@@ -37,6 +37,7 @@ ipympl = "^0.7.0"
 jupyter_nbextensions_configurator = "^0.4.1"
 tables = "^3.6.1"
 mypy = "^0.812"
+pandas-stubs = "^1.1.0"
 
 [tool.poetry.scripts]
 nowcastlib = 'nowcastlib.cli:main'

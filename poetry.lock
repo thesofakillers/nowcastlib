@@ -997,6 +997,17 @@ pytz = ">=2017.2"
 test = ["pytest (>=4.0.2)", "pytest-xdist", "hypothesis (>=3.58)"]
 
 [[package]]
+name = "pandas-stubs"
+version = "1.1.0.7"
+description = "Type annotations for Pandas"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+typing-extensions = {version = ">=3.7.4.3", markers = "python_version < \"3.8\""}
+
+[[package]]
 name = "pandocfilters"
 version = "1.4.3"
 description = "Utilities for writing pandoc filters in python"
@@ -1499,7 +1510,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6.9"
-content-hash = "71729637f99d060de44a6eaee288018b9fa67e50b515b1094a7c5278a50fa20f"
+content-hash = "e2a944bf4e5320b5ba41f0601018b7d7ee276d5cc721f0d4cdb730b4f252e83d"
 
 [metadata.files]
 anyio = [
@@ -2093,6 +2104,10 @@ pandas = [
     {file = "pandas-1.1.5-cp39-cp39-win32.whl", hash = "sha256:c94ff2780a1fd89f190390130d6d36173ca59fcfb3fe0ff596f9a56518191ccb"},
     {file = "pandas-1.1.5-cp39-cp39-win_amd64.whl", hash = "sha256:edda9bacc3843dfbeebaf7a701763e68e741b08fccb889c003b0a52f0ee95782"},
     {file = "pandas-1.1.5.tar.gz", hash = "sha256:f10fc41ee3c75a474d3bdf68d396f10782d013d7f67db99c0efbfd0acb99701b"},
+]
+pandas-stubs = [
+    {file = "pandas-stubs-1.1.0.7.tar.gz", hash = "sha256:1dce450bd06fc871111f2d8ef1aee97137d9d62869b1186637ab90469913ff93"},
+    {file = "pandas_stubs-1.1.0.7-py3-none-any.whl", hash = "sha256:c490c1fbf73c0248f48a5f9197a935843c5b3b43815d238d7ed33ff7593b0278"},
 ]
 pandocfilters = [
     {file = "pandocfilters-1.4.3.tar.gz", hash = "sha256:bc63fbb50534b4b1f8ebe1860889289e8af94a23bff7445259592df25a3906eb"},
