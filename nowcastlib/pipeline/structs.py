@@ -1,11 +1,13 @@
 """
-module containing custom structures used throughout the library
+module containing custom structures used throughout the pipeline submodule
 """
 from typing import List, Optional
 from attr import attrs, attrib, validators
+import numpy as np
+import pandas as pd
 
 
-def normed_validator(instance, attribute, value):
+def normed_val(instance, attribute, value):
     """Checks whether a given value is between 0 and 1"""
     if not 0 <= value <= 1:
         raise ValueError(
@@ -16,14 +18,21 @@ def normed_validator(instance, attribute, value):
         )
 
 
-@attrs
-class ScaleOptions:
-    """
-    Struct containing configuration options for the scaling of a
-    given data column
+def normed_outlier_val(instance, attribute, value):
+    """Runs normed_validator if the outlier is quantile based"""
+    if instance.quantile_based:
+        normed_val(instance, attribute, value)
 
-    TODO
-    """
+
+CONV_MAP = {
+    "mph2ms": (lambda x: 0.44704 * x),
+    "deg2rad": np.deg2rad,
+    "rad2deg": np.rad2deg,
+}
+"""
+dictionary for mapping conversion keys to conversion functions.
+Currently supports 'mph2ms', 'deg2rad' and 'rad2deg'
+"""
 
 
 @attrs
@@ -31,9 +40,11 @@ class PeriodicOptions:
     """
     Struct containing configuration options for the scaling of a
     given data column
-
-    TODO
     """
+
+    # WIP
+
+    period_length: int = attrib()
 
 
 @attrs
@@ -41,12 +52,13 @@ class OutlierOptions:
     """
     Struct containing outlier handling configuration options
     of a given data field
-
-    WIP
     """
 
-    lower: float = attrib(default=0, validator=normed_validator)
-    higher: float = attrib(default=1, validator=normed_validator)
+    # WIP
+
+    quantile_based: bool = attrib(default=True)
+    lower: float = attrib(default=0, validator=normed_outlier_val)
+    higher: float = attrib(default=1, validator=normed_outlier_val)
 
     @higher.validator
     def higher_gt_lower(self, attribute, value):
@@ -59,26 +71,52 @@ class OutlierOptions:
 
 
 @attrs
+class SmoothOptions:
+    """
+    Struct containing data smoothing configuration options
+    of a given data field
+    """
+
+    window_size: int = attrib()
+    units: Optional[str] = attrib(default=None)
+
+    @units.validator
+    def check_pd_offset_alias(self, attribute, value):
+        """checks whether the unit attribute is a valid pandas Offset alias"""
+        if value is not None:
+            try:
+                pd.tseries.frequencies.to_offset(value)
+            except ValueError as invalid_freq:
+                error_string = (
+                    "{0} of the {1} instance must be an Offset Alias string"
+                    " as specified at"
+                    " https://pandas.pydata.org/pandas-docs"
+                    "/stable/user_guide/timeseries.html#offset-aliases".format(
+                        attribute.name, self.__class__.__name__
+                    )
+                )
+                raise ValueError(error_string) from invalid_freq
+
+
+@attrs
 class DataField:
     """
     Struct containing configuration attributes for a given field
     of a given data source
-
-    WIP
     """
 
+    # WIP
     # pylint: disable=too-many-instance-attributes
 
     field_name: str = attrib()
     is_date: bool = attrib(default=False)
     date_format: str = attrib(default="%Y-%m-%dT%H:%M:%S")
-    smooth_window: Optional[int] = attrib(default=None)
-    scale_options: Optional[ScaleOptions] = attrib(default=None)
-    periodic_options: Optional[PeriodicOptions] = attrib(default=None)
     outlier_options: Optional[OutlierOptions] = attrib(default=None)
+    periodic_options: Optional[PeriodicOptions] = attrib(default=None)
     conversion: Optional[str] = attrib(
-        default=None, validator=validators.in_([None, "mph2ms", "deg2rad", "rad2deg"])
+        default=None, validator=validators.in_([None, *CONV_MAP.keys()])
     )
+    smooth_options: Optional[SmoothOptions] = attrib(default=None)
 
 
 @attrs
@@ -86,9 +124,9 @@ class DataSourceConfig:
     """
     Struct containing configuration attributes for processing
     an individual Data Source
-
-    WIP
     """
+
+    # WIP
 
     name: str = attrib()
     path: str = attrib()
