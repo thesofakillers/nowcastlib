@@ -130,10 +130,3 @@ def preprocess(config: structs.DataSourceConfig):
     # drop all rows with NaNs, as final step
     data_df = data_df.dropna()
     return data_df
-
-
-#     # resample, ensuring to floor to the nearest `sample_spacing` to ensure overlap
-#     data_df = data_df.resample(
-#         sample_spacing, origin=data_df.index[0].floor(sample_spacing)
-#     ).mean()
-#     return data_df
