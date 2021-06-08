@@ -1,7 +1,7 @@
 """
 module containing custom structures used throughout the pipeline submodule
 """
-from typing import List, Optional
+from typing import List, Optional, Dict, Callable
 from attr import attrs, attrib, validators
 import numpy as np
 import pandas as pd
@@ -24,7 +24,7 @@ def normed_outlier_val(instance, attribute, value):
         normed_val(instance, attribute, value)
 
 
-CONV_MAP = {
+CONV_MAP: Dict[str, Callable] = {
     "mph2ms": (lambda x: 0.44704 * x),
     "deg2rad": np.deg2rad,
     "rad2deg": np.rad2deg,
@@ -42,8 +42,6 @@ class PeriodicOptions:
     given data column
     """
 
-    # WIP
-
     period_length: int = attrib()
 
 
@@ -53,8 +51,6 @@ class OutlierOptions:
     Struct containing outlier handling configuration options
     of a given data field
     """
-
-    # WIP
 
     quantile_based: bool = attrib(default=True)
     lower: float = attrib(default=0, validator=normed_outlier_val)
@@ -105,7 +101,6 @@ class DataField:
     of a given data source
     """
 
-    # WIP
     # pylint: disable=too-many-instance-attributes
 
     field_name: str = attrib()
@@ -125,8 +120,6 @@ class DataSourceConfig:
     Struct containing configuration attributes for processing
     an individual Data Source
     """
-
-    # WIP
 
     name: str = attrib()
     path: str = attrib()
