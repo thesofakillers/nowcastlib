@@ -1,5 +1,5 @@
 """
-DataSource processing
+Command-Line interface functionality for preprocessing
 """
 import json
 import argparse

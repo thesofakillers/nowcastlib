@@ -1,5 +1,5 @@
 """
-Functions for pre- and post-processing of data.
+Functions for pre-processing of data.
 """
 from typing import Union
 import pandas as pd
