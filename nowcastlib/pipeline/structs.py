@@ -115,7 +115,7 @@ class DataField:
 
 
 @attrs
-class DataSourceConfig:
+class DataSource:
     """
     Struct containing configuration attributes for processing
     an individual Data Source
@@ -135,3 +135,13 @@ class DataSourceConfig:
                 "{0} of the {1} instance must contain exactly one DataField with"
                 " is_date=True".format(attribute.name, self.__class__.__name__)
             )
+
+
+@attrs
+class DataSet:
+    """
+    Struct containing configuration attributes for processing
+    a set of Data Sources
+    """
+
+    data_sources: List[DataSource] = attrib()

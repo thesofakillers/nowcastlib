@@ -90,14 +90,14 @@ def drop_outliers(input_series: pd.core.series.Series, config: structs.OutlierOp
         ]
 
 
-def preprocess(config: structs.DataSourceConfig):
+def preprocess(config: structs.DataSource):
     """
     Runs preprocessing on a given data source given options outlined
-    in the input DataSourceConfig instance.
+    in the input DataSource instance.
 
     Parameters
     ----------
-    config : nowcastlib.pipeline.structs.DataSourceConfig
+    config : nowcastlib.pipeline.structs.DataSource
     """
     index_field = next(field for field in config.fields if field.is_date)
     data_df = pd.read_csv(
