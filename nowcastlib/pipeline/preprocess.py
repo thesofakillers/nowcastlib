@@ -90,7 +90,27 @@ def drop_outliers(input_series: pd.core.series.Series, config: structs.OutlierOp
         ]
 
 
-def preprocess(config: structs.DataSource):
+def preprocess_dataset(config: structs.DataSet):
+    """
+    Runs preprocessing on a given set of data sources given options outlined
+    in the input DataSet instance.
+
+    Parameters
+    ----------
+    config : nowcastlib.pipeline.structs.DataSet
+
+    Returns
+    -------
+    list[pandas.core.frame.DataFrame]
+        list containing each of the resulting processed dataframes
+    """
+    processed_dfs = []
+    for ds_config in config.data_sources:
+        processed_dfs.append(preprocess_datasource(ds_config))
+    return processed_dfs
+
+
+def preprocess_datasource(config: structs.DataSource):
     """
     Runs preprocessing on a given data source given options outlined
     in the input DataSource instance.
@@ -98,6 +118,11 @@ def preprocess(config: structs.DataSource):
     Parameters
     ----------
     config : nowcastlib.pipeline.structs.DataSource
+
+    Returns
+    -------
+    pandas.core.frame.DataFrame
+        the resulting processed dataframe
     """
     index_field = next(field for field in config.fields if field.is_date)
     data_df = pd.read_csv(
