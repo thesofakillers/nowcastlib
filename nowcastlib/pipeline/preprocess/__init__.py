@@ -136,22 +136,24 @@ def preprocess_datasource(config: structs.DataSource):
     data_df = data_df[~data_df.index.duplicated(keep="last")]
     data_df.sort_index(inplace=True)
     for field in config.fields:
-        if field.outlier_options is not None:
-            data_df[field.field_name] = drop_outliers(
-                data_df[field.field_name], field.outlier_options
-            )
-        if field.periodic_options is not None:
-            data_df[field.field_name] = handle_periodic(
-                data_df[field.field_name], field.periodic_options
-            )
-        if field.conversion is not None:
-            data_df[field.field_name] = structs.CONV_MAP[field.conversion](
-                data_df[field.field_name]
-            )
-        if field.smooth_options is not None:
-            data_df[field.field_name] = handle_smoothing(
-                data_df[field.field_name], field.smooth_options
-            )
+        options = field.preprocessing_options
+        if options is not None:
+            if options.outlier_options is not None:
+                data_df[field.field_name] = drop_outliers(
+                    data_df[field.field_name], options.outlier_options
+                )
+            if options.periodic_options is not None:
+                data_df[field.field_name] = handle_periodic(
+                    data_df[field.field_name], options.periodic_options
+                )
+            if options.conversion is not None:
+                data_df[field.field_name] = structs.CONV_MAP[options.conversion](
+                    data_df[field.field_name]
+                )
+            if options.smooth_options is not None:
+                data_df[field.field_name] = handle_smoothing(
+                    data_df[field.field_name], options.smooth_options
+                )
     # drop all rows with NaNs, as final step
     data_df = data_df.dropna()
     return data_df

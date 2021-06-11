@@ -95,6 +95,21 @@ class SmoothOptions:
 
 
 @attrs
+class ProcessingOptions:
+    """
+    Struct containing configuration attributes for processing
+    a given field of a given data source
+    """
+
+    outlier_options: Optional[OutlierOptions] = attrib(default=None)
+    periodic_options: Optional[PeriodicOptions] = attrib(default=None)
+    conversion: Optional[str] = attrib(
+        default=None, validator=validators.in_([None, *CONV_MAP.keys()])
+    )
+    smooth_options: Optional[SmoothOptions] = attrib(default=None)
+
+
+@attrs
 class DataField:
     """
     Struct containing configuration attributes for a given field
@@ -106,12 +121,8 @@ class DataField:
     field_name: str = attrib()
     is_date: bool = attrib(default=False)
     date_format: str = attrib(default="%Y-%m-%dT%H:%M:%S")
-    outlier_options: Optional[OutlierOptions] = attrib(default=None)
-    periodic_options: Optional[PeriodicOptions] = attrib(default=None)
-    conversion: Optional[str] = attrib(
-        default=None, validator=validators.in_([None, *CONV_MAP.keys()])
-    )
-    smooth_options: Optional[SmoothOptions] = attrib(default=None)
+    preprocessing_options: Optional[ProcessingOptions] = attrib(default=None)
+    postprocessing_options: Optional[ProcessingOptions] = attrib(default=None)
 
 
 @attrs
