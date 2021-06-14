@@ -146,8 +146,8 @@ def preprocess_datasource(config: structs.DataSource):
                 data_df[field.field_name] = handle_periodic(
                     data_df[field.field_name], options.periodic_options
                 )
-            if options.conversion is not None:
-                data_df[field.field_name] = structs.CONV_MAP[options.conversion](
+            if options.conversion_options is not None:
+                data_df[field.field_name] = options.conversion_options.conv_func(
                     data_df[field.field_name]
                 )
             if options.smooth_options is not None:

@@ -24,29 +24,51 @@ def normed_outlier_val(instance, attribute, value):
         normed_val(instance, attribute, value)
 
 
-CONV_MAP: Dict[str, Callable] = {
-    "mph2ms": (lambda x: 0.44704 * x),
-    "deg2rad": np.deg2rad,
-    "rad2deg": np.rad2deg,
-}
-"""
-dictionary for mapping conversion keys to conversion functions.
-Currently supports 'mph2ms', 'deg2rad' and 'rad2deg'
-"""
+@attrs(kw_only=True)
+class FunctionOptions:
+    """
+    Generic class for more specific function
+    processing classes.
+    """
+
+    overwrite: bool = attrib(default=False)
 
 
-@attrs
-class PeriodicOptions:
+@attrs(kw_only=True)
+class ConversionOptions(FunctionOptions):
+    """
+    Struct containing configuration options for the unit
+    conversion of a given data field
+    """
+
+    CONV_MAP: Dict[str, Callable] = {
+        "mph2ms": (lambda x: 0.44704 * x),
+        "deg2rad": np.deg2rad,
+        "rad2deg": np.rad2deg,
+    }
+    """
+    dictionary for mapping conversion keys to conversion functions.
+    Currently supports 'mph2ms', 'deg2rad' and 'rad2deg'
+    """
+    key: str = attrib(validator=validators.in_([*CONV_MAP.keys()]))
+
+    def conv_func(self, input_series):
+        """will be rewritten upon initialization"""
+        return self.CONV_MAP[self.key](input_series)
+
+
+@attrs(kw_only=True)
+class PeriodicOptions(FunctionOptions):
     """
     Struct containing configuration options for the scaling of a
-    given data column
+    given data field
     """
 
     period_length: int = attrib()
 
 
-@attrs
-class OutlierOptions:
+@attrs(kw_only=True)
+class OutlierOptions(FunctionOptions):
     """
     Struct containing outlier handling configuration options
     of a given data field
@@ -66,8 +88,8 @@ class OutlierOptions:
             )
 
 
-@attrs
-class SmoothOptions:
+@attrs(kw_only=True)
+class SmoothOptions(FunctionOptions):
     """
     Struct containing data smoothing configuration options
     of a given data field
@@ -94,7 +116,7 @@ class SmoothOptions:
                 raise ValueError(error_string) from invalid_freq
 
 
-@attrs
+@attrs(kw_only=True)
 class ProcessingOptions:
     """
     Struct containing configuration attributes for processing
@@ -103,13 +125,13 @@ class ProcessingOptions:
 
     outlier_options: Optional[OutlierOptions] = attrib(default=None)
     periodic_options: Optional[PeriodicOptions] = attrib(default=None)
-    conversion: Optional[str] = attrib(
-        default=None, validator=validators.in_([None, *CONV_MAP.keys()])
+    conversion_options: Optional[ConversionOptions] = attrib(
+        default=None,
     )
     smooth_options: Optional[SmoothOptions] = attrib(default=None)
 
 
-@attrs
+@attrs(kw_only=True)
 class DataField:
     """
     Struct containing configuration attributes for a given field
@@ -125,7 +147,7 @@ class DataField:
     postprocessing_options: Optional[ProcessingOptions] = attrib(default=None)
 
 
-@attrs
+@attrs(kw_only=True)
 class DataSource:
     """
     Struct containing configuration attributes for processing
@@ -148,7 +170,7 @@ class DataSource:
             )
 
 
-@attrs
+@attrs(kw_only=True)
 class DataSet:
     """
     Struct containing configuration attributes for processing
