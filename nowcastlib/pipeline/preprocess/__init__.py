@@ -110,15 +110,15 @@ def preprocess_dataset(config: structs.DataSet):
     return processed_dfs
 
 
-def build_field_name(config: structs.FunctionOptions, prefix: str, field_name: str):
+def build_field_name(config: structs.ProcessingOptions, field_name: str):
     """
     Builds the appropriate field name depending on whether
-    the user wishes to overwrite the current field
+    the user wishes to overwrite the current field or not
     """
     if config.overwrite:
         computed_field_name = field_name
     else:
-        computed_field_name = "{}_{}".format(prefix, field_name)
+        computed_field_name = "preprocessed_{}".format(field_name)
     return computed_field_name
 
 
@@ -150,37 +150,24 @@ def preprocess_datasource(config: structs.DataSource):
     for field in config.fields:
         options = field.preprocessing_options
         if options is not None:
+            # next two lines handle whether user wishes to overwrite field or not
+            computed_field_name = build_field_name(options, field.field_name)
+            data_df[computed_field_name] = data_df[field.field_name].copy()
             if options.outlier_options is not None:
-                computed_field_name = build_field_name(
-                    options.outlier_options, "outlierless", field.field_name
-                )
                 data_df[computed_field_name] = drop_outliers(
-                    data_df[field.field_name], options.outlier_options
+                    data_df[computed_field_name], options.outlier_options
                 )
             if options.periodic_options is not None:
-                computed_field_name = build_field_name(
-                    options.periodic_options, "normalized_periodic", field.field_name
-                )
                 data_df[computed_field_name] = handle_periodic(
-                    data_df[field.field_name], options.periodic_options
+                    data_df[computed_field_name], options.periodic_options
                 )
             if options.conversion_options is not None:
-                computed_field_name = build_field_name(
-                    options.conversion_options,
-                    options.conversion_options.key.split("2")[-1],
-                    field.field_name,
-                )
                 data_df[computed_field_name] = options.conversion_options.conv_func(
-                    data_df[field.field_name]
+                    data_df[computed_field_name]
                 )
             if options.smooth_options is not None:
-                computed_field_name = build_field_name(
-                    options.smooth_options,
-                    "smooth",
-                    field.field_name,
-                )
                 data_df[computed_field_name] = handle_smoothing(
-                    data_df[field.field_name], options.smooth_options
+                    data_df[computed_field_name], options.smooth_options
                 )
     # drop all rows with NaNs, as final step
     data_df = data_df.dropna()

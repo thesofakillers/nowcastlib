@@ -25,17 +25,7 @@ def normed_outlier_val(instance, attribute, value):
 
 
 @attrs(kw_only=True)
-class FunctionOptions:
-    """
-    Generic class for more specific function
-    processing classes.
-    """
-
-    overwrite: bool = attrib(default=False)
-
-
-@attrs(kw_only=True)
-class ConversionOptions(FunctionOptions):
+class ConversionOptions:
     """
     Struct containing configuration options for the unit
     conversion of a given data field
@@ -58,7 +48,7 @@ class ConversionOptions(FunctionOptions):
 
 
 @attrs(kw_only=True)
-class PeriodicOptions(FunctionOptions):
+class PeriodicOptions:
     """
     Struct containing configuration options for the scaling of a
     given data field
@@ -68,7 +58,7 @@ class PeriodicOptions(FunctionOptions):
 
 
 @attrs(kw_only=True)
-class OutlierOptions(FunctionOptions):
+class OutlierOptions:
     """
     Struct containing outlier handling configuration options
     of a given data field
@@ -89,7 +79,7 @@ class OutlierOptions(FunctionOptions):
 
 
 @attrs(kw_only=True)
-class SmoothOptions(FunctionOptions):
+class SmoothOptions:
     """
     Struct containing data smoothing configuration options
     of a given data field
@@ -123,6 +113,7 @@ class ProcessingOptions:
     a given field of a given data source
     """
 
+    overwrite: bool = attrib(default=False)
     outlier_options: Optional[OutlierOptions] = attrib(default=None)
     periodic_options: Optional[PeriodicOptions] = attrib(default=None)
     conversion_options: Optional[ConversionOptions] = attrib(
