@@ -1,7 +1,7 @@
 """
 module containing custom structures used throughout the pipeline submodule
 """
-from typing import List, Optional, Dict, Callable
+from typing import Tuple, Optional, Dict, Callable
 from attr import attrs, attrib, validators
 import numpy as np
 import pandas as pd
@@ -24,7 +24,7 @@ def normed_outlier_val(instance, attribute, value):
         normed_val(instance, attribute, value)
 
 
-@attrs(kw_only=True)
+@attrs(kw_only=True, frozen=True)
 class ConversionOptions:
     """
     Struct containing configuration options for the unit
@@ -47,7 +47,7 @@ class ConversionOptions:
         return self.CONV_MAP[self.key](input_series)
 
 
-@attrs(kw_only=True)
+@attrs(kw_only=True, frozen=True)
 class PeriodicOptions:
     """
     Struct containing configuration options for the scaling of a
@@ -57,7 +57,7 @@ class PeriodicOptions:
     period_length: int = attrib()
 
 
-@attrs(kw_only=True)
+@attrs(kw_only=True, frozen=True)
 class OutlierOptions:
     """
     Struct containing outlier handling configuration options
@@ -78,7 +78,7 @@ class OutlierOptions:
             )
 
 
-@attrs(kw_only=True)
+@attrs(kw_only=True, frozen=True)
 class SmoothOptions:
     """
     Struct containing data smoothing configuration options
@@ -106,7 +106,7 @@ class SmoothOptions:
                 raise ValueError(error_string) from invalid_freq
 
 
-@attrs(kw_only=True)
+@attrs(kw_only=True, frozen=True)
 class ProcessingOptions:
     """
     Struct containing configuration attributes for processing
@@ -122,7 +122,7 @@ class ProcessingOptions:
     smooth_options: Optional[SmoothOptions] = attrib(default=None)
 
 
-@attrs(kw_only=True)
+@attrs(kw_only=True, frozen=True)
 class DataField:
     """
     Struct containing configuration attributes for a given field
@@ -138,7 +138,7 @@ class DataField:
     postprocessing_options: Optional[ProcessingOptions] = attrib(default=None)
 
 
-@attrs(kw_only=True)
+@attrs(kw_only=True, frozen=True)
 class SerializationOptions:
     """
     Struct containing configuration attributes for
@@ -149,7 +149,7 @@ class SerializationOptions:
     output_path: str = attrib()
 
 
-@attrs(kw_only=True)
+@attrs(kw_only=True, frozen=True)
 class DataSource:
     """
     Struct containing configuration attributes for processing
@@ -158,7 +158,7 @@ class DataSource:
 
     name: str = attrib()
     path: str = attrib()
-    fields: List[DataField] = attrib()
+    fields: Tuple[DataField, ...] = attrib()
     comment_format: str = attrib(default="#")
     preprocessing_output: Optional[SerializationOptions] = attrib(default=None)
 
@@ -173,11 +173,11 @@ class DataSource:
             )
 
 
-@attrs(kw_only=True)
+@attrs(kw_only=True, frozen=True)
 class DataSet:
     """
     Struct containing configuration attributes for processing
     a set of Data Sources
     """
 
-    data_sources: List[DataSource] = attrib()
+    data_sources: Tuple[DataSource, ...] = attrib()
