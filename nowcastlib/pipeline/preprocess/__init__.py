@@ -114,12 +114,35 @@ def build_field_name(config: structs.ProcessingOptions, field_name: str):
     """
     Builds the appropriate field name depending on whether
     the user wishes to overwrite the current field or not
+
+    Parameters
+    ----------
+    config : nowcastlib.pipeline.structs.ProcessingOptions
+    field_name : str
+        the name of the current field we are acting on
+
+    Returns
+    -------
+    str
+        the resulting string
     """
     if config.overwrite:
         computed_field_name = field_name
     else:
         computed_field_name = "preprocessed_{}".format(field_name)
     return computed_field_name
+
+
+def handle_serialization(
+    data_df: pd.core.frame.DataFrame, config: structs.SerializationOptions
+):
+    """
+    Serializes a given dataframe to disk in the appropriate format
+    """
+    if config.output_format == "csv":
+        data_df.to_csv(config.output_path, float_format="%g")
+    elif config.output_format == "pickle":
+        data_df.to_pickle(config.output_path)
 
 
 def preprocess_datasource(config: structs.DataSource):
@@ -171,4 +194,6 @@ def preprocess_datasource(config: structs.DataSource):
                 )
     # drop all rows with NaNs, as final step
     data_df = data_df.dropna()
+    if config.preprocessing_output is not None:
+        handle_serialization(data_df, config.preprocessing_output)
     return data_df

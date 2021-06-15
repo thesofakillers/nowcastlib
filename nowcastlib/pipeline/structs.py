@@ -139,6 +139,17 @@ class DataField:
 
 
 @attrs(kw_only=True)
+class SerializationOptions:
+    """
+    Struct containing configuration attributes for
+    serializing a given DataSource
+    """
+
+    output_format: str = attrib(validator=validators.in_(["csv", "pickle"]))
+    output_path: str = attrib()
+
+
+@attrs(kw_only=True)
 class DataSource:
     """
     Struct containing configuration attributes for processing
@@ -149,6 +160,7 @@ class DataSource:
     path: str = attrib()
     fields: List[DataField] = attrib()
     comment_format: str = attrib(default="#")
+    preprocessing_output: Optional[SerializationOptions] = attrib(default=None)
 
     @fields.validator
     def exactly_one_date(self, attribute, value):
