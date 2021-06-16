@@ -111,11 +111,11 @@ def drop_outliers(input_series: pd.core.series.Series, config: structs.OutlierOp
     if config.quantile_based:
         return input_series[
             (input_series.quantile(config.lower) &lt;= input_series)
-            &amp; (input_series &lt;= input_series.quantile(config.higher))
+            &amp; (input_series &lt;= input_series.quantile(config.upper))
         ]
     else:
         return input_series[
-            (config.lower &lt;= input_series) &amp; (input_series &lt;= config.higher)
+            (config.lower &lt;= input_series) &amp; (input_series &lt;= config.upper)
         ]
 
 
@@ -137,6 +137,41 @@ def preprocess_dataset(config: structs.DataSet):
     for ds_config in config.data_sources:
         processed_dfs.append(preprocess_datasource(ds_config))
     return processed_dfs
+
+
+def build_field_name(config: structs.ProcessingOptions, field_name: str):
+    &#34;&#34;&#34;
+    Builds the appropriate field name depending on whether
+    the user wishes to overwrite the current field or not
+
+    Parameters
+    ----------
+    config : nowcastlib.pipeline.structs.ProcessingOptions
+    field_name : str
+        the name of the current field we are acting on
+
+    Returns
+    -------
+    str
+        the resulting string
+    &#34;&#34;&#34;
+    if config.overwrite:
+        computed_field_name = field_name
+    else:
+        computed_field_name = &#34;preprocessed_{}&#34;.format(field_name)
+    return computed_field_name
+
+
+def handle_serialization(
+    data_df: pd.core.frame.DataFrame, config: structs.SerializationOptions
+):
+    &#34;&#34;&#34;
+    Serializes a given dataframe to disk in the appropriate format
+    &#34;&#34;&#34;
+    if config.output_format == &#34;csv&#34;:
+        data_df.to_csv(config.output_path, float_format=&#34;%g&#34;)
+    elif config.output_format == &#34;pickle&#34;:
+        data_df.to_pickle(config.output_path)
 
 
 def preprocess_datasource(config: structs.DataSource):
@@ -165,24 +200,31 @@ def preprocess_datasource(config: structs.DataSource):
     data_df = data_df[~data_df.index.duplicated(keep=&#34;last&#34;)]
     data_df.sort_index(inplace=True)
     for field in config.fields:
-        if field.outlier_options is not None:
-            data_df[field.field_name] = drop_outliers(
-                data_df[field.field_name], field.outlier_options
-            )
-        if field.periodic_options is not None:
-            data_df[field.field_name] = handle_periodic(
-                data_df[field.field_name], field.periodic_options
-            )
-        if field.conversion is not None:
-            data_df[field.field_name] = structs.CONV_MAP[field.conversion](
-                data_df[field.field_name]
-            )
-        if field.smooth_options is not None:
-            data_df[field.field_name] = handle_smoothing(
-                data_df[field.field_name], field.smooth_options
-            )
+        options = field.preprocessing_options
+        if options is not None:
+            # next two lines handle whether user wishes to overwrite field or not
+            computed_field_name = build_field_name(options, field.field_name)
+            data_df[computed_field_name] = data_df[field.field_name].copy()
+            if options.outlier_options is not None:
+                data_df[computed_field_name] = drop_outliers(
+                    data_df[computed_field_name], options.outlier_options
+                )
+            if options.periodic_options is not None:
+                data_df[computed_field_name] = handle_periodic(
+                    data_df[computed_field_name], options.periodic_options
+                )
+            if options.conversion_options is not None:
+                data_df[computed_field_name] = options.conversion_options.conv_func(
+                    data_df[computed_field_name]
+                )
+            if options.smooth_options is not None:
+                data_df[computed_field_name] = handle_smoothing(
+                    data_df[computed_field_name], options.smooth_options
+                )
     # drop all rows with NaNs, as final step
     data_df = data_df.dropna()
+    if config.preprocessing_output is not None:
+        handle_serialization(data_df, config.preprocessing_output)
     return data_df</code></pre>
 </details>
 </section>
@@ -200,6 +242,51 @@ def preprocess_datasource(config: structs.DataSource):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="nowcastlib.pipeline.preprocess.build_field_name"><code class="name flex">
+<span>def <span class="ident">build_field_name</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.ProcessingOptions" href="../structs.html#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, field_name: str)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Builds the appropriate field name depending on whether
+the user wishes to overwrite the current field or not</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.ProcessingOptions" href="../structs.html#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a></code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>field_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>the name of the current field we are acting on</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>the resulting string</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def build_field_name(config: structs.ProcessingOptions, field_name: str):
+    &#34;&#34;&#34;
+    Builds the appropriate field name depending on whether
+    the user wishes to overwrite the current field or not
+
+    Parameters
+    ----------
+    config : nowcastlib.pipeline.structs.ProcessingOptions
+    field_name : str
+        the name of the current field we are acting on
+
+    Returns
+    -------
+    str
+        the resulting string
+    &#34;&#34;&#34;
+    if config.overwrite:
+        computed_field_name = field_name
+    else:
+        computed_field_name = &#34;preprocessed_{}&#34;.format(field_name)
+    return computed_field_name</code></pre>
+</details>
+</dd>
 <dt id="nowcastlib.pipeline.preprocess.drop_outliers"><code class="name flex">
 <span>def <span class="ident">drop_outliers</span></span>(<span>input_series: pandas.core.series.Series, config: <a title="nowcastlib.pipeline.structs.OutlierOptions" href="../structs.html#nowcastlib.pipeline.structs.OutlierOptions">OutlierOptions</a>)</span>
 </code></dt>
@@ -243,11 +330,11 @@ config object</p>
     if config.quantile_based:
         return input_series[
             (input_series.quantile(config.lower) &lt;= input_series)
-            &amp; (input_series &lt;= input_series.quantile(config.higher))
+            &amp; (input_series &lt;= input_series.quantile(config.upper))
         ]
     else:
         return input_series[
-            (config.lower &lt;= input_series) &amp; (input_series &lt;= config.higher)
+            (config.lower &lt;= input_series) &amp; (input_series &lt;= config.upper)
         ]</code></pre>
 </details>
 </dd>
@@ -293,6 +380,27 @@ in the input config object</p>
         the normalized series
     &#34;&#34;&#34;
     return input_series % config.period_length</code></pre>
+</details>
+</dd>
+<dt id="nowcastlib.pipeline.preprocess.handle_serialization"><code class="name flex">
+<span>def <span class="ident">handle_serialization</span></span>(<span>data_df: pandas.core.frame.DataFrame, config: <a title="nowcastlib.pipeline.structs.SerializationOptions" href="../structs.html#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Serializes a given dataframe to disk in the appropriate format</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def handle_serialization(
+    data_df: pd.core.frame.DataFrame, config: structs.SerializationOptions
+):
+    &#34;&#34;&#34;
+    Serializes a given dataframe to disk in the appropriate format
+    &#34;&#34;&#34;
+    if config.output_format == &#34;csv&#34;:
+        data_df.to_csv(config.output_path, float_format=&#34;%g&#34;)
+    elif config.output_format == &#34;pickle&#34;:
+        data_df.to_pickle(config.output_path)</code></pre>
 </details>
 </dd>
 <dt id="nowcastlib.pipeline.preprocess.handle_smoothing"><code class="name flex">
@@ -438,24 +546,31 @@ in the input DataSource instance.</p>
     data_df = data_df[~data_df.index.duplicated(keep=&#34;last&#34;)]
     data_df.sort_index(inplace=True)
     for field in config.fields:
-        if field.outlier_options is not None:
-            data_df[field.field_name] = drop_outliers(
-                data_df[field.field_name], field.outlier_options
-            )
-        if field.periodic_options is not None:
-            data_df[field.field_name] = handle_periodic(
-                data_df[field.field_name], field.periodic_options
-            )
-        if field.conversion is not None:
-            data_df[field.field_name] = structs.CONV_MAP[field.conversion](
-                data_df[field.field_name]
-            )
-        if field.smooth_options is not None:
-            data_df[field.field_name] = handle_smoothing(
-                data_df[field.field_name], field.smooth_options
-            )
+        options = field.preprocessing_options
+        if options is not None:
+            # next two lines handle whether user wishes to overwrite field or not
+            computed_field_name = build_field_name(options, field.field_name)
+            data_df[computed_field_name] = data_df[field.field_name].copy()
+            if options.outlier_options is not None:
+                data_df[computed_field_name] = drop_outliers(
+                    data_df[computed_field_name], options.outlier_options
+                )
+            if options.periodic_options is not None:
+                data_df[computed_field_name] = handle_periodic(
+                    data_df[computed_field_name], options.periodic_options
+                )
+            if options.conversion_options is not None:
+                data_df[computed_field_name] = options.conversion_options.conv_func(
+                    data_df[computed_field_name]
+                )
+            if options.smooth_options is not None:
+                data_df[computed_field_name] = handle_smoothing(
+                    data_df[computed_field_name], options.smooth_options
+                )
     # drop all rows with NaNs, as final step
     data_df = data_df.dropna()
+    if config.preprocessing_output is not None:
+        handle_serialization(data_df, config.preprocessing_output)
     return data_df</code></pre>
 </details>
 </dd>
@@ -482,8 +597,10 @@ in the input DataSource instance.</p>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="nowcastlib.pipeline.preprocess.build_field_name" href="#nowcastlib.pipeline.preprocess.build_field_name">build_field_name</a></code></li>
 <li><code><a title="nowcastlib.pipeline.preprocess.drop_outliers" href="#nowcastlib.pipeline.preprocess.drop_outliers">drop_outliers</a></code></li>
 <li><code><a title="nowcastlib.pipeline.preprocess.handle_periodic" href="#nowcastlib.pipeline.preprocess.handle_periodic">handle_periodic</a></code></li>
+<li><code><a title="nowcastlib.pipeline.preprocess.handle_serialization" href="#nowcastlib.pipeline.preprocess.handle_serialization">handle_serialization</a></code></li>
 <li><code><a title="nowcastlib.pipeline.preprocess.handle_smoothing" href="#nowcastlib.pipeline.preprocess.handle_smoothing">handle_smoothing</a></code></li>
 <li><code><a title="nowcastlib.pipeline.preprocess.preprocess_dataset" href="#nowcastlib.pipeline.preprocess.preprocess_dataset">preprocess_dataset</a></code></li>
 <li><code><a title="nowcastlib.pipeline.preprocess.preprocess_datasource" href="#nowcastlib.pipeline.preprocess.preprocess_datasource">preprocess_datasource</a></code></li>

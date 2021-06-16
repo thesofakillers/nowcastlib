@@ -1,5 +1,7 @@
 """
-module containing custom structures used throughout the pipeline submodule
+Module containing custom structures used throughout the pipeline submodule.
+Classes listed here should be viewed as dictionaries, with class variables
+being treated analogous to dictionary keys.
 """
 from typing import Tuple, Optional, Dict, Callable
 from attr import attrs, attrib, validators
@@ -7,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 
-def normed_val(instance, attribute, value):
+def _normed_val(instance, attribute, value):
     """Checks whether a given value is between 0 and 1"""
     if not 0 <= value <= 1:
         raise ValueError(
@@ -18,10 +20,10 @@ def normed_val(instance, attribute, value):
         )
 
 
-def normed_outlier_val(instance, attribute, value):
+def _normed_outlier_val(instance, attribute, value):
     """Runs normed_validator if the outlier is quantile based"""
     if instance.quantile_based:
-        normed_val(instance, attribute, value)
+        _normed_val(instance, attribute, value)
 
 
 @attrs(kw_only=True, frozen=True)
@@ -31,20 +33,20 @@ class ConversionOptions:
     conversion of a given data field
     """
 
-    CONV_MAP: Dict[str, Callable] = {
+    _conv_map: Dict[str, Callable] = {
         "mph2ms": (lambda x: 0.44704 * x),
         "deg2rad": np.deg2rad,
         "rad2deg": np.rad2deg,
     }
+    key: str = attrib(validator=validators.in_([*_conv_map.keys()]))
     """
-    dictionary for mapping conversion keys to conversion functions.
-    Currently supports 'mph2ms', 'deg2rad' and 'rad2deg'
+    One of 'mph2ms', 'deg2rad' or 'rad2deg' to specify what unit
+    conversion to perform
     """
-    key: str = attrib(validator=validators.in_([*CONV_MAP.keys()]))
 
     def conv_func(self, input_series):
-        """will be rewritten upon initialization"""
-        return self.CONV_MAP[self.key](input_series)
+        """Function to use for converting the series as set by the key attribute"""
+        return self._conv_map[self.key](input_series)
 
 
 @attrs(kw_only=True, frozen=True)
@@ -55,6 +57,9 @@ class PeriodicOptions:
     """
 
     period_length: int = attrib()
+    """
+    The sample number at which the signal starts repeating
+    """
 
 
 @attrs(kw_only=True, frozen=True)
@@ -64,12 +69,18 @@ class OutlierOptions:
     of a given data field
     """
 
+    lower: float = attrib(default=0, validator=_normed_outlier_val)
+    """Lower inclusive (percentile) threshold, eliminating numbers lower than it"""
+    upper: float = attrib(default=1, validator=_normed_outlier_val)
+    """Upper inclusive (percentile) threshold, eliminating numbers greater than it"""
     quantile_based: bool = attrib(default=True)
-    lower: float = attrib(default=0, validator=normed_outlier_val)
-    higher: float = attrib(default=1, validator=normed_outlier_val)
+    """
+    Whether the lower and higher attributes are referring to quantiles.
+    If `False`, `lower` and `higher` are treated as absolute thresholds.
+    """
 
-    @higher.validator
-    def higher_gt_lower(self, attribute, value):
+    @upper.validator
+    def _upper_gt_lower(self, attribute, value):
         """validates whether higher > lower"""
         if value <= self.lower:
             raise ValueError(
@@ -82,14 +93,20 @@ class OutlierOptions:
 class SmoothOptions:
     """
     Struct containing data smoothing configuration options
-    of a given data field
+    of a given data field, achieved with a moving average operation.
     """
 
     window_size: int = attrib()
+    """How large the window should be for a moving average operation"""
     units: Optional[str] = attrib(default=None)
+    """
+    What units `window_size` is given in. Should be compatible with
+    [pandas offset aliases](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
+    If `None`, `window_size` refers to the number of samples comprising a window.
+    """
 
     @units.validator
-    def check_pd_offset_alias(self, attribute, value):
+    def _check_pd_offset_alias(self, attribute, value):
         """checks whether the unit attribute is a valid pandas Offset alias"""
         if value is not None:
             try:
@@ -114,39 +131,78 @@ class ProcessingOptions:
     """
 
     overwrite: bool = attrib(default=False)
+    """
+    If `True`, overwrites the input field in the input dataframe.
+    Otherwise appends a new field to the dataframe.
+    """
     outlier_options: Optional[OutlierOptions] = attrib(default=None)
+    """
+    Configuration options for specifying which outliers to drop.
+    If `None`, no outlier removal is performed.
+    """
     periodic_options: Optional[PeriodicOptions] = attrib(default=None)
+    """
+    Configuration options for treating data that is periodic in nature,
+    such as normalizing the desired range of values.
+    Is performed before any unit conversion.
+    If `None`, no processing in this regard is performed.
+    """
     conversion_options: Optional[ConversionOptions] = attrib(
         default=None,
     )
+    """
+    Configuration options for converting a field from one unit to another
+    If `None`, no conversion is performed.
+    """
     smooth_options: Optional[SmoothOptions] = attrib(default=None)
+    """
+    Configuration options for smoothing the field.
+    If `None`, no smoothing is performed.
+    """
 
 
 @attrs(kw_only=True, frozen=True)
 class DataField:
     """
     Struct containing configuration attributes for a given field
-    of a given data source
+    of a given DataSource
     """
 
-    # pylint: disable=too-many-instance-attributes
-
     field_name: str = attrib()
+    """The name of the field as specified in the input file"""
     is_date: bool = attrib(default=False)
+    """Whether the field is a date and therefore is the index of the DataSource"""
     date_format: str = attrib(default="%Y-%m-%dT%H:%M:%S")
+    """What format the date is presented in if the field is a date"""
     preprocessing_options: Optional[ProcessingOptions] = attrib(default=None)
+    """
+    Configuration options for how to pre-process the field
+    If `None`, no preprocessing will be performed.
+    """
     postprocessing_options: Optional[ProcessingOptions] = attrib(default=None)
+    """
+    Configuration options for how to post-process the field
+    If `None`, no post-processing will be performed.
+    """
 
 
 @attrs(kw_only=True, frozen=True)
 class SerializationOptions:
     """
     Struct containing configuration attributes for
-    serializing a given DataSource
+    serializing a given DataSource to disk
     """
 
     output_format: str = attrib(validator=validators.in_(["csv", "pickle"]))
+    """
+    One of 'csv', or 'pickle' to specify what format
+    to save the DataSource as
+    """
     output_path: str = attrib()
+    """
+    The desired path to the output file, including the name.
+    Folders containing the output file should exist before running.
+    """
 
 
 @attrs(kw_only=True, frozen=True)
@@ -157,13 +213,21 @@ class DataSource:
     """
 
     name: str = attrib()
+    """The name of the DataSource. Somewhat arbitrary but useful for legibility"""
     path: str = attrib()
+    """The path to the csv file from which to read the data"""
     fields: Tuple[DataField, ...] = attrib()
+    """Configuration options for each field the user is interested in"""
     comment_format: str = attrib(default="#")
+    """Prefix used in csv file to signal comments, that will be dropped when reading"""
     preprocessing_output: Optional[SerializationOptions] = attrib(default=None)
+    """
+    Configuration options for saving the preprocessing results to disk.
+    If `None`, no serialization of the preprocessing results will be performed.
+    """
 
     @fields.validator
-    def exactly_one_date(self, attribute, value):
+    def _exactly_one_date(self, attribute, value):
         """checks whether maximum one of the fields contains date information"""
         date_flags = [field.is_date for field in value if field.is_date]
         if len(date_flags) > 1:
@@ -181,3 +245,7 @@ class DataSet:
     """
 
     data_sources: Tuple[DataSource, ...] = attrib()
+    """
+    Configuration options for each of the sources of data we wish
+    to process, each originating from a different file.
+    """

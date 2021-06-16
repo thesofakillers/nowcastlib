@@ -82,11 +82,11 @@ def drop_outliers(input_series: pd.core.series.Series, config: structs.OutlierOp
     if config.quantile_based:
         return input_series[
             (input_series.quantile(config.lower) <= input_series)
-            & (input_series <= input_series.quantile(config.higher))
+            & (input_series <= input_series.quantile(config.upper))
         ]
     else:
         return input_series[
-            (config.lower <= input_series) & (input_series <= config.higher)
+            (config.lower <= input_series) & (input_series <= config.upper)
         ]
 
 
