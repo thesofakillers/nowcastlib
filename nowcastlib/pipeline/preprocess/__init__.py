@@ -90,26 +90,6 @@ def drop_outliers(input_series: pd.core.series.Series, config: structs.OutlierOp
         ]
 
 
-def preprocess_dataset(config: structs.DataSet):
-    """
-    Runs preprocessing on a given set of data sources given options outlined
-    in the input DataSet instance.
-
-    Parameters
-    ----------
-    config : nowcastlib.pipeline.structs.DataSet
-
-    Returns
-    -------
-    list[pandas.core.frame.DataFrame]
-        list containing each of the resulting processed dataframes
-    """
-    processed_dfs = []
-    for ds_config in config.data_sources:
-        processed_dfs.append(preprocess_datasource(ds_config))
-    return processed_dfs
-
-
 def build_field_name(config: structs.ProcessingOptions, field_name: str):
     """
     Builds the appropriate field name depending on whether
@@ -197,3 +177,23 @@ def preprocess_datasource(config: structs.DataSource):
     if config.preprocessing_output is not None:
         handle_serialization(data_df, config.preprocessing_output)
     return data_df
+
+
+def preprocess_dataset(config: structs.DataSet):
+    """
+    Runs preprocessing on a given set of data sources given options outlined
+    in the input DataSet instance.
+
+    Parameters
+    ----------
+    config : nowcastlib.pipeline.structs.DataSet
+
+    Returns
+    -------
+    list[pandas.core.frame.DataFrame]
+        list containing each of the resulting processed dataframes
+    """
+    processed_dfs = []
+    for ds_config in config.data_sources:
+        processed_dfs.append(preprocess_datasource(ds_config))
+    return processed_dfs
