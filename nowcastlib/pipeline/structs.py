@@ -249,3 +249,8 @@ class DataSet:
     Configuration options for each of the sources of data we wish
     to process, each originating from a different file.
     """
+    sample_spacing: Optional[int] = attrib(default=None)
+    """
+    The desired amount of time in seconds between each sample.
+    If `None`, no re-sampling will be performed.
+    """
