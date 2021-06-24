@@ -4,6 +4,7 @@ Command-Line interfaces for the Nowcast Library
 import argparse
 import configargparse
 from nowcastlib.pipeline.preprocess import cli as preprocess_cli
+from nowcastlib.pipeline.sync import cli as sync_cli
 from . import triangulate
 from . import chunksync
 
@@ -18,6 +19,7 @@ def main():
     triangulate.configure_parser(command_parsers)
     chunksync.configure_parser(command_parsers)
     preprocess_cli.configure_parser(command_parsers)
+    sync_cli.configure_parser(command_parsers)
 
     args = parser.parse_args()
     command = args.command
@@ -29,3 +31,5 @@ def main():
         chunksync.chunksync(args)
     elif command == "preprocess":
         preprocess_cli.run(args)
+    elif command == "sync":
+        sync_cli.run(args)

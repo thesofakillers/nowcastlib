@@ -1,22 +1,22 @@
 """
-Command-Line interface functionality for preprocessing
+Command-Line interface functionality for synchronization
 """
 import json
 import argparse
 import cattr
 from nowcastlib.pipeline import structs
-import nowcastlib.pipeline.preprocess as preprocess
+import nowcastlib.pipeline.sync as sync
 
 
 def configure_parser(action_object):
     """Configures the subparser for our preprocess command"""
-    pparser = action_object.add_parser(
-        "preprocess",
-        description="Preprocess datasets",
-        help="Run `nowcastlib preprocess -h` for further help",
+    sparser = action_object.add_parser(
+        "sync",
+        description="Synchronize datasets",
+        help="Run `nowcastlib sync -h` for further help",
         formatter_class=argparse.HelpFormatter,
     )
-    pparser.add(
+    sparser.add(
         "-c",
         "--config",
         required=True,
@@ -31,4 +31,4 @@ def run(args):
         config = json.load(json_file)
     cattr_cnvrtr = cattr.GenConverter(forbid_extra_keys=True)
     dataset_config = cattr_cnvrtr.structure(config, structs.DataSet)
-    return preprocess.preprocess_dataset(dataset_config)
+    return sync.synchronize_dataset(dataset_config)
