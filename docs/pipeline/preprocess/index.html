@@ -119,26 +119,6 @@ def drop_outliers(input_series: pd.core.series.Series, config: structs.OutlierOp
         ]
 
 
-def preprocess_dataset(config: structs.DataSet):
-    &#34;&#34;&#34;
-    Runs preprocessing on a given set of data sources given options outlined
-    in the input DataSet instance.
-
-    Parameters
-    ----------
-    config : nowcastlib.pipeline.structs.DataSet
-
-    Returns
-    -------
-    list[pandas.core.frame.DataFrame]
-        list containing each of the resulting processed dataframes
-    &#34;&#34;&#34;
-    processed_dfs = []
-    for ds_config in config.data_sources:
-        processed_dfs.append(preprocess_datasource(ds_config))
-    return processed_dfs
-
-
 def build_field_name(config: structs.ProcessingOptions, field_name: str):
     &#34;&#34;&#34;
     Builds the appropriate field name depending on whether
@@ -225,7 +205,27 @@ def preprocess_datasource(config: structs.DataSource):
     data_df = data_df.dropna()
     if config.preprocessing_output is not None:
         handle_serialization(data_df, config.preprocessing_output)
-    return data_df</code></pre>
+    return data_df
+
+
+def preprocess_dataset(config: structs.DataSet):
+    &#34;&#34;&#34;
+    Runs preprocessing on a given set of data sources given options outlined
+    in the input DataSet instance.
+
+    Parameters
+    ----------
+    config : nowcastlib.pipeline.structs.DataSet
+
+    Returns
+    -------
+    list[pandas.core.frame.DataFrame]
+        list containing each of the resulting processed dataframes
+    &#34;&#34;&#34;
+    processed_dfs = []
+    for ds_config in config.data_sources:
+        processed_dfs.append(preprocess_datasource(ds_config))
+    return processed_dfs</code></pre>
 </details>
 </section>
 <section>
@@ -242,167 +242,6 @@ def preprocess_datasource(config: structs.DataSource):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="nowcastlib.pipeline.preprocess.build_field_name"><code class="name flex">
-<span>def <span class="ident">build_field_name</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.ProcessingOptions" href="../structs.html#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, field_name: str)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Builds the appropriate field name depending on whether
-the user wishes to overwrite the current field or not</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.ProcessingOptions" href="../structs.html#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a></code></dt>
-<dd>&nbsp;</dd>
-<dt><strong><code>field_name</code></strong> :&ensp;<code>str</code></dt>
-<dd>the name of the current field we are acting on</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>str</code></dt>
-<dd>the resulting string</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def build_field_name(config: structs.ProcessingOptions, field_name: str):
-    &#34;&#34;&#34;
-    Builds the appropriate field name depending on whether
-    the user wishes to overwrite the current field or not
-
-    Parameters
-    ----------
-    config : nowcastlib.pipeline.structs.ProcessingOptions
-    field_name : str
-        the name of the current field we are acting on
-
-    Returns
-    -------
-    str
-        the resulting string
-    &#34;&#34;&#34;
-    if config.overwrite:
-        computed_field_name = field_name
-    else:
-        computed_field_name = &#34;preprocessed_{}&#34;.format(field_name)
-    return computed_field_name</code></pre>
-</details>
-</dd>
-<dt id="nowcastlib.pipeline.preprocess.drop_outliers"><code class="name flex">
-<span>def <span class="ident">drop_outliers</span></span>(<span>input_series: pandas.core.series.Series, config: <a title="nowcastlib.pipeline.structs.OutlierOptions" href="../structs.html#nowcastlib.pipeline.structs.OutlierOptions">OutlierOptions</a>)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>drops 'outliers' from a given pandas input series
-given inclusive thresholds specified in the input
-config object</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>input_series</code></strong> :&ensp;<code>pandas.core.series.Series</code></dt>
-<dd>&nbsp;</dd>
-<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.OutlierOptions" href="../structs.html#nowcastlib.pipeline.structs.OutlierOptions">OutlierOptions</a></code></dt>
-<dd>&nbsp;</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>pandas.core.series.Series</code></dt>
-<dd>the filtered series</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def drop_outliers(input_series: pd.core.series.Series, config: structs.OutlierOptions):
-    &#34;&#34;&#34;
-    drops &#39;outliers&#39; from a given pandas input series
-    given inclusive thresholds specified in the input
-    config object
-
-    Parameters
-    ----------
-    input_series: pandas.core.series.Series
-    config : nowcastlib.pipeline.structs.OutlierOptions
-
-    Returns
-    -------
-    pandas.core.series.Series
-        the filtered series
-    &#34;&#34;&#34;
-
-    if config.quantile_based:
-        return input_series[
-            (input_series.quantile(config.lower) &lt;= input_series)
-            &amp; (input_series &lt;= input_series.quantile(config.upper))
-        ]
-    else:
-        return input_series[
-            (config.lower &lt;= input_series) &amp; (input_series &lt;= config.upper)
-        ]</code></pre>
-</details>
-</dd>
-<dt id="nowcastlib.pipeline.preprocess.handle_periodic"><code class="name flex">
-<span>def <span class="ident">handle_periodic</span></span>(<span>input_series: pandas.core.series.Series, config: <a title="nowcastlib.pipeline.structs.PeriodicOptions" href="../structs.html#nowcastlib.pipeline.structs.PeriodicOptions">PeriodicOptions</a>)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Normalizes a periodic series such that its values lies in
-the range [0, T-1] where T is the period length, as defined
-in the input config object</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>input_series</code></strong> :&ensp;<code>pandas.core.series.Series</code></dt>
-<dd>&nbsp;</dd>
-<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.PeriodicOptions" href="../structs.html#nowcastlib.pipeline.structs.PeriodicOptions">PeriodicOptions</a></code></dt>
-<dd>&nbsp;</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>pandas.core.series.Series</code></dt>
-<dd>the normalized series</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def handle_periodic(
-    input_series: pd.core.series.Series, config: structs.PeriodicOptions
-):
-    &#34;&#34;&#34;
-    Normalizes a periodic series such that its values lies in
-    the range [0, T-1] where T is the period length, as defined
-    in the input config object
-
-    Parameters
-    ----------
-    input_series: pandas.core.series.Series
-    config : nowcastlib.pipeline.structs.PeriodicOptions
-
-    Returns
-    -------
-    pandas.core.series.Series
-        the normalized series
-    &#34;&#34;&#34;
-    return input_series % config.period_length</code></pre>
-</details>
-</dd>
-<dt id="nowcastlib.pipeline.preprocess.handle_serialization"><code class="name flex">
-<span>def <span class="ident">handle_serialization</span></span>(<span>data_df: pandas.core.frame.DataFrame, config: <a title="nowcastlib.pipeline.structs.SerializationOptions" href="../structs.html#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Serializes a given dataframe to disk in the appropriate format</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def handle_serialization(
-    data_df: pd.core.frame.DataFrame, config: structs.SerializationOptions
-):
-    &#34;&#34;&#34;
-    Serializes a given dataframe to disk in the appropriate format
-    &#34;&#34;&#34;
-    if config.output_format == &#34;csv&#34;:
-        data_df.to_csv(config.output_path, float_format=&#34;%g&#34;)
-    elif config.output_format == &#34;pickle&#34;:
-        data_df.to_pickle(config.output_path)</code></pre>
-</details>
-</dd>
 <dt id="nowcastlib.pipeline.preprocess.handle_smoothing"><code class="name flex">
 <span>def <span class="ident">handle_smoothing</span></span>(<span>input_series: pandas.core.series.Series, config: <a title="nowcastlib.pipeline.structs.SmoothOptions" href="../structs.html#nowcastlib.pipeline.structs.SmoothOptions">SmoothOptions</a>)</span>
 </code></dt>
@@ -460,44 +299,165 @@ so to achieve some form of smoothing</p>
     )</code></pre>
 </details>
 </dd>
-<dt id="nowcastlib.pipeline.preprocess.preprocess_dataset"><code class="name flex">
-<span>def <span class="ident">preprocess_dataset</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.DataSet" href="../structs.html#nowcastlib.pipeline.structs.DataSet">DataSet</a>)</span>
+<dt id="nowcastlib.pipeline.preprocess.handle_periodic"><code class="name flex">
+<span>def <span class="ident">handle_periodic</span></span>(<span>input_series: pandas.core.series.Series, config: <a title="nowcastlib.pipeline.structs.PeriodicOptions" href="../structs.html#nowcastlib.pipeline.structs.PeriodicOptions">PeriodicOptions</a>)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Runs preprocessing on a given set of data sources given options outlined
-in the input DataSet instance.</p>
+<div class="desc"><p>Normalizes a periodic series such that its values lies in
+the range [0, T-1] where T is the period length, as defined
+in the input config object</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.DataSet" href="../structs.html#nowcastlib.pipeline.structs.DataSet">DataSet</a></code></dt>
+<dt><strong><code>input_series</code></strong> :&ensp;<code>pandas.core.series.Series</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.PeriodicOptions" href="../structs.html#nowcastlib.pipeline.structs.PeriodicOptions">PeriodicOptions</a></code></dt>
 <dd>&nbsp;</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>list[pandas.core.frame.DataFrame]</code></dt>
-<dd>list containing each of the resulting processed dataframes</dd>
+<dt><code>pandas.core.series.Series</code></dt>
+<dd>the normalized series</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def preprocess_dataset(config: structs.DataSet):
+<pre><code class="python">def handle_periodic(
+    input_series: pd.core.series.Series, config: structs.PeriodicOptions
+):
     &#34;&#34;&#34;
-    Runs preprocessing on a given set of data sources given options outlined
-    in the input DataSet instance.
+    Normalizes a periodic series such that its values lies in
+    the range [0, T-1] where T is the period length, as defined
+    in the input config object
 
     Parameters
     ----------
-    config : nowcastlib.pipeline.structs.DataSet
+    input_series: pandas.core.series.Series
+    config : nowcastlib.pipeline.structs.PeriodicOptions
 
     Returns
     -------
-    list[pandas.core.frame.DataFrame]
-        list containing each of the resulting processed dataframes
+    pandas.core.series.Series
+        the normalized series
     &#34;&#34;&#34;
-    processed_dfs = []
-    for ds_config in config.data_sources:
-        processed_dfs.append(preprocess_datasource(ds_config))
-    return processed_dfs</code></pre>
+    return input_series % config.period_length</code></pre>
+</details>
+</dd>
+<dt id="nowcastlib.pipeline.preprocess.drop_outliers"><code class="name flex">
+<span>def <span class="ident">drop_outliers</span></span>(<span>input_series: pandas.core.series.Series, config: <a title="nowcastlib.pipeline.structs.OutlierOptions" href="../structs.html#nowcastlib.pipeline.structs.OutlierOptions">OutlierOptions</a>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>drops 'outliers' from a given pandas input series
+given inclusive thresholds specified in the input
+config object</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>input_series</code></strong> :&ensp;<code>pandas.core.series.Series</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.OutlierOptions" href="../structs.html#nowcastlib.pipeline.structs.OutlierOptions">OutlierOptions</a></code></dt>
+<dd>&nbsp;</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pandas.core.series.Series</code></dt>
+<dd>the filtered series</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def drop_outliers(input_series: pd.core.series.Series, config: structs.OutlierOptions):
+    &#34;&#34;&#34;
+    drops &#39;outliers&#39; from a given pandas input series
+    given inclusive thresholds specified in the input
+    config object
+
+    Parameters
+    ----------
+    input_series: pandas.core.series.Series
+    config : nowcastlib.pipeline.structs.OutlierOptions
+
+    Returns
+    -------
+    pandas.core.series.Series
+        the filtered series
+    &#34;&#34;&#34;
+
+    if config.quantile_based:
+        return input_series[
+            (input_series.quantile(config.lower) &lt;= input_series)
+            &amp; (input_series &lt;= input_series.quantile(config.upper))
+        ]
+    else:
+        return input_series[
+            (config.lower &lt;= input_series) &amp; (input_series &lt;= config.upper)
+        ]</code></pre>
+</details>
+</dd>
+<dt id="nowcastlib.pipeline.preprocess.build_field_name"><code class="name flex">
+<span>def <span class="ident">build_field_name</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.ProcessingOptions" href="../structs.html#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, field_name: str)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Builds the appropriate field name depending on whether
+the user wishes to overwrite the current field or not</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.ProcessingOptions" href="../structs.html#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a></code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>field_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>the name of the current field we are acting on</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>the resulting string</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def build_field_name(config: structs.ProcessingOptions, field_name: str):
+    &#34;&#34;&#34;
+    Builds the appropriate field name depending on whether
+    the user wishes to overwrite the current field or not
+
+    Parameters
+    ----------
+    config : nowcastlib.pipeline.structs.ProcessingOptions
+    field_name : str
+        the name of the current field we are acting on
+
+    Returns
+    -------
+    str
+        the resulting string
+    &#34;&#34;&#34;
+    if config.overwrite:
+        computed_field_name = field_name
+    else:
+        computed_field_name = &#34;preprocessed_{}&#34;.format(field_name)
+    return computed_field_name</code></pre>
+</details>
+</dd>
+<dt id="nowcastlib.pipeline.preprocess.handle_serialization"><code class="name flex">
+<span>def <span class="ident">handle_serialization</span></span>(<span>data_df: pandas.core.frame.DataFrame, config: <a title="nowcastlib.pipeline.structs.SerializationOptions" href="../structs.html#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Serializes a given dataframe to disk in the appropriate format</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def handle_serialization(
+    data_df: pd.core.frame.DataFrame, config: structs.SerializationOptions
+):
+    &#34;&#34;&#34;
+    Serializes a given dataframe to disk in the appropriate format
+    &#34;&#34;&#34;
+    if config.output_format == &#34;csv&#34;:
+        data_df.to_csv(config.output_path, float_format=&#34;%g&#34;)
+    elif config.output_format == &#34;pickle&#34;:
+        data_df.to_pickle(config.output_path)</code></pre>
 </details>
 </dd>
 <dt id="nowcastlib.pipeline.preprocess.preprocess_datasource"><code class="name flex">
@@ -574,6 +534,46 @@ in the input DataSource instance.</p>
     return data_df</code></pre>
 </details>
 </dd>
+<dt id="nowcastlib.pipeline.preprocess.preprocess_dataset"><code class="name flex">
+<span>def <span class="ident">preprocess_dataset</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.DataSet" href="../structs.html#nowcastlib.pipeline.structs.DataSet">DataSet</a>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Runs preprocessing on a given set of data sources given options outlined
+in the input DataSet instance.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.DataSet" href="../structs.html#nowcastlib.pipeline.structs.DataSet">DataSet</a></code></dt>
+<dd>&nbsp;</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>list[pandas.core.frame.DataFrame]</code></dt>
+<dd>list containing each of the resulting processed dataframes</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def preprocess_dataset(config: structs.DataSet):
+    &#34;&#34;&#34;
+    Runs preprocessing on a given set of data sources given options outlined
+    in the input DataSet instance.
+
+    Parameters
+    ----------
+    config : nowcastlib.pipeline.structs.DataSet
+
+    Returns
+    -------
+    list[pandas.core.frame.DataFrame]
+        list containing each of the resulting processed dataframes
+    &#34;&#34;&#34;
+    processed_dfs = []
+    for ds_config in config.data_sources:
+        processed_dfs.append(preprocess_datasource(ds_config))
+    return processed_dfs</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -597,13 +597,13 @@ in the input DataSource instance.</p>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.preprocess.build_field_name" href="#nowcastlib.pipeline.preprocess.build_field_name">build_field_name</a></code></li>
-<li><code><a title="nowcastlib.pipeline.preprocess.drop_outliers" href="#nowcastlib.pipeline.preprocess.drop_outliers">drop_outliers</a></code></li>
-<li><code><a title="nowcastlib.pipeline.preprocess.handle_periodic" href="#nowcastlib.pipeline.preprocess.handle_periodic">handle_periodic</a></code></li>
-<li><code><a title="nowcastlib.pipeline.preprocess.handle_serialization" href="#nowcastlib.pipeline.preprocess.handle_serialization">handle_serialization</a></code></li>
 <li><code><a title="nowcastlib.pipeline.preprocess.handle_smoothing" href="#nowcastlib.pipeline.preprocess.handle_smoothing">handle_smoothing</a></code></li>
-<li><code><a title="nowcastlib.pipeline.preprocess.preprocess_dataset" href="#nowcastlib.pipeline.preprocess.preprocess_dataset">preprocess_dataset</a></code></li>
+<li><code><a title="nowcastlib.pipeline.preprocess.handle_periodic" href="#nowcastlib.pipeline.preprocess.handle_periodic">handle_periodic</a></code></li>
+<li><code><a title="nowcastlib.pipeline.preprocess.drop_outliers" href="#nowcastlib.pipeline.preprocess.drop_outliers">drop_outliers</a></code></li>
+<li><code><a title="nowcastlib.pipeline.preprocess.build_field_name" href="#nowcastlib.pipeline.preprocess.build_field_name">build_field_name</a></code></li>
+<li><code><a title="nowcastlib.pipeline.preprocess.handle_serialization" href="#nowcastlib.pipeline.preprocess.handle_serialization">handle_serialization</a></code></li>
 <li><code><a title="nowcastlib.pipeline.preprocess.preprocess_datasource" href="#nowcastlib.pipeline.preprocess.preprocess_datasource">preprocess_datasource</a></code></li>
+<li><code><a title="nowcastlib.pipeline.preprocess.preprocess_dataset" href="#nowcastlib.pipeline.preprocess.preprocess_dataset">preprocess_dataset</a></code></li>
 </ul>
 </li>
 </ul>

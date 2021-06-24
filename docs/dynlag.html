@@ -127,75 +127,6 @@ def dynamically_lag(input_signal, wind_speed, wind_alignment, distance):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="nowcastlib.dynlag.dynamically_lag"><code class="name flex">
-<span>def <span class="ident">dynamically_lag</span></span>(<span>input_signal, wind_speed, wind_alignment, distance)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Dynamically lags a time-series to simulate the transport via wind of a phenomenon
-between two geo-spatially distanced sensors (A and B). Incorporation of noise is
-deferred to a separate function.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>input_signal</code></strong> :&ensp;<code>pandas.core.series.Series</code></dt>
-<dd>Time-indexed series representing the signal measured at sensor A</dd>
-<dt><strong><code>wind_speed</code></strong> :&ensp;<code>pandas.core.series.Series</code></dt>
-<dd>Time-indexed series representing the wind speed [m/s] measured at sensor A</dd>
-<dt><strong><code>wind_alignment</code></strong> :&ensp;<code>pandas.core.seres.Series</code></dt>
-<dd>Time-indexed series containing the dot product between the initial bearing from
-sensor A to sensor B and the direction the wind is blowing at sensor A</dd>
-<dt><strong><code>distance</code></strong> :&ensp;<code>float</code></dt>
-<dd>The distance in meters between target and source locations</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>pandas.core.series.Series</code></dt>
-<dd>The dynamically lagged <code>input_series</code>.</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def dynamically_lag(input_signal, wind_speed, wind_alignment, distance):
-    &#34;&#34;&#34;
-    Dynamically lags a time-series to simulate the transport via wind of a phenomenon
-    between two geo-spatially distanced sensors (A and B). Incorporation of noise is
-    deferred to a separate function.
-
-    Parameters
-    ----------
-    input_signal : pandas.core.series.Series
-        Time-indexed series representing the signal measured at sensor A
-    wind_speed : pandas.core.series.Series
-        Time-indexed series representing the wind speed [m/s] measured at sensor A
-    wind_alignment : pandas.core.seres.Series
-        Time-indexed series containing the dot product between the initial bearing from
-        sensor A to sensor B and the direction the wind is blowing at sensor A
-    distance : float
-        The distance in meters between target and source locations
-
-    Returns
-    -------
-    pandas.core.series.Series
-        The dynamically lagged `input_series`.
-    &#34;&#34;&#34;
-    spacing_secs = input_signal.index.freq.delta.seconds
-    # how many time steps in the past is the target series?
-    time_secs = distance / (wind_alignment * wind_speed)
-    time_steps = (
-        np.floor((time_secs / spacing_secs))
-        .replace([np.inf, -np.inf], np.nan)
-        .astype(&#34;Int64&#34;)
-    )
-    total_steps = len(input_signal)
-    target_idx = np.arange(total_steps) + time_steps
-    # keep track of invalid indices
-    nan_mask = (target_idx &lt; 0) | (target_idx &gt;= total_steps) | target_idx.isna()
-    # temporarily set nan indices to 0, to be able to use them.
-    target_idx[nan_mask] = 0
-    target_series = np.where(nan_mask, np.nan, input_signal[target_idx.values])
-    return target_series</code></pre>
-</details>
-</dd>
 <dt id="nowcastlib.dynlag.simulate_perturbations"><code class="name flex">
 <span>def <span class="ident">simulate_perturbations</span></span>(<span>input_sig, snr_db, rn_comp_len=0, allow_neg=True)</span>
 </code></dt>
@@ -272,6 +203,75 @@ white noise that were generated before being applied to the input signal</dd>
     return (output_signal, (red_noise, white_noise))</code></pre>
 </details>
 </dd>
+<dt id="nowcastlib.dynlag.dynamically_lag"><code class="name flex">
+<span>def <span class="ident">dynamically_lag</span></span>(<span>input_signal, wind_speed, wind_alignment, distance)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Dynamically lags a time-series to simulate the transport via wind of a phenomenon
+between two geo-spatially distanced sensors (A and B). Incorporation of noise is
+deferred to a separate function.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>input_signal</code></strong> :&ensp;<code>pandas.core.series.Series</code></dt>
+<dd>Time-indexed series representing the signal measured at sensor A</dd>
+<dt><strong><code>wind_speed</code></strong> :&ensp;<code>pandas.core.series.Series</code></dt>
+<dd>Time-indexed series representing the wind speed [m/s] measured at sensor A</dd>
+<dt><strong><code>wind_alignment</code></strong> :&ensp;<code>pandas.core.seres.Series</code></dt>
+<dd>Time-indexed series containing the dot product between the initial bearing from
+sensor A to sensor B and the direction the wind is blowing at sensor A</dd>
+<dt><strong><code>distance</code></strong> :&ensp;<code>float</code></dt>
+<dd>The distance in meters between target and source locations</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pandas.core.series.Series</code></dt>
+<dd>The dynamically lagged <code>input_series</code>.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def dynamically_lag(input_signal, wind_speed, wind_alignment, distance):
+    &#34;&#34;&#34;
+    Dynamically lags a time-series to simulate the transport via wind of a phenomenon
+    between two geo-spatially distanced sensors (A and B). Incorporation of noise is
+    deferred to a separate function.
+
+    Parameters
+    ----------
+    input_signal : pandas.core.series.Series
+        Time-indexed series representing the signal measured at sensor A
+    wind_speed : pandas.core.series.Series
+        Time-indexed series representing the wind speed [m/s] measured at sensor A
+    wind_alignment : pandas.core.seres.Series
+        Time-indexed series containing the dot product between the initial bearing from
+        sensor A to sensor B and the direction the wind is blowing at sensor A
+    distance : float
+        The distance in meters between target and source locations
+
+    Returns
+    -------
+    pandas.core.series.Series
+        The dynamically lagged `input_series`.
+    &#34;&#34;&#34;
+    spacing_secs = input_signal.index.freq.delta.seconds
+    # how many time steps in the past is the target series?
+    time_secs = distance / (wind_alignment * wind_speed)
+    time_steps = (
+        np.floor((time_secs / spacing_secs))
+        .replace([np.inf, -np.inf], np.nan)
+        .astype(&#34;Int64&#34;)
+    )
+    total_steps = len(input_signal)
+    target_idx = np.arange(total_steps) + time_steps
+    # keep track of invalid indices
+    nan_mask = (target_idx &lt; 0) | (target_idx &gt;= total_steps) | target_idx.isna()
+    # temporarily set nan indices to 0, to be able to use them.
+    target_idx[nan_mask] = 0
+    target_series = np.where(nan_mask, np.nan, input_signal[target_idx.values])
+    return target_series</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -290,8 +290,8 @@ white noise that were generated before being applied to the input signal</dd>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="nowcastlib.dynlag.dynamically_lag" href="#nowcastlib.dynlag.dynamically_lag">dynamically_lag</a></code></li>
 <li><code><a title="nowcastlib.dynlag.simulate_perturbations" href="#nowcastlib.dynlag.simulate_perturbations">simulate_perturbations</a></code></li>
+<li><code><a title="nowcastlib.dynlag.dynamically_lag" href="#nowcastlib.dynlag.dynamically_lag">dynamically_lag</a></code></li>
 </ul>
 </li>
 </ul>

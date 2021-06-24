@@ -138,6 +138,7 @@ class ProcessingOptions:
     outlier_options: Optional[OutlierOptions] = attrib(default=None)
     """
     Configuration options for specifying which outliers to drop.
+    Is performed before any unit conversion.
     If `None`, no outlier removal is performed.
     """
     periodic_options: Optional[PeriodicOptions] = attrib(default=None)
@@ -157,6 +158,7 @@ class ProcessingOptions:
     smooth_options: Optional[SmoothOptions] = attrib(default=None)
     """
     Configuration options for smoothing the field.
+    Is performed at the end of all other processing.
     If `None`, no smoothing is performed.
     """
 
@@ -238,6 +240,49 @@ class DataSource:
 
 
 @attrs(kw_only=True, frozen=True)
+class ChunkOptions:
+    """
+    Struct containing configuration attributes for chunking
+    a partially synchronized DataSet
+    """
+
+    min_gap_size: int = attrib()
+    """
+    The minimum amount of time in seconds for a gap to be considered
+    large enough to not be ignored.
+    """
+    min_chunk_size: int = attrib()
+    """
+    The minimum length in seconds for contiguous block of data
+    to be considered.
+    """
+    output_path: Optional[str] = attrib(default=None)
+    """
+    The path where to save resulting chunks as an hdf5 file.
+    If `None`, no serialization will be performed.
+    """
+
+
+@attrs(kw_only=True, frozen=True)
+class SyncOptions:
+    """
+    Struct containing configuration attributes for synchronizing
+    a DataSet
+    """
+
+    sample_spacing: int = attrib()
+    """
+    The desired amount of time in seconds between each sample.
+    If `None`, no re-sampling will be performed.
+    """
+    chunk_options: Optional[ChunkOptions] = attrib(default=None)
+    """
+    Configuration options necessary for handling chunking operations.
+    If `None`, no chunking will be performed.
+    """
+
+
+@attrs(kw_only=True, frozen=True)
 class DataSet:
     """
     Struct containing configuration attributes for processing
@@ -249,8 +294,8 @@ class DataSet:
     Configuration options for each of the sources of data we wish
     to process, each originating from a different file.
     """
-    sample_spacing: Optional[int] = attrib(default=None)
+    sync_options: Optional[SyncOptions] = attrib(default=None)
     """
-    The desired amount of time in seconds between each sample.
-    If `None`, no re-sampling will be performed.
+    Configurations options for synchronizing the `data_sources`.
+    If `None`, no synchronization will be performed
     """

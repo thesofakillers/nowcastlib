@@ -233,6 +233,69 @@ def make_chunks(input_df, min_length):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="nowcastlib.datasets.compute_trig_fields"><code class="name flex">
+<span>def <span class="ident">compute_trig_fields</span></span>(<span>input_df, fields_to_compute=[])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>For a time series pandas dataframe, computes the Cosine and Sine of the seconds of the
+day of each data point. Also optionally computes the Cosine and Sine equivalent
+additional fields if requested. The computed fields are added to the dataframe which
+is returned with the new fields included.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>input_df</code></strong> :&ensp;<code>pandas.core.frame.DataFrame</code></dt>
+<dd>The dataframe to process</dd>
+<dt><strong><code>fields_to_compute</code></strong> :&ensp;<code>list</code> of <code>string</code>, default <code>[]</code></dt>
+<dd>List of the names of the additional fields for which we wish to compute Cosine
+and Sine equivalents</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pandas.core.frame.DataFrame</code></dt>
+<dd>The original dataframe with the addition of the newly computed fields</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_trig_fields(input_df, fields_to_compute=[]):
+    &#34;&#34;&#34;For a time series pandas dataframe, computes the Cosine and Sine of the seconds of the
+    day of each data point. Also optionally computes the Cosine and Sine equivalent
+    additional fields if requested. The computed fields are added to the dataframe which
+    is returned with the new fields included.
+
+    Parameters
+    ----------
+    input_df : pandas.core.frame.DataFrame
+        The dataframe to process
+    fields_to_compute : list of string, default []
+        List of the names of the additional fields for which we wish to compute Cosine
+        and Sine equivalents
+
+    Returns
+    -------
+    pandas.core.frame.DataFrame
+        The original dataframe with the addition of the newly computed fields
+    &#34;&#34;&#34;
+    # get at which second of the day each data point occured
+    datetime = input_df.index.to_series()
+    day_seconds = (datetime - datetime.dt.normalize()).dt.total_seconds()
+
+    for func, func_name in zip([np.cos, np.sin], [&#34;Cosine&#34;, &#34;Sine&#34;]):
+        # first, compute trig _time_ equivalents
+        trig_day_name = &#34;{} Day&#34;.format(func_name)
+        input_df[trig_day_name] = func((2 * np.pi * day_seconds.values) / 86400.0)
+        # we can then tackle custom requested fields if any
+        for field_name in fields_to_compute:
+            new_field_name = &#34;{} {}&#34;.format(func_name, field_name)
+            field_data = input_df[field_name]
+            if &#34;deg&#34; in field_name:
+                field_data = np.radians(field_data)
+            input_df[new_field_name] = func(field_data)
+
+    return input_df</code></pre>
+</details>
+</dd>
 <dt id="nowcastlib.datasets.bfill_nan"><code class="name flex">
 <span>def <span class="ident">bfill_nan</span></span>(<span>input_array)</span>
 </code></dt>
@@ -287,6 +350,76 @@ array([4., 4., 4., 0., 0., 7., 7., 0.])
     idx = np.minimum.accumulate(idx[::-1], axis=0)[::-1]
     # can now use this backfilled index array as a map on our original
     return input_array[idx]</code></pre>
+</details>
+</dd>
+<dt id="nowcastlib.datasets.compute_large_gap_mask"><code class="name flex">
+<span>def <span class="ident">compute_large_gap_mask</span></span>(<span>data_array, max_gap)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Computes a mask (boolean NumPy array) outlining where there aren't large gaps
+in the data, as defined by <code>max_gap</code></p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>data_array</code></strong> :&ensp;<code>numpy.ndarray</code></dt>
+<dd>The array on which we want to compute the mask</dd>
+<dt><strong><code>max_gap</code></strong> :&ensp;<code>int</code></dt>
+<dd>the maximum number of consecutive NaNs before defining the section to be a
+large gap</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>numpy.ndarray</code></dt>
+<dd>The mask, a boolean numpy.ndarray, where False indicates that the current
+index is part of a large gap.</dd>
+</dl>
+<h2 id="notes">Notes</h2>
+<p>This is an adaption of <a href="https://stackoverflow.com/a/54512613/9889508">this StackOverflow post</a></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def compute_large_gap_mask(data_array, max_gap):
+    &#34;&#34;&#34;Computes a mask (boolean NumPy array) outlining where there aren&#39;t large gaps
+    in the data, as defined by `max_gap`
+
+    Parameters
+    ----------
+    data_array : numpy.ndarray
+        The array on which we want to compute the mask
+    max_gap : int
+        the maximum number of consecutive NaNs before defining the section to be a
+        large gap
+
+    Returns
+    -------
+    numpy.ndarray
+        The mask, a boolean numpy.ndarray, where False indicates that the current
+        index is part of a large gap.
+
+    Notes
+    -----
+    This is an adaption of [this StackOverflow post](https://stackoverflow.com/a/54512613/9889508)
+    &#34;&#34;&#34;
+    # where are the NaNs?
+    isnan = np.isnan(data_array)
+    # how many NaNs so far?
+    cumsum = np.cumsum(isnan).astype(&#34;int&#34;)
+    # for each non-nan indices, find the cum sum of nans since the last non-nan index
+    diff = np.zeros_like(data_array)
+    diff[~isnan] = np.diff(cumsum[~isnan], prepend=0)
+    # set the nan indices to nan
+    diff[isnan] = np.nan
+    # backfill nan blocks by setting each nan index to the cum. sum of nans for that block
+    diff = bfill_nan(diff)
+    # handle NaN end
+    final_nan_check = np.isnan(diff)
+    if final_nan_check.any():
+        if np.isnan(diff[-(max_gap + 1) :]).all():
+            diff[final_nan_check] = max_gap + 1
+        else:
+            diff[final_nan_check] = 0
+    # finally compute mask: False where large gaps - True elsewhere
+    return (diff &lt; max_gap) | ~isnan</code></pre>
 </details>
 </dd>
 <dt id="nowcastlib.datasets.compute_dataframe_mask"><code class="name flex">
@@ -373,139 +506,6 @@ check one column from each data source</p></div>
     return computed_mask</code></pre>
 </details>
 </dd>
-<dt id="nowcastlib.datasets.compute_large_gap_mask"><code class="name flex">
-<span>def <span class="ident">compute_large_gap_mask</span></span>(<span>data_array, max_gap)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Computes a mask (boolean NumPy array) outlining where there aren't large gaps
-in the data, as defined by <code>max_gap</code></p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>data_array</code></strong> :&ensp;<code>numpy.ndarray</code></dt>
-<dd>The array on which we want to compute the mask</dd>
-<dt><strong><code>max_gap</code></strong> :&ensp;<code>int</code></dt>
-<dd>the maximum number of consecutive NaNs before defining the section to be a
-large gap</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>numpy.ndarray</code></dt>
-<dd>The mask, a boolean numpy.ndarray, where False indicates that the current
-index is part of a large gap.</dd>
-</dl>
-<h2 id="notes">Notes</h2>
-<p>This is an adaption of <a href="https://stackoverflow.com/a/54512613/9889508">this StackOverflow post</a></p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def compute_large_gap_mask(data_array, max_gap):
-    &#34;&#34;&#34;Computes a mask (boolean NumPy array) outlining where there aren&#39;t large gaps
-    in the data, as defined by `max_gap`
-
-    Parameters
-    ----------
-    data_array : numpy.ndarray
-        The array on which we want to compute the mask
-    max_gap : int
-        the maximum number of consecutive NaNs before defining the section to be a
-        large gap
-
-    Returns
-    -------
-    numpy.ndarray
-        The mask, a boolean numpy.ndarray, where False indicates that the current
-        index is part of a large gap.
-
-    Notes
-    -----
-    This is an adaption of [this StackOverflow post](https://stackoverflow.com/a/54512613/9889508)
-    &#34;&#34;&#34;
-    # where are the NaNs?
-    isnan = np.isnan(data_array)
-    # how many NaNs so far?
-    cumsum = np.cumsum(isnan).astype(&#34;int&#34;)
-    # for each non-nan indices, find the cum sum of nans since the last non-nan index
-    diff = np.zeros_like(data_array)
-    diff[~isnan] = np.diff(cumsum[~isnan], prepend=0)
-    # set the nan indices to nan
-    diff[isnan] = np.nan
-    # backfill nan blocks by setting each nan index to the cum. sum of nans for that block
-    diff = bfill_nan(diff)
-    # handle NaN end
-    final_nan_check = np.isnan(diff)
-    if final_nan_check.any():
-        if np.isnan(diff[-(max_gap + 1) :]).all():
-            diff[final_nan_check] = max_gap + 1
-        else:
-            diff[final_nan_check] = 0
-    # finally compute mask: False where large gaps - True elsewhere
-    return (diff &lt; max_gap) | ~isnan</code></pre>
-</details>
-</dd>
-<dt id="nowcastlib.datasets.compute_trig_fields"><code class="name flex">
-<span>def <span class="ident">compute_trig_fields</span></span>(<span>input_df, fields_to_compute=[])</span>
-</code></dt>
-<dd>
-<div class="desc"><p>For a time series pandas dataframe, computes the Cosine and Sine of the seconds of the
-day of each data point. Also optionally computes the Cosine and Sine equivalent
-additional fields if requested. The computed fields are added to the dataframe which
-is returned with the new fields included.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>input_df</code></strong> :&ensp;<code>pandas.core.frame.DataFrame</code></dt>
-<dd>The dataframe to process</dd>
-<dt><strong><code>fields_to_compute</code></strong> :&ensp;<code>list</code> of <code>string</code>, default <code>[]</code></dt>
-<dd>List of the names of the additional fields for which we wish to compute Cosine
-and Sine equivalents</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>pandas.core.frame.DataFrame</code></dt>
-<dd>The original dataframe with the addition of the newly computed fields</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def compute_trig_fields(input_df, fields_to_compute=[]):
-    &#34;&#34;&#34;For a time series pandas dataframe, computes the Cosine and Sine of the seconds of the
-    day of each data point. Also optionally computes the Cosine and Sine equivalent
-    additional fields if requested. The computed fields are added to the dataframe which
-    is returned with the new fields included.
-
-    Parameters
-    ----------
-    input_df : pandas.core.frame.DataFrame
-        The dataframe to process
-    fields_to_compute : list of string, default []
-        List of the names of the additional fields for which we wish to compute Cosine
-        and Sine equivalents
-
-    Returns
-    -------
-    pandas.core.frame.DataFrame
-        The original dataframe with the addition of the newly computed fields
-    &#34;&#34;&#34;
-    # get at which second of the day each data point occured
-    datetime = input_df.index.to_series()
-    day_seconds = (datetime - datetime.dt.normalize()).dt.total_seconds()
-
-    for func, func_name in zip([np.cos, np.sin], [&#34;Cosine&#34;, &#34;Sine&#34;]):
-        # first, compute trig _time_ equivalents
-        trig_day_name = &#34;{} Day&#34;.format(func_name)
-        input_df[trig_day_name] = func((2 * np.pi * day_seconds.values) / 86400.0)
-        # we can then tackle custom requested fields if any
-        for field_name in fields_to_compute:
-            new_field_name = &#34;{} {}&#34;.format(func_name, field_name)
-            field_data = input_df[field_name]
-            if &#34;deg&#34; in field_name:
-                field_data = np.radians(field_data)
-            input_df[new_field_name] = func(field_data)
-
-    return input_df</code></pre>
-</details>
-</dd>
 <dt id="nowcastlib.datasets.make_chunks"><code class="name flex">
 <span>def <span class="ident">make_chunks</span></span>(<span>input_df, min_length)</span>
 </code></dt>
@@ -579,10 +579,10 @@ original</dd>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="nowcastlib.datasets.bfill_nan" href="#nowcastlib.datasets.bfill_nan">bfill_nan</a></code></li>
-<li><code><a title="nowcastlib.datasets.compute_dataframe_mask" href="#nowcastlib.datasets.compute_dataframe_mask">compute_dataframe_mask</a></code></li>
-<li><code><a title="nowcastlib.datasets.compute_large_gap_mask" href="#nowcastlib.datasets.compute_large_gap_mask">compute_large_gap_mask</a></code></li>
 <li><code><a title="nowcastlib.datasets.compute_trig_fields" href="#nowcastlib.datasets.compute_trig_fields">compute_trig_fields</a></code></li>
+<li><code><a title="nowcastlib.datasets.bfill_nan" href="#nowcastlib.datasets.bfill_nan">bfill_nan</a></code></li>
+<li><code><a title="nowcastlib.datasets.compute_large_gap_mask" href="#nowcastlib.datasets.compute_large_gap_mask">compute_large_gap_mask</a></code></li>
+<li><code><a title="nowcastlib.datasets.compute_dataframe_mask" href="#nowcastlib.datasets.compute_dataframe_mask">compute_dataframe_mask</a></code></li>
 <li><code><a title="nowcastlib.datasets.make_chunks" href="#nowcastlib.datasets.make_chunks">make_chunks</a></code></li>
 </ul>
 </li>
