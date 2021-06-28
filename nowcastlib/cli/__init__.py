@@ -1,6 +1,7 @@
 """
 Command-Line interfaces for the Nowcast Library
 """
+import logging
 import argparse
 import configargparse
 from nowcastlib.pipeline.preprocess import cli as preprocess_cli
@@ -14,6 +15,13 @@ def main():
     Function for organizing subcommands and providing help to user.
     """
     parser = configargparse.ArgParser()
+    parser.add(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="increase verbosity level from INFO to DEBUG",
+    )
+
     command_parsers = parser.add_subparsers(dest="command", help="available commands")
 
     triangulate.configure_parser(command_parsers)
@@ -22,6 +30,10 @@ def main():
     sync_cli.configure_parser(command_parsers)
 
     args = parser.parse_args()
+
+    if args.v:
+        logging.basicConfig(level=logging.DEBUG)
+
     command = args.command
     if command is None:
         parser.print_help()

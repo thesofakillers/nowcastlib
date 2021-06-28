@@ -1,6 +1,7 @@
 """
 Functions for synchronizing data
 """
+import logging
 from typing import Optional, List
 import numpy as np
 import pandas as pd
@@ -51,6 +52,7 @@ def handle_chunking(
     chunks = datasets.make_chunks(chunked_df, min_chunk_length)
 
     if config.output_path is not None:
+        logging.debug("Serializing resulting synchronization chunks...")
         hdfs = pd.HDFStore(config.output_path)
         for i, chunk in enumerate(chunks):
             chunk.to_hdf(hdfs, "chunk_{:d}".format(i), format="table")
@@ -89,9 +91,11 @@ def synchronize_dataset(
         data_dfs = preprocess.preprocess_dataset(config)
     else:
         data_dfs = dataset
-    # resample
+    total_dfs = len(data_dfs)
+    logging.info("Synchronizing dataset...")
     resampled_dfs = []
-    for data_df in data_dfs:
+    for i, data_df in enumerate(data_dfs):
+        logging.debug("Resampling DataSource %d of %d...", i + 1, total_dfs)
         data_df.index.name = None
         offset_str = "{}S".format(sync_config.sample_spacing)
         resampled_dfs.append(
@@ -100,10 +104,11 @@ def synchronize_dataset(
                 origin=data_df.index[0].floor(offset_str),
             ).mean()
         )
-    # finding overlapping range and joining into single dataframe
+    logging.debug("Finding overlapping range and joining into single dataframe...")
     synced_df = pd.concat(resampled_dfs, axis=1, join="inner")
     chunks = [synced_df]
     if sync_config.chunk_options is not None:
+        logging.debug("Splitting data into contiguous chunks...")
         chunks = handle_chunking(
             synced_df, sync_config.chunk_options, [df.columns[0] for df in data_dfs]
         )
