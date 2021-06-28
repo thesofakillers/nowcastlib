@@ -31,8 +31,10 @@ def main():
 
     args = parser.parse_args()
 
-    if args.v:
-        logging.basicConfig(level=logging.DEBUG)
+    if args.verbose:
+        logger = logging.getLogger('nowcastlib')
+        logger.setLevel(logging.DEBUG)
+        logger.handlers[0].setLevel(logging.DEBUG)
 
     command = args.command
     if command is None:
