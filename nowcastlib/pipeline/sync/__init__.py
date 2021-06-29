@@ -5,12 +5,59 @@ import logging
 from typing import Optional, List
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from nowcastlib.pipeline import structs
 from nowcastlib.pipeline import preprocess
 from nowcastlib import datasets
 
-
+plt.ion()
 logger = logging.getLogger(__name__)
+
+
+def yes_or_no(question):
+    while "the answer is invalid":
+        reply = str(input(question + " (y/n): ")).lower().strip()
+        if reply[:1] == "y":
+            return True
+        if reply[:1] == "n":
+            return False
+        else:
+            print("Please enter either 'y'/'Y' or 'n'/'N'")
+
+
+def handle_diag_plots(
+    config: structs.SyncOptions, dataframes: List[pd.core.frame.DataFrame]
+):
+    n_samples = 10000
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
+    for i, data_df in enumerate(dataframes):
+        sample_spacing = data_df.index.to_series().diff()
+        data = sample_spacing.sample(n_samples).astype("timedelta64[s]")
+        weights = np.ones_like(data) / n_samples
+        ax.hist(
+            data,
+            bins=np.arange(150, step=1),
+            weights=weights,
+            label="DataSource {} sample spacing".format(i),
+            histtype="step",
+            linewidth=1.5,
+        )
+    ax.axvline(config.sample_spacing, color="black", label="Selected Sample Spacing")
+    ax.set_xlabel("Sample Spacing [s]")
+    ax.set_ylabel("Prevalence")
+    ax.set_title(
+        "Sample spacing of {} random samples across the input Data Sources".format(
+            n_samples
+        )
+    )
+    ax.legend()
+    fig.set_tight_layout(True)
+    logger.info("Press any button to exit. Use mouse to zoom and resize")
+    while True:
+        plt.draw()
+        if plt.waitforbuttonpress():
+            break
+    return yes_or_no("Are you satisfied with the target sample rate?")
 
 
 def handle_chunking(
@@ -88,8 +135,17 @@ def synchronize_dataset(
         data_dfs = preprocess.preprocess_dataset(config)
     else:
         data_dfs = dataset
-    total_dfs = len(data_dfs)
     logger.info("Synchronizing dataset...")
+
+    if sync_config.diagnostic_plots is not None:
+        continue_processing = handle_diag_plots(sync_config, data_dfs)
+        if continue_processing is False:
+            logger.info(
+                "Closing program prematurely to allow for configuration changes"
+            )
+            quit()
+
+    total_dfs = len(data_dfs)
     resampled_dfs = []
     for i, data_df in enumerate(data_dfs):
         logger.debug("Resampling DataSource %d of %d...", i + 1, total_dfs)

@@ -280,6 +280,11 @@ class SyncOptions:
     The path where to save resulting chunks as an hdf5 file.
     If `None`, no serialization will be performed.
     """
+    diagnostic_plots: bool = attrib(default=True)
+    """
+    Whether or not to show diagnostic plots, intended to help
+    the user in configuration evaluation and decision making.
+    """
 
 
 @attrs(kw_only=True, frozen=True)
