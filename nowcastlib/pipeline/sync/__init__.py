@@ -54,12 +54,6 @@ def handle_chunking(
     min_chunk_length = int(config.min_chunk_size / sample_spacing_secs)
     chunks = datasets.make_chunks(chunked_df, min_chunk_length)
 
-    if config.output_path is not None:
-        logger.debug("Serializing resulting synchronization chunks...")
-        hdfs = pd.HDFStore(config.output_path)
-        for i, chunk in enumerate(chunks):
-            chunk.to_hdf(hdfs, "chunk_{:d}".format(i), format="table")
-
     return chunks
 
 
@@ -115,4 +109,10 @@ def synchronize_dataset(
         chunks = handle_chunking(
             synced_df, sync_config.chunk_options, [df.columns[0] for df in data_dfs]
         )
+    if sync_config.output_path is not None:
+        logger.debug("Serializing resulting synchronization chunks...")
+        hdfs = pd.HDFStore(sync_config.output_path)
+        for i, chunk in enumerate(chunks):
+            chunk.to_hdf(hdfs, "chunk_{:d}".format(i), format="table")
+
     return chunks

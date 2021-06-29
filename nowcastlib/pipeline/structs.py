@@ -256,11 +256,6 @@ class ChunkOptions:
     The minimum length in seconds for contiguous block of data
     to be considered.
     """
-    output_path: Optional[str] = attrib(default=None)
-    """
-    The path where to save resulting chunks as an hdf5 file.
-    If `None`, no serialization will be performed.
-    """
 
 
 @attrs(kw_only=True, frozen=True)
@@ -279,6 +274,11 @@ class SyncOptions:
     """
     Configuration options necessary for handling chunking operations.
     If `None`, no chunking will be performed.
+    """
+    output_path: Optional[str] = attrib(default=None)
+    """
+    The path where to save resulting chunks as an hdf5 file.
+    If `None`, no serialization will be performed.
     """
 
 
