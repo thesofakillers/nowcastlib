@@ -1,6 +1,7 @@
 """
 Functions for synchronizing data
 """
+import sys
 import logging
 from typing import Optional, List
 import numpy as np
@@ -15,6 +16,10 @@ logger = logging.getLogger(__name__)
 
 
 def yes_or_no(question):
+    """
+    Asks the user a yes or no question, parsing the answer
+    accordingly.
+    """
     while "the answer is invalid":
         reply = str(input(question + " (y/n): ")).lower().strip()
         if reply[:1] == "y":
@@ -28,6 +33,23 @@ def yes_or_no(question):
 def handle_diag_plots(
     config: structs.SyncOptions, dataframes: List[pd.core.frame.DataFrame]
 ):
+    """
+    Produces plots that can aid the user in noticing mistakes
+    in their configuration before proceeding with the
+    synchronization process
+
+    Parameters
+    ----------
+    config : nowcastlib.pipeline.structs.SyncOptions
+    dataframes : list[pandas.core.frame.DataFrame]
+        The set of dataframes one wishes to synchronize.
+
+    Returns
+    -------
+    bool
+        whether the user wishes to continue with
+        running the pipeline or not
+    """
     n_samples = 10000
     fig, ax = plt.subplots(1, 1, figsize=(6, 4))
     for i, data_df in enumerate(dataframes):
@@ -143,7 +165,7 @@ def synchronize_dataset(
             logger.info(
                 "Closing program prematurely to allow for configuration changes"
             )
-            quit()
+            sys.exit()
 
     total_dfs = len(data_dfs)
     resampled_dfs = []
