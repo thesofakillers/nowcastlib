@@ -289,11 +289,6 @@ class ChunkOptions:
     The minimum length in seconds for contiguous block of data
     to be considered.
     &#34;&#34;&#34;
-    output_path: Optional[str] = attrib(default=None)
-    &#34;&#34;&#34;
-    The path where to save resulting chunks as an hdf5 file.
-    If `None`, no serialization will be performed.
-    &#34;&#34;&#34;
 
 
 @attrs(kw_only=True, frozen=True)
@@ -312,6 +307,16 @@ class SyncOptions:
     &#34;&#34;&#34;
     Configuration options necessary for handling chunking operations.
     If `None`, no chunking will be performed.
+    &#34;&#34;&#34;
+    output_path: Optional[str] = attrib(default=None)
+    &#34;&#34;&#34;
+    The path where to save resulting chunks as an hdf5 file.
+    If `None`, no serialization will be performed.
+    &#34;&#34;&#34;
+    diagnostic_plots: bool = attrib(default=True)
+    &#34;&#34;&#34;
+    Whether or not to show diagnostic plots, intended to help
+    the user in configuration evaluation and decision making.
     &#34;&#34;&#34;
 
 
@@ -801,7 +806,7 @@ If <code>None</code>, no serialization of the preprocessing results will be perf
 </dd>
 <dt id="nowcastlib.pipeline.structs.ChunkOptions"><code class="flex name class">
 <span>class <span class="ident">ChunkOptions</span></span>
-<span>(</span><span>*, min_gap_size: int, min_chunk_size: int, output_path: Union[str, NoneType] = None)</span>
+<span>(</span><span>*, min_gap_size: int, min_chunk_size: int)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Struct containing configuration attributes for chunking
@@ -826,11 +831,6 @@ a partially synchronized DataSet</p>
     &#34;&#34;&#34;
     The minimum length in seconds for contiguous block of data
     to be considered.
-    &#34;&#34;&#34;
-    output_path: Optional[str] = attrib(default=None)
-    &#34;&#34;&#34;
-    The path where to save resulting chunks as an hdf5 file.
-    If `None`, no serialization will be performed.
     &#34;&#34;&#34;</code></pre>
 </details>
 <h3>Class variables</h3>
@@ -845,16 +845,11 @@ large enough to not be ignored.</p></div>
 <div class="desc"><p>The minimum length in seconds for contiguous block of data
 to be considered.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.ChunkOptions.output_path"><code class="name">var <span class="ident">output_path</span> : Union[str, NoneType]</code></dt>
-<dd>
-<div class="desc"><p>The path where to save resulting chunks as an hdf5 file.
-If <code>None</code>, no serialization will be performed.</p></div>
-</dd>
 </dl>
 </dd>
 <dt id="nowcastlib.pipeline.structs.SyncOptions"><code class="flex name class">
 <span>class <span class="ident">SyncOptions</span></span>
-<span>(</span><span>*, sample_spacing: int, chunk_options: Union[<a title="nowcastlib.pipeline.structs.ChunkOptions" href="#nowcastlib.pipeline.structs.ChunkOptions">ChunkOptions</a>, NoneType] = None)</span>
+<span>(</span><span>*, sample_spacing: int, chunk_options: Union[<a title="nowcastlib.pipeline.structs.ChunkOptions" href="#nowcastlib.pipeline.structs.ChunkOptions">ChunkOptions</a>, NoneType] = None, output_path: Union[str, NoneType] = None, diagnostic_plots: bool = True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Struct containing configuration attributes for synchronizing
@@ -879,6 +874,16 @@ a DataSet</p>
     &#34;&#34;&#34;
     Configuration options necessary for handling chunking operations.
     If `None`, no chunking will be performed.
+    &#34;&#34;&#34;
+    output_path: Optional[str] = attrib(default=None)
+    &#34;&#34;&#34;
+    The path where to save resulting chunks as an hdf5 file.
+    If `None`, no serialization will be performed.
+    &#34;&#34;&#34;
+    diagnostic_plots: bool = attrib(default=True)
+    &#34;&#34;&#34;
+    Whether or not to show diagnostic plots, intended to help
+    the user in configuration evaluation and decision making.
     &#34;&#34;&#34;</code></pre>
 </details>
 <h3>Class variables</h3>
@@ -892,6 +897,16 @@ If <code>None</code>, no re-sampling will be performed.</p></div>
 <dd>
 <div class="desc"><p>Configuration options necessary for handling chunking operations.
 If <code>None</code>, no chunking will be performed.</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.SyncOptions.output_path"><code class="name">var <span class="ident">output_path</span> : Union[str, NoneType]</code></dt>
+<dd>
+<div class="desc"><p>The path where to save resulting chunks as an hdf5 file.
+If <code>None</code>, no serialization will be performed.</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.SyncOptions.diagnostic_plots"><code class="name">var <span class="ident">diagnostic_plots</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>Whether or not to show diagnostic plots, intended to help
+the user in configuration evaluation and decision making.</p></div>
 </dd>
 </dl>
 </dd>
@@ -1024,7 +1039,6 @@ If <code>None</code>, no synchronization will be performed</p></div>
 <ul class="">
 <li><code><a title="nowcastlib.pipeline.structs.ChunkOptions.min_gap_size" href="#nowcastlib.pipeline.structs.ChunkOptions.min_gap_size">min_gap_size</a></code></li>
 <li><code><a title="nowcastlib.pipeline.structs.ChunkOptions.min_chunk_size" href="#nowcastlib.pipeline.structs.ChunkOptions.min_chunk_size">min_chunk_size</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.ChunkOptions.output_path" href="#nowcastlib.pipeline.structs.ChunkOptions.output_path">output_path</a></code></li>
 </ul>
 </li>
 <li>
@@ -1032,6 +1046,8 @@ If <code>None</code>, no synchronization will be performed</p></div>
 <ul class="">
 <li><code><a title="nowcastlib.pipeline.structs.SyncOptions.sample_spacing" href="#nowcastlib.pipeline.structs.SyncOptions.sample_spacing">sample_spacing</a></code></li>
 <li><code><a title="nowcastlib.pipeline.structs.SyncOptions.chunk_options" href="#nowcastlib.pipeline.structs.SyncOptions.chunk_options">chunk_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.SyncOptions.output_path" href="#nowcastlib.pipeline.structs.SyncOptions.output_path">output_path</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.SyncOptions.diagnostic_plots" href="#nowcastlib.pipeline.structs.SyncOptions.diagnostic_plots">diagnostic_plots</a></code></li>
 </ul>
 </li>
 <li>

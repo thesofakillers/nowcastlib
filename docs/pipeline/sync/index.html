@@ -30,12 +30,85 @@
 <pre><code class="python">&#34;&#34;&#34;
 Functions for synchronizing data
 &#34;&#34;&#34;
+import sys
+import logging
 from typing import Optional, List
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from nowcastlib.pipeline import structs
 from nowcastlib.pipeline import preprocess
 from nowcastlib import datasets
+
+plt.ion()
+logger = logging.getLogger(__name__)
+
+
+def yes_or_no(question):
+    &#34;&#34;&#34;
+    Asks the user a yes or no question, parsing the answer
+    accordingly.
+    &#34;&#34;&#34;
+    while &#34;the answer is invalid&#34;:
+        reply = str(input(question + &#34; (y/n): &#34;)).lower().strip()
+        if reply[:1] == &#34;y&#34;:
+            return True
+        if reply[:1] == &#34;n&#34;:
+            return False
+        else:
+            print(&#34;Please enter either &#39;y&#39;/&#39;Y&#39; or &#39;n&#39;/&#39;N&#39;&#34;)
+
+
+def handle_diag_plots(
+    config: structs.SyncOptions, dataframes: List[pd.core.frame.DataFrame]
+):
+    &#34;&#34;&#34;
+    Produces plots that can aid the user in noticing mistakes
+    in their configuration before proceeding with the
+    synchronization process
+
+    Parameters
+    ----------
+    config : nowcastlib.pipeline.structs.SyncOptions
+    dataframes : list[pandas.core.frame.DataFrame]
+        The set of dataframes one wishes to synchronize.
+
+    Returns
+    -------
+    bool
+        whether the user wishes to continue with
+        running the pipeline or not
+    &#34;&#34;&#34;
+    n_samples = 10000
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
+    for i, data_df in enumerate(dataframes):
+        sample_spacing = data_df.index.to_series().diff()
+        data = sample_spacing.sample(n_samples).astype(&#34;timedelta64[s]&#34;)
+        weights = np.ones_like(data) / n_samples
+        ax.hist(
+            data,
+            bins=np.arange(150, step=1),
+            weights=weights,
+            label=&#34;DataSource {} sample spacing&#34;.format(i),
+            histtype=&#34;step&#34;,
+            linewidth=1.5,
+        )
+    ax.axvline(config.sample_spacing, color=&#34;black&#34;, label=&#34;Selected Sample Spacing&#34;)
+    ax.set_xlabel(&#34;Sample Spacing [s]&#34;)
+    ax.set_ylabel(&#34;Prevalence&#34;)
+    ax.set_title(
+        &#34;Sample spacing of {} random samples across the input Data Sources&#34;.format(
+            n_samples
+        )
+    )
+    ax.legend()
+    fig.set_tight_layout(True)
+    logger.info(&#34;Press any button to exit. Use mouse to zoom and resize&#34;)
+    while True:
+        plt.draw()
+        if plt.waitforbuttonpress():
+            break
+    return yes_or_no(&#34;Are you satisfied with the target sample rate?&#34;)
 
 
 def handle_chunking(
@@ -79,11 +152,6 @@ def handle_chunking(
     min_chunk_length = int(config.min_chunk_size / sample_spacing_secs)
     chunks = datasets.make_chunks(chunked_df, min_chunk_length)
 
-    if config.output_path is not None:
-        hdfs = pd.HDFStore(config.output_path)
-        for i, chunk in enumerate(chunks):
-            chunk.to_hdf(hdfs, &#34;chunk_{:d}&#34;.format(i), format=&#34;table&#34;)
-
     return chunks
 
 
@@ -118,9 +186,20 @@ def synchronize_dataset(
         data_dfs = preprocess.preprocess_dataset(config)
     else:
         data_dfs = dataset
-    # resample
+    logger.info(&#34;Synchronizing dataset...&#34;)
+
+    if sync_config.diagnostic_plots is not None:
+        continue_processing = handle_diag_plots(sync_config, data_dfs)
+        if continue_processing is False:
+            logger.info(
+                &#34;Closing program prematurely to allow for configuration changes&#34;
+            )
+            sys.exit()
+
+    total_dfs = len(data_dfs)
     resampled_dfs = []
-    for data_df in data_dfs:
+    for i, data_df in enumerate(data_dfs):
+        logger.debug(&#34;Resampling DataSource %d of %d...&#34;, i + 1, total_dfs)
         data_df.index.name = None
         offset_str = &#34;{}S&#34;.format(sync_config.sample_spacing)
         resampled_dfs.append(
@@ -129,13 +208,20 @@ def synchronize_dataset(
                 origin=data_df.index[0].floor(offset_str),
             ).mean()
         )
-    # finding overlapping range and joining into single dataframe
+    logger.debug(&#34;Finding overlapping range and joining into single dataframe...&#34;)
     synced_df = pd.concat(resampled_dfs, axis=1, join=&#34;inner&#34;)
     chunks = [synced_df]
     if sync_config.chunk_options is not None:
+        logger.debug(&#34;Splitting data into contiguous chunks...&#34;)
         chunks = handle_chunking(
             synced_df, sync_config.chunk_options, [df.columns[0] for df in data_dfs]
         )
+    if sync_config.output_path is not None:
+        logger.debug(&#34;Serializing resulting synchronization chunks...&#34;)
+        hdfs = pd.HDFStore(sync_config.output_path)
+        for i, chunk in enumerate(chunks):
+            chunk.to_hdf(hdfs, &#34;chunk_{:d}&#34;.format(i), format=&#34;table&#34;)
+
     return chunks</code></pre>
 </details>
 </section>
@@ -153,6 +239,107 @@ def synchronize_dataset(
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="nowcastlib.pipeline.sync.yes_or_no"><code class="name flex">
+<span>def <span class="ident">yes_or_no</span></span>(<span>question)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Asks the user a yes or no question, parsing the answer
+accordingly.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def yes_or_no(question):
+    &#34;&#34;&#34;
+    Asks the user a yes or no question, parsing the answer
+    accordingly.
+    &#34;&#34;&#34;
+    while &#34;the answer is invalid&#34;:
+        reply = str(input(question + &#34; (y/n): &#34;)).lower().strip()
+        if reply[:1] == &#34;y&#34;:
+            return True
+        if reply[:1] == &#34;n&#34;:
+            return False
+        else:
+            print(&#34;Please enter either &#39;y&#39;/&#39;Y&#39; or &#39;n&#39;/&#39;N&#39;&#34;)</code></pre>
+</details>
+</dd>
+<dt id="nowcastlib.pipeline.sync.handle_diag_plots"><code class="name flex">
+<span>def <span class="ident">handle_diag_plots</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.SyncOptions" href="../structs.html#nowcastlib.pipeline.structs.SyncOptions">SyncOptions</a>, dataframes: List[pandas.core.frame.DataFrame])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Produces plots that can aid the user in noticing mistakes
+in their configuration before proceeding with the
+synchronization process</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.SyncOptions" href="../structs.html#nowcastlib.pipeline.structs.SyncOptions">SyncOptions</a></code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>dataframes</code></strong> :&ensp;<code>list[pandas.core.frame.DataFrame]</code></dt>
+<dd>The set of dataframes one wishes to synchronize.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>bool</code></dt>
+<dd>whether the user wishes to continue with
+running the pipeline or not</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def handle_diag_plots(
+    config: structs.SyncOptions, dataframes: List[pd.core.frame.DataFrame]
+):
+    &#34;&#34;&#34;
+    Produces plots that can aid the user in noticing mistakes
+    in their configuration before proceeding with the
+    synchronization process
+
+    Parameters
+    ----------
+    config : nowcastlib.pipeline.structs.SyncOptions
+    dataframes : list[pandas.core.frame.DataFrame]
+        The set of dataframes one wishes to synchronize.
+
+    Returns
+    -------
+    bool
+        whether the user wishes to continue with
+        running the pipeline or not
+    &#34;&#34;&#34;
+    n_samples = 10000
+    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
+    for i, data_df in enumerate(dataframes):
+        sample_spacing = data_df.index.to_series().diff()
+        data = sample_spacing.sample(n_samples).astype(&#34;timedelta64[s]&#34;)
+        weights = np.ones_like(data) / n_samples
+        ax.hist(
+            data,
+            bins=np.arange(150, step=1),
+            weights=weights,
+            label=&#34;DataSource {} sample spacing&#34;.format(i),
+            histtype=&#34;step&#34;,
+            linewidth=1.5,
+        )
+    ax.axvline(config.sample_spacing, color=&#34;black&#34;, label=&#34;Selected Sample Spacing&#34;)
+    ax.set_xlabel(&#34;Sample Spacing [s]&#34;)
+    ax.set_ylabel(&#34;Prevalence&#34;)
+    ax.set_title(
+        &#34;Sample spacing of {} random samples across the input Data Sources&#34;.format(
+            n_samples
+        )
+    )
+    ax.legend()
+    fig.set_tight_layout(True)
+    logger.info(&#34;Press any button to exit. Use mouse to zoom and resize&#34;)
+    while True:
+        plt.draw()
+        if plt.waitforbuttonpress():
+            break
+    return yes_or_no(&#34;Are you satisfied with the target sample rate?&#34;)</code></pre>
+</details>
+</dd>
 <dt id="nowcastlib.pipeline.sync.handle_chunking"><code class="name flex">
 <span>def <span class="ident">handle_chunking</span></span>(<span>data_df: pandas.core.frame.DataFrame, config: <a title="nowcastlib.pipeline.structs.ChunkOptions" href="../structs.html#nowcastlib.pipeline.structs.ChunkOptions">ChunkOptions</a>, column_names: Union[List[str], NoneType] = None)</span>
 </code></dt>
@@ -221,11 +408,6 @@ of data</dd>
     min_chunk_length = int(config.min_chunk_size / sample_spacing_secs)
     chunks = datasets.make_chunks(chunked_df, min_chunk_length)
 
-    if config.output_path is not None:
-        hdfs = pd.HDFStore(config.output_path)
-        for i, chunk in enumerate(chunks):
-            chunk.to_hdf(hdfs, &#34;chunk_{:d}&#34;.format(i), format=&#34;table&#34;)
-
     return chunks</code></pre>
 </details>
 </dd>
@@ -286,9 +468,20 @@ of synchronized data</dd>
         data_dfs = preprocess.preprocess_dataset(config)
     else:
         data_dfs = dataset
-    # resample
+    logger.info(&#34;Synchronizing dataset...&#34;)
+
+    if sync_config.diagnostic_plots is not None:
+        continue_processing = handle_diag_plots(sync_config, data_dfs)
+        if continue_processing is False:
+            logger.info(
+                &#34;Closing program prematurely to allow for configuration changes&#34;
+            )
+            sys.exit()
+
+    total_dfs = len(data_dfs)
     resampled_dfs = []
-    for data_df in data_dfs:
+    for i, data_df in enumerate(data_dfs):
+        logger.debug(&#34;Resampling DataSource %d of %d...&#34;, i + 1, total_dfs)
         data_df.index.name = None
         offset_str = &#34;{}S&#34;.format(sync_config.sample_spacing)
         resampled_dfs.append(
@@ -297,13 +490,20 @@ of synchronized data</dd>
                 origin=data_df.index[0].floor(offset_str),
             ).mean()
         )
-    # finding overlapping range and joining into single dataframe
+    logger.debug(&#34;Finding overlapping range and joining into single dataframe...&#34;)
     synced_df = pd.concat(resampled_dfs, axis=1, join=&#34;inner&#34;)
     chunks = [synced_df]
     if sync_config.chunk_options is not None:
+        logger.debug(&#34;Splitting data into contiguous chunks...&#34;)
         chunks = handle_chunking(
             synced_df, sync_config.chunk_options, [df.columns[0] for df in data_dfs]
         )
+    if sync_config.output_path is not None:
+        logger.debug(&#34;Serializing resulting synchronization chunks...&#34;)
+        hdfs = pd.HDFStore(sync_config.output_path)
+        for i, chunk in enumerate(chunks):
+            chunk.to_hdf(hdfs, &#34;chunk_{:d}&#34;.format(i), format=&#34;table&#34;)
+
     return chunks</code></pre>
 </details>
 </dd>
@@ -330,6 +530,8 @@ of synchronized data</dd>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="nowcastlib.pipeline.sync.yes_or_no" href="#nowcastlib.pipeline.sync.yes_or_no">yes_or_no</a></code></li>
+<li><code><a title="nowcastlib.pipeline.sync.handle_diag_plots" href="#nowcastlib.pipeline.sync.handle_diag_plots">handle_diag_plots</a></code></li>
 <li><code><a title="nowcastlib.pipeline.sync.handle_chunking" href="#nowcastlib.pipeline.sync.handle_chunking">handle_chunking</a></code></li>
 <li><code><a title="nowcastlib.pipeline.sync.synchronize_dataset" href="#nowcastlib.pipeline.sync.synchronize_dataset">synchronize_dataset</a></code></li>
 </ul>

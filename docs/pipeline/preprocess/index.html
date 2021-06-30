@@ -30,9 +30,12 @@
 <pre><code class="python">&#34;&#34;&#34;
 Functions for pre-processing of data.
 &#34;&#34;&#34;
+import logging
 from typing import Union
 import pandas as pd
 from nowcastlib.pipeline import structs
+
+logger = logging.getLogger(__name__)
 
 
 def handle_smoothing(
@@ -168,7 +171,9 @@ def preprocess_datasource(config: structs.DataSource):
     pandas.core.frame.DataFrame
         the resulting processed dataframe
     &#34;&#34;&#34;
+    logger.debug(&#34;Preprocessing %s...&#34;, config.name)
     index_field = next(field for field in config.fields if field.is_date)
+    logger.debug(&#34;Reading file...&#34;)
     data_df = pd.read_csv(
         config.path,
         usecols=[field.field_name for field in config.fields],
@@ -180,30 +185,36 @@ def preprocess_datasource(config: structs.DataSource):
     data_df = data_df[~data_df.index.duplicated(keep=&#34;last&#34;)]
     data_df.sort_index(inplace=True)
     for field in config.fields:
+        logger.debug(&#34;Processing field %s of %s...&#34;, field.field_name, config.name)
         options = field.preprocessing_options
         if options is not None:
             # next two lines handle whether user wishes to overwrite field or not
             computed_field_name = build_field_name(options, field.field_name)
             data_df[computed_field_name] = data_df[field.field_name].copy()
             if options.outlier_options is not None:
+                logger.debug(&#34;Dropping outliers...&#34;)
                 data_df[computed_field_name] = drop_outliers(
                     data_df[computed_field_name], options.outlier_options
                 )
             if options.periodic_options is not None:
+                logger.debug(&#34;Normalizing periodic ranges...&#34;)
                 data_df[computed_field_name] = handle_periodic(
                     data_df[computed_field_name], options.periodic_options
                 )
             if options.conversion_options is not None:
+                logger.debug(&#34;Converting units...&#34;)
                 data_df[computed_field_name] = options.conversion_options.conv_func(
                     data_df[computed_field_name]
                 )
             if options.smooth_options is not None:
+                logger.debug(&#34;Applying moving average for smoothing...&#34;)
                 data_df[computed_field_name] = handle_smoothing(
                     data_df[computed_field_name], options.smooth_options
                 )
-    # drop all rows with NaNs, as final step
+    logger.debug(&#34;Dropping outliers...&#34;)
     data_df = data_df.dropna()
     if config.preprocessing_output is not None:
+        logger.debug(&#34;Serializing preprocessing output...&#34;)
         handle_serialization(data_df, config.preprocessing_output)
     return data_df
 
@@ -222,6 +233,7 @@ def preprocess_dataset(config: structs.DataSet):
     list[pandas.core.frame.DataFrame]
         list containing each of the resulting processed dataframes
     &#34;&#34;&#34;
+    logger.info(&#34;Preprocessing dataset...&#34;)
     processed_dfs = []
     for ds_config in config.data_sources:
         processed_dfs.append(preprocess_datasource(ds_config))
@@ -494,7 +506,9 @@ in the input DataSource instance.</p>
     pandas.core.frame.DataFrame
         the resulting processed dataframe
     &#34;&#34;&#34;
+    logger.debug(&#34;Preprocessing %s...&#34;, config.name)
     index_field = next(field for field in config.fields if field.is_date)
+    logger.debug(&#34;Reading file...&#34;)
     data_df = pd.read_csv(
         config.path,
         usecols=[field.field_name for field in config.fields],
@@ -506,30 +520,36 @@ in the input DataSource instance.</p>
     data_df = data_df[~data_df.index.duplicated(keep=&#34;last&#34;)]
     data_df.sort_index(inplace=True)
     for field in config.fields:
+        logger.debug(&#34;Processing field %s of %s...&#34;, field.field_name, config.name)
         options = field.preprocessing_options
         if options is not None:
             # next two lines handle whether user wishes to overwrite field or not
             computed_field_name = build_field_name(options, field.field_name)
             data_df[computed_field_name] = data_df[field.field_name].copy()
             if options.outlier_options is not None:
+                logger.debug(&#34;Dropping outliers...&#34;)
                 data_df[computed_field_name] = drop_outliers(
                     data_df[computed_field_name], options.outlier_options
                 )
             if options.periodic_options is not None:
+                logger.debug(&#34;Normalizing periodic ranges...&#34;)
                 data_df[computed_field_name] = handle_periodic(
                     data_df[computed_field_name], options.periodic_options
                 )
             if options.conversion_options is not None:
+                logger.debug(&#34;Converting units...&#34;)
                 data_df[computed_field_name] = options.conversion_options.conv_func(
                     data_df[computed_field_name]
                 )
             if options.smooth_options is not None:
+                logger.debug(&#34;Applying moving average for smoothing...&#34;)
                 data_df[computed_field_name] = handle_smoothing(
                     data_df[computed_field_name], options.smooth_options
                 )
-    # drop all rows with NaNs, as final step
+    logger.debug(&#34;Dropping outliers...&#34;)
     data_df = data_df.dropna()
     if config.preprocessing_output is not None:
+        logger.debug(&#34;Serializing preprocessing output...&#34;)
         handle_serialization(data_df, config.preprocessing_output)
     return data_df</code></pre>
 </details>
@@ -568,6 +588,7 @@ in the input DataSet instance.</p>
     list[pandas.core.frame.DataFrame]
         list containing each of the resulting processed dataframes
     &#34;&#34;&#34;
+    logger.info(&#34;Preprocessing dataset...&#34;)
     processed_dfs = []
     for ds_config in config.data_sources:
         processed_dfs.append(preprocess_datasource(ds_config))
