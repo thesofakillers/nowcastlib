@@ -182,7 +182,7 @@ def preprocess_datasource(config: structs.DataSource):
                 data_df[computed_field_name] = handle_smoothing(
                     data_df[computed_field_name], options.smooth_options
                 )
-    logger.debug("Dropping outliers...")
+    logger.debug("Dropping NaNs...")
     data_df = data_df.dropna()
     if config.preprocessing_output is not None:
         logger.debug("Serializing preprocessing output...")
