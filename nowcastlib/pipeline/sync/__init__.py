@@ -159,7 +159,7 @@ def synchronize_dataset(
         data_dfs = dataset
     logger.info("Synchronizing dataset...")
 
-    if sync_config.diagnostic_plots is not None:
+    if sync_config.diagnostic_plots is not False:
         continue_processing = handle_diag_plots(sync_config, data_dfs)
         if continue_processing is False:
             logger.info(
