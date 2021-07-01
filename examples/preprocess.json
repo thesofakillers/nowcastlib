@@ -1,0 +1,45 @@
+{
+  "data_sources": [
+    {
+      "name": "lco_wind",
+      "path": "data/LCO/lascampanas_wind.csv",
+      "fields": [
+        { "field_name": "vtm", "is_date": true },
+        {
+          "field_name": "wind_speed",
+          "preprocessing_options": {
+            "outlier_options": { "upper": 200, "quantile_based": false },
+            "conversion_options": { "key": "mph2ms" },
+            "overwrite": true
+          }
+        },
+        {
+          "field_name": "wind_dir",
+          "preprocessing_options": {
+            "outlier_options": {
+              "quantile_based": false,
+              "lower": 0,
+              "upper": 720
+            },
+            "periodic_options": { "period_length": 360 },
+            "conversion_options": { "key": "deg2rad" },
+            "overwrite": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "lco_dimm",
+      "path": "data/LCO/lascampanas_dimm.csv",
+      "fields": [
+        { "field_name": "tsd", "is_date": true },
+        {
+          "field_name": "FWHM",
+          "preprocessing_options": {
+            "overwrite": true
+          }
+        }
+      ]
+    }
+  ]
+}

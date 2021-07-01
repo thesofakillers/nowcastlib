@@ -20,7 +20,6 @@ def configure_parser(action_object):
         "-c",
         "--config",
         required=True,
-        is_config_file=True,
         help="path to JSON file following the DataSet format. See docs for available fields",
     )
 
