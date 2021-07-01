@@ -1,0 +1,29 @@
+{
+  "data_sources": [
+    {
+      "name": "lco_wind",
+      "path": "data/LCO/lascampanas_wind.csv",
+      "fields": [
+        { "field_name": "vtm", "is_date": true },
+        { "field_name": "wind_speed" },
+        { "field_name": "wind_dir" }
+      ]
+    },
+    {
+      "name": "lco_dimm",
+      "path": "data/LCO/lascampanas_dimm.csv",
+      "fields": [
+        { "field_name": "tsd", "is_date": true },
+        { "field_name": "FWHM" }
+      ]
+    }
+  ],
+  "sync_options": {
+    "sample_spacing": 60,
+    "chunk_options": {
+      "min_chunk_size": 7200,
+      "min_gap_size": 600
+    },
+    "diagnostic_plots": false
+  }
+}
