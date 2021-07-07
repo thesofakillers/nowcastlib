@@ -246,10 +246,9 @@ class ChunkOptions:
     a partially synchronized DataSet
     """
 
-    min_gap_size: int = attrib()
+    max_gap_size: int = attrib()
     """
-    The minimum amount of time in seconds for a gap to be considered
-    large enough to not be ignored.
+    The maximum amount of time in seconds for a gap to be ignored
     """
     min_chunk_size: int = attrib()
     """
@@ -270,15 +269,14 @@ class SyncOptions:
     The desired amount of time in seconds between each sample.
     If `None`, no re-sampling will be performed.
     """
-    chunk_options: Optional[ChunkOptions] = attrib(default=None)
+    chunk_options: ChunkOptions = attrib()
     """
     Configuration options necessary for handling chunking operations.
-    If `None`, no chunking will be performed.
     """
-    output_path: Optional[str] = attrib(default=None)
+    output_options: Optional[SerializationOptions] = attrib(default=None)
     """
-    The path where to save resulting chunks as an hdf5 file.
-    If `None`, no serialization will be performed.
+    Configuration options for saving the preprocessing results to disk.
+    If `None`, no serialization of the preprocessing results will be performed.
     """
     diagnostic_plots: bool = attrib(default=True)
     """

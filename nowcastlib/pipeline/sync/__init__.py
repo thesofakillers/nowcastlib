@@ -9,6 +9,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from nowcastlib.pipeline import structs
 from nowcastlib.pipeline import preprocess
+from nowcastlib.pipeline import utils
 from nowcastlib import datasets
 
 plt.ion()
@@ -88,9 +89,8 @@ def handle_chunking(
     column_names: Optional[List[str]] = None,
 ):
     """
-    Finds overlapping chunks of data in a sparse dataframe,
-    taking into account gap size preferences. Optionally
-    serializes the results.
+    Finds overlapping chunks of data across dataframe columns,
+    taking into account gap size preferences.
 
     Parameters
     ----------
@@ -104,26 +104,29 @@ def handle_chunking(
 
     Returns
     -------
-    list[pandas.core.frame.DataFrame]
-        a list where each elements corresponds to a contiguous chunk
-        of data
+    pandas.core.frame.DataFrame
+        The resulting dataframe, rows where not
+        all columns contained data now contain NaN
+        across all columns, depending on gap preferences.
+    numpy.ndarray
+        2D numpy array containing the start and end
+        integer indices of the contiguous chunks of data
+        in the input dataframe. Shape is (-1, 2).
     """
     # find overlapping data, ignoring small gaps
     sample_spacing_secs = data_df.index.freq.delta.seconds
-    max_spacing_steps = np.floor((config.min_gap_size / sample_spacing_secs)).astype(
+    max_spacing_steps = np.floor((config.max_gap_size / sample_spacing_secs)).astype(
         int
     )
-    final_mask = datasets.compute_dataframe_mask(
-        data_df, max_spacing_steps, 0, column_names
+    min_chunk_length = int(config.min_chunk_size / sample_spacing_secs)
+    final_mask, chunk_locs = datasets.compute_dataframe_mask(
+        data_df, max_spacing_steps, min_chunk_length, 0, column_names
     )
     # imputing gaps, restoring large gaps
     interpolated_df = data_df.interpolate("linear", limit_direction="both")
     chunked_df = interpolated_df.where(final_mask)  # type: ignore
-    # extracting contiguous chunks from data
-    min_chunk_length = int(config.min_chunk_size / sample_spacing_secs)
-    chunks = datasets.make_chunks(chunked_df, min_chunk_length)
 
-    return chunks
+    return chunked_df, chunk_locs
 
 
 def synchronize_dataset(
@@ -181,16 +184,11 @@ def synchronize_dataset(
         )
     logger.debug("Finding overlapping range and joining into single dataframe...")
     synced_df = pd.concat(resampled_dfs, axis=1, join="inner")
-    chunks = [synced_df]
-    if sync_config.chunk_options is not None:
-        logger.debug("Splitting data into contiguous chunks...")
-        chunks = handle_chunking(
-            synced_df, sync_config.chunk_options, [df.columns[0] for df in data_dfs]
-        )
-    if sync_config.output_path is not None:
-        logger.debug("Serializing resulting synchronization chunks...")
-        hdfs = pd.HDFStore(sync_config.output_path)
-        for i, chunk in enumerate(chunks):
-            chunk.to_hdf(hdfs, "chunk_{:d}".format(i), format="table")
-
-    return chunks
+    logger.debug("Splitting data into contiguous chunks...")
+    chunked_df, chunk_locs = handle_chunking(
+        synced_df, sync_config.chunk_options, [df.columns[0] for df in data_dfs]
+    )
+    if sync_config.output_options is not None:
+        logger.debug("Serializing chunked dataframe...")
+        utils.handle_serialization(chunked_df, sync_config.output_options)
+    return chunked_df, chunk_locs

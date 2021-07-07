@@ -113,11 +113,116 @@ def compute_large_gap_mask(data_array, max_gap):
             diff[final_nan_check] = max_gap + 1
         else:
             diff[final_nan_check] = 0
-    # finally compute mask: False where large gaps - True elsewhere
+    # finally compute mask: False where large gaps, True elsewhere
     return (diff < max_gap) | ~isnan
 
 
-def compute_dataframe_mask(input_df, max_gap, additional_cols_n=0, column_names=None):
+def contiguous_regions(input_array):
+    """
+    Finds the start and end indices of contiguous `True`
+    regions in the input array.
+
+    Parameters
+    ----------
+    input_array : numpy.ndarray
+        1D input boolean numpy array
+
+    Returns
+    -------
+    numpy.ndarray
+        2D numpy array containing the start and end
+        indices of the contiguous regions of `True`
+        in the input array. Shape is (-1, 2).
+
+    Notes
+    -----
+    Credit: https://stackoverflow.com/a/4495197/9889508
+    """
+    # Find the indices of changes
+    (idx,) = np.diff(input_array).nonzero()
+    # need to shift indices to the right since we are interested in _after_ changes
+    idx += 1
+    if input_array[0]:
+        # If the start of condition is True prepend a 0
+        idx = np.r_[0, idx]
+    if input_array[-1]:
+        # If the end of condition is True, append the length of the array
+        idx = np.r_[idx, input_array.size]  # Edit
+    # Reshape the result into two colums
+    idx.shape = (-1, 2)
+    return idx
+
+
+def fill_start_end(start, end):
+    """
+    Given NumPy arrays of start and end indices
+    returns an array containing all indices between
+    each of the start and end indices, including the
+    start indices.
+
+    Examples
+    --------
+    >>> starts = np.array([1,7,20])
+    >>> ends = np.array([3,10,25])
+    >>> fill_start_end(starts, ends)
+    array([ 1,  2,  7,  8,  9, 20, 21, 22, 23, 24])
+
+    Notes
+    -----
+    Credit: https://stackoverflow.com/a/4708737/9889508
+    """
+    cml_lens = (end - start).cumsum()
+    # initialize indices; resulting array will be length of cumulative sum of lengths
+    idx = np.ones(cml_lens[-1], dtype=int)
+    idx[0] = start[0]
+    # computing 'break' indices
+    idx[cml_lens[:-1]] += start[1:] - end[:-1]
+    # finally take cumulative sum to compute indices in between
+    idx = idx.cumsum()
+    return idx
+
+
+def filter_contiguous_regions(bool_array, true_locs, min_length):
+    """
+    Given a boolean array, removes contiguous `True`
+    regions too short (by setting them to `False`)
+
+    Parameters
+    ----------
+    bool_array : numpy.ndarray
+        1D NumPy array of booleans
+    true_locs : numpy.ndarray
+        (-1, 2) NumPy array containing the start and end
+        indices of each contiguous region of `True`s
+    min_length : int
+        The minimum length necessary for a contiguous
+        region of `True`s to be considered one
+
+    Returns
+    -------
+    numpy.ndarray
+        resulting 1D filtered boolean array
+    numpy.ndarray
+        (-1, 2) numpy array containing the filtered
+        contiguous region start and end indices
+    """
+    lengths = true_locs[:, 1] - true_locs[:, 0]
+    # mask for which starts and stops to keep
+    mask = lengths >= min_length
+    remove_starts, remove_ends = true_locs[~mask].T
+    # get all indices between the start and stops to remove, so to set these as False
+    additional_false_idxs = fill_start_end(remove_starts, remove_ends)
+    # "filter" the boolean array by setting the computed indices to False
+    filtered_array = bool_array.copy()
+    filtered_array[additional_false_idxs] = False
+    # use previously computed mask to filter the location array too
+    filtered_locs = true_locs[mask]
+    return filtered_array, filtered_locs
+
+
+def compute_dataframe_mask(
+    input_df, max_gap, min_length, additional_cols_n=0, column_names=None
+):
     """Computes a mask (numpy.ndarray with dtype=boolean) shaped like `input_df` outlining
     where _all_ columns overlap (i.e. are not NaN), ignoring data gaps smaller than
     `max_gap`
@@ -129,6 +234,8 @@ def compute_dataframe_mask(input_df, max_gap, additional_cols_n=0, column_names=
     max_gap : int
         The maximum number of consecutive NaNs that we ignore before considering this
         a gap
+    min_length : int
+        The minimum length for a contiguous chunk of data to be considered one
     additional_cols_n : int, default 0
         The number of additional columns that may be computed before applying the mask,
         and therefore need to be considered such that the mask shape matches the
@@ -142,6 +249,9 @@ def compute_dataframe_mask(input_df, max_gap, additional_cols_n=0, column_names=
     numpy.ndarray
         2-dimensional (tiled) numpy array of the same shape as data_df, to be used as
         an argument to pandas.core.frame.DataFrame.where() or .mask()
+    numpy.ndarray
+        (-1, 2) numpy array containing the filtered
+        contiguous region start and end indices
 
     Notes
     -----
@@ -158,23 +268,32 @@ def compute_dataframe_mask(input_df, max_gap, additional_cols_n=0, column_names=
         gap_masks.append(mask)
     # find the intersection of all these masks, to only keep overlapping points
     computed_mask = np.logical_and.reduce(gap_masks)
+    # where are the contiguous chunks in the mask?
+    chunk_locations = contiguous_regions(computed_mask)
+    # filter mask and chunk_locs: get rid of contiguous chunks that are too short
+    computed_mask, chunk_locations = filter_contiguous_regions(
+        computed_mask, chunk_locations, min_length
+    )
     # we need to reshape our final_mask such that it matches our data_df's shape.
     computed_mask = np.tile(
         computed_mask, (len(input_df.columns) + additional_cols_n, 1)
     ).transpose()
-    return computed_mask
+    # include chunk_locations in return in case we need to re-use them
+    return computed_mask, chunk_locations
 
 
-def make_chunks(input_df, min_length):
-    """Given a sparse pandas DataFrame (i.e. data interrupted by NaNs), splits the
-    DataFrame into the non-sparse chunks.
+def make_chunks(input_df, chunk_locations=None):
+    """
+    Given a sparse pandas DataFrame (i.e. data interrupted by NaNs),
+    splits the DataFrame into the non-sparse chunks.
 
     Parameters
     ----------
     input_df : pandas.core.frame.DataFrame
         The sparse dataframe we wish to process
-    min_length : int
-        The minimum length a portion of data must be to be considered a chunk
+    chunk_locations : np.ndarray, default None
+        2D numpy array with the pre-computed chunk start
+        and end indices. Shape is (-1, 2). Optional.
 
     Returns
     -------
@@ -182,16 +301,16 @@ def make_chunks(input_df, min_length):
         A list, where each element is a DataFrame corresponding to a chunk of the
         original
     """
-    sparse_ts = input_df.iloc[:, 0].astype(pd.SparseDtype("float"))
-    # extract block length and locations
-    block_locs = zip(
-        sparse_ts.values.sp_index.to_block_index().blocs,
-        sparse_ts.values.sp_index.to_block_index().blengths,
-    )
+    # need to compute chunk_locations if not provided
+    if chunk_locations is None:
+        sparse_ts = input_df.iloc[:, 0].astype(pd.SparseDtype("float"))
+        # extract block length and locations
+        starts = sparse_ts.values.sp_index.to_block_index().blocs
+        lengths = sparse_ts.values.sp_index.to_block_index().blengths
+        ends = starts + lengths
+        block_locs = np.array((starts, ends)).T
+    else:
+        block_locs = chunk_locations
     # use these to index our dataframe and populate our chunk list
-    blocks = [
-        input_df.iloc[start : (start + length - 1)]
-        for (start, length) in block_locs
-        if length >= min_length
-    ]
+    blocks = [input_df.iloc[start:end] for (start, end) in block_locs]
     return blocks
