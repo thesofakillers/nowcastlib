@@ -5,6 +5,7 @@ import logging
 from typing import Union
 import pandas as pd
 from nowcastlib.pipeline import structs
+from nowcastlib.pipeline import utils
 
 logger = logging.getLogger(__name__)
 
@@ -116,18 +117,6 @@ def build_field_name(config: structs.ProcessingOptions, field_name: str):
     return computed_field_name
 
 
-def handle_serialization(
-    data_df: pd.core.frame.DataFrame, config: structs.SerializationOptions
-):
-    """
-    Serializes a given dataframe to disk in the appropriate format
-    """
-    if config.output_format == "csv":
-        data_df.to_csv(config.output_path, float_format="%g")
-    elif config.output_format == "pickle":
-        data_df.to_pickle(config.output_path)
-
-
 def preprocess_datasource(config: structs.DataSource):
     """
     Runs preprocessing on a given data source given options outlined
@@ -186,7 +175,7 @@ def preprocess_datasource(config: structs.DataSource):
     data_df = data_df.dropna()
     if config.preprocessing_output is not None:
         logger.debug("Serializing preprocessing output...")
-        handle_serialization(data_df, config.preprocessing_output)
+        utils.handle_serialization(data_df, config.preprocessing_output)
     return data_df
 
 
