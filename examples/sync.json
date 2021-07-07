@@ -22,7 +22,7 @@
     "sample_spacing": 60,
     "chunk_options": {
       "min_chunk_size": 7200,
-      "min_gap_size": 600
+      "max_gap_size": 600
     },
     "diagnostic_plots": false
   }

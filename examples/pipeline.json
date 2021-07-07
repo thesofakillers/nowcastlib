@@ -46,8 +46,11 @@
     "sample_spacing": 60,
     "chunk_options": {
       "min_chunk_size": 7200,
-      "min_gap_size": 600,
-      "output_path": "./output/pipeline.hdf5"
+      "max_gap_size": 600,
+      "output_options": {
+       "output_format":"pickle", 
+        "output_path":"./output/pipeline.pkl"
+      }
     }
   }
 }

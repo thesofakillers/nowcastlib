@@ -34,6 +34,7 @@ import logging
 from typing import Union
 import pandas as pd
 from nowcastlib.pipeline import structs
+from nowcastlib.pipeline import utils
 
 logger = logging.getLogger(__name__)
 
@@ -145,18 +146,6 @@ def build_field_name(config: structs.ProcessingOptions, field_name: str):
     return computed_field_name
 
 
-def handle_serialization(
-    data_df: pd.core.frame.DataFrame, config: structs.SerializationOptions
-):
-    &#34;&#34;&#34;
-    Serializes a given dataframe to disk in the appropriate format
-    &#34;&#34;&#34;
-    if config.output_format == &#34;csv&#34;:
-        data_df.to_csv(config.output_path, float_format=&#34;%g&#34;)
-    elif config.output_format == &#34;pickle&#34;:
-        data_df.to_pickle(config.output_path)
-
-
 def preprocess_datasource(config: structs.DataSource):
     &#34;&#34;&#34;
     Runs preprocessing on a given data source given options outlined
@@ -211,11 +200,11 @@ def preprocess_datasource(config: structs.DataSource):
                 data_df[computed_field_name] = handle_smoothing(
                     data_df[computed_field_name], options.smooth_options
                 )
-    logger.debug(&#34;Dropping outliers...&#34;)
+    logger.debug(&#34;Dropping NaNs...&#34;)
     data_df = data_df.dropna()
     if config.preprocessing_output is not None:
         logger.debug(&#34;Serializing preprocessing output...&#34;)
-        handle_serialization(data_df, config.preprocessing_output)
+        utils.handle_serialization(data_df, config.preprocessing_output)
     return data_df
 
 
@@ -451,27 +440,6 @@ the user wishes to overwrite the current field or not</p>
     return computed_field_name</code></pre>
 </details>
 </dd>
-<dt id="nowcastlib.pipeline.preprocess.handle_serialization"><code class="name flex">
-<span>def <span class="ident">handle_serialization</span></span>(<span>data_df: pandas.core.frame.DataFrame, config: <a title="nowcastlib.pipeline.structs.SerializationOptions" href="../structs.html#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Serializes a given dataframe to disk in the appropriate format</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def handle_serialization(
-    data_df: pd.core.frame.DataFrame, config: structs.SerializationOptions
-):
-    &#34;&#34;&#34;
-    Serializes a given dataframe to disk in the appropriate format
-    &#34;&#34;&#34;
-    if config.output_format == &#34;csv&#34;:
-        data_df.to_csv(config.output_path, float_format=&#34;%g&#34;)
-    elif config.output_format == &#34;pickle&#34;:
-        data_df.to_pickle(config.output_path)</code></pre>
-</details>
-</dd>
 <dt id="nowcastlib.pipeline.preprocess.preprocess_datasource"><code class="name flex">
 <span>def <span class="ident">preprocess_datasource</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.DataSource" href="../structs.html#nowcastlib.pipeline.structs.DataSource">DataSource</a>)</span>
 </code></dt>
@@ -546,11 +514,11 @@ in the input DataSource instance.</p>
                 data_df[computed_field_name] = handle_smoothing(
                     data_df[computed_field_name], options.smooth_options
                 )
-    logger.debug(&#34;Dropping outliers...&#34;)
+    logger.debug(&#34;Dropping NaNs...&#34;)
     data_df = data_df.dropna()
     if config.preprocessing_output is not None:
         logger.debug(&#34;Serializing preprocessing output...&#34;)
-        handle_serialization(data_df, config.preprocessing_output)
+        utils.handle_serialization(data_df, config.preprocessing_output)
     return data_df</code></pre>
 </details>
 </dd>
@@ -622,7 +590,6 @@ in the input DataSet instance.</p>
 <li><code><a title="nowcastlib.pipeline.preprocess.handle_periodic" href="#nowcastlib.pipeline.preprocess.handle_periodic">handle_periodic</a></code></li>
 <li><code><a title="nowcastlib.pipeline.preprocess.drop_outliers" href="#nowcastlib.pipeline.preprocess.drop_outliers">drop_outliers</a></code></li>
 <li><code><a title="nowcastlib.pipeline.preprocess.build_field_name" href="#nowcastlib.pipeline.preprocess.build_field_name">build_field_name</a></code></li>
-<li><code><a title="nowcastlib.pipeline.preprocess.handle_serialization" href="#nowcastlib.pipeline.preprocess.handle_serialization">handle_serialization</a></code></li>
 <li><code><a title="nowcastlib.pipeline.preprocess.preprocess_datasource" href="#nowcastlib.pipeline.preprocess.preprocess_datasource">preprocess_datasource</a></code></li>
 <li><code><a title="nowcastlib.pipeline.preprocess.preprocess_dataset" href="#nowcastlib.pipeline.preprocess.preprocess_dataset">preprocess_dataset</a></code></li>
 </ul>
