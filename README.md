@@ -52,16 +52,18 @@ Some of the library's functionality is bundled in configurable subcommands
 accessible via the terminal with the command `nowcastlib`:
 
 ```console
-usage: nowcastlib [-h] {triangulate,chunksync} ...
+usage: nowcastlib [-h] [-v] {triangulate,preprocess,sync} ...
 
 positional arguments:
-  {triangulate,chunksync}
+  {triangulate,preprocess,sync}
                         available commands
     triangulate         Run `nowcastlib triangulate -h` for further help
-    chunksync           Run `nowcastlib chunksync -h` for further help
+    preprocess          Run `nowcastlib preprocess -h` for further help
+    sync                Run `nowcastlib sync -h` for further help
 
 optional arguments:
   -h, --help            show this help message and exit
+  -v, --verbose         increase verbosity level from INFO to DEBUG
 ```
 
 ## Development Setup
