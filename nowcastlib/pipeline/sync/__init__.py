@@ -188,7 +188,10 @@ def synchronize_dataset(
     chunked_df, chunk_locs = handle_chunking(
         synced_df, sync_config.chunk_options, [df.columns[0] for df in data_dfs]
     )
-    if sync_config.output_options is not None:
+    if sync_config.data_output is not None:
         logger.debug("Serializing chunked dataframe...")
-        utils.handle_serialization(chunked_df, sync_config.output_options)
+        utils.handle_serialization(chunked_df, sync_config.data_output)
+    if sync_config.chunks_output is not None:
+        logger.debug("Serializing chunk locations...")
+        utils.handle_serialization(chunk_locs, sync_config.chunks_output)
     return chunked_df, chunk_locs

@@ -24,6 +24,14 @@
       "min_chunk_size": 7200,
       "max_gap_size": 600
     },
+    "data_output":{
+      "output_format":"csv",
+      "output_path":"some/random/path.csv"
+    },
+    "chunks_output":{
+      "output_format":"csv",
+      "output_path":"some/random/path.csv"
+    },
     "diagnostic_plots": false
   }
 }

@@ -9,6 +9,17 @@ import numpy as np
 import pandas as pd
 
 
+def _enforce_npy(instance, attribute, value):
+    """ensures that the `output_format` key is `npy`"""
+    if value is not None and value.output_format != "npy":
+        raise ValueError(
+            "'{0}'.output_path of the '{1}' instance needs to be `npy`"
+            " A value of `{2}` was passed instead.".format(
+                attribute.name, instance.__class__.__name__, value.output_format
+            )
+        )
+
+
 def _normed_val(instance, attribute, value):
     """Checks whether a given value is between 0 and 1"""
     if not 0 <= value <= 1:
@@ -102,7 +113,7 @@ class SmoothOptions:
     """
     What units `window_size` is given in. Should be compatible with
     [pandas offset aliases](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
-    If `None`, `window_size` refers to the number of samples comprising a window.
+    \nIf `None`, `window_size` refers to the number of samples comprising a window.
     """
 
     @units.validator
@@ -139,27 +150,27 @@ class ProcessingOptions:
     """
     Configuration options for specifying which outliers to drop.
     Is performed before any unit conversion.
-    If `None`, no outlier removal is performed.
+    \nIf `None`, no outlier removal is performed.
     """
     periodic_options: Optional[PeriodicOptions] = attrib(default=None)
     """
     Configuration options for treating data that is periodic in nature,
     such as normalizing the desired range of values.
     Is performed before any unit conversion.
-    If `None`, no processing in this regard is performed.
+    \nIf `None`, no processing in this regard is performed.
     """
     conversion_options: Optional[ConversionOptions] = attrib(
         default=None,
     )
     """
     Configuration options for converting a field from one unit to another
-    If `None`, no conversion is performed.
+    \nIf `None`, no conversion is performed.
     """
     smooth_options: Optional[SmoothOptions] = attrib(default=None)
     """
     Configuration options for smoothing the field.
     Is performed at the end of all other processing.
-    If `None`, no smoothing is performed.
+    \nIf `None`, no smoothing is performed.
     """
 
 
@@ -179,12 +190,12 @@ class DataField:
     preprocessing_options: Optional[ProcessingOptions] = attrib(default=None)
     """
     Configuration options for how to pre-process the field
-    If `None`, no preprocessing will be performed.
+    \nIf `None`, no preprocessing will be performed.
     """
     postprocessing_options: Optional[ProcessingOptions] = attrib(default=None)
     """
     Configuration options for how to post-process the field
-    If `None`, no post-processing will be performed.
+    \nIf `None`, no post-processing will be performed.
     """
 
 
@@ -195,7 +206,7 @@ class SerializationOptions:
     serializing a given DataSource to disk
     """
 
-    output_format: str = attrib(validator=validators.in_(["csv", "pickle"]))
+    output_format: str = attrib(validator=validators.in_(["csv", "pickle", "npy"]))
     """
     One of 'csv', or 'pickle' to specify what format
     to save the DataSource as
@@ -225,7 +236,7 @@ class DataSource:
     preprocessing_output: Optional[SerializationOptions] = attrib(default=None)
     """
     Configuration options for saving the preprocessing results to disk.
-    If `None`, no serialization of the preprocessing results will be performed.
+    \nIf `None`, no serialization of the preprocessing results will be performed.
     """
 
     @fields.validator
@@ -267,16 +278,26 @@ class SyncOptions:
     sample_spacing: int = attrib()
     """
     The desired amount of time in seconds between each sample.
-    If `None`, no re-sampling will be performed.
+    \nIf `None`, no re-sampling will be performed.
     """
     chunk_options: ChunkOptions = attrib()
     """
     Configuration options necessary for handling chunking operations.
     """
-    output_options: Optional[SerializationOptions] = attrib(default=None)
+    data_output: Optional[SerializationOptions] = attrib(default=None)
     """
-    Configuration options for saving the preprocessing results to disk.
-    If `None`, no serialization of the preprocessing results will be performed.
+    Configuration options for saving the resulting
+    synchronized dataframe to disk.
+    \nIf `None`, no serialization of the preprocessing results will be performed.
+    """
+    chunks_output: Optional[SerializationOptions] = attrib(
+        default=None, validator=_enforce_npy
+    )
+    """
+    Configuration options for saving the detected
+    chunk locations to disk. Only 'npy' output_format
+    is accepted.
+    \nIf `None`, no serialization of the preprocessing results will be performed.
     """
     diagnostic_plots: bool = attrib(default=True)
     """
@@ -300,5 +321,5 @@ class DataSet:
     sync_options: Optional[SyncOptions] = attrib(default=None)
     """
     Configurations options for synchronizing the `data_sources`.
-    If `None`, no synchronization will be performed
+    \nIf `None`, no synchronization will be performed
     """
