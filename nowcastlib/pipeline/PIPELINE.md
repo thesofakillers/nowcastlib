@@ -39,8 +39,7 @@ this case a synchronization process would want to keep the data only when all
 data sources overlap. This leaves large chunks between overlaps, as well as
 smaller ones due to differences in sample rates.
 
-Handling these two edge case allow us to handle all other cases in between. By
-default, the synchronization pipeline handles the simple edge case, where the
-user only needs to specify the desired target sample-rate. To handle the more
-complex edge case, the user needs to specify additional configuration options
-under the `chunk_config` of the `SyncOptions` struct.
+Handling the latter of these two edge case allow us to handle all other cases in
+between. As such, besides the target sample rate, the user needs to specify
+additional configuration options under the `chunk_config` of the `SyncOptions`
+struct.
