@@ -28,19 +28,28 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;Shared functionality across the Nowcast Library Pipeline submodule&#34;&#34;&#34;
+from typing import Union
 import pandas as pd
+import numpy as np
 from nowcastlib.pipeline import structs
 
+
 def handle_serialization(
-    data_df: pd.core.frame.DataFrame, config: structs.SerializationOptions
+    data: Union[pd.core.frame.DataFrame, np.ndarray],
+    config: structs.SerializationOptions,
 ):
     &#34;&#34;&#34;
-    Serializes a given dataframe to disk in the appropriate format
+    Serializes a given dataframe or numpy array
+    to disk in the appropriate format
     &#34;&#34;&#34;
-    if config.output_format == &#34;csv&#34;:
-        data_df.to_csv(config.output_path, float_format=&#34;%g&#34;)
-    elif config.output_format == &#34;pickle&#34;:
-        data_df.to_pickle(config.output_path)</code></pre>
+    if isinstance(data, pd.core.frame.DataFrame):
+        if config.output_format == &#34;csv&#34;:
+            data.to_csv(config.output_path, float_format=&#34;%g&#34;)
+        elif config.output_format == &#34;pickle&#34;:
+            data.to_pickle(config.output_path)
+    else:
+        if config.output_format == &#34;npy&#34;:
+            np.save(config.output_path, data)</code></pre>
 </details>
 </section>
 <section>
@@ -51,24 +60,31 @@ def handle_serialization(
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="nowcastlib.pipeline.utils.handle_serialization"><code class="name flex">
-<span>def <span class="ident">handle_serialization</span></span>(<span>data_df: pandas.core.frame.DataFrame, config: <a title="nowcastlib.pipeline.structs.SerializationOptions" href="structs.html#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>)</span>
+<span>def <span class="ident">handle_serialization</span></span>(<span>data: Union[pandas.core.frame.DataFrame, numpy.ndarray], config: <a title="nowcastlib.pipeline.structs.SerializationOptions" href="structs.html#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Serializes a given dataframe to disk in the appropriate format</p></div>
+<div class="desc"><p>Serializes a given dataframe or numpy array
+to disk in the appropriate format</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def handle_serialization(
-    data_df: pd.core.frame.DataFrame, config: structs.SerializationOptions
+    data: Union[pd.core.frame.DataFrame, np.ndarray],
+    config: structs.SerializationOptions,
 ):
     &#34;&#34;&#34;
-    Serializes a given dataframe to disk in the appropriate format
+    Serializes a given dataframe or numpy array
+    to disk in the appropriate format
     &#34;&#34;&#34;
-    if config.output_format == &#34;csv&#34;:
-        data_df.to_csv(config.output_path, float_format=&#34;%g&#34;)
-    elif config.output_format == &#34;pickle&#34;:
-        data_df.to_pickle(config.output_path)</code></pre>
+    if isinstance(data, pd.core.frame.DataFrame):
+        if config.output_format == &#34;csv&#34;:
+            data.to_csv(config.output_path, float_format=&#34;%g&#34;)
+        elif config.output_format == &#34;pickle&#34;:
+            data.to_pickle(config.output_path)
+    else:
+        if config.output_format == &#34;npy&#34;:
+            np.save(config.output_path, data)</code></pre>
 </details>
 </dd>
 </dl>

@@ -36,10 +36,21 @@ Module containing custom structures used throughout the pipeline submodule.
 Classes listed here should be viewed as dictionaries, with class variables
 being treated analogous to dictionary keys.
 &#34;&#34;&#34;
-from typing import Tuple, Optional, Dict, Callable
+from typing import Union, Tuple, Optional, Dict, Callable
 from attr import attrs, attrib, validators
 import numpy as np
 import pandas as pd
+
+
+def _enforce_npy(instance, attribute, value):
+    &#34;&#34;&#34;ensures that the `output_format` key is `npy`&#34;&#34;&#34;
+    if value is not None and value.output_format != &#34;npy&#34;:
+        raise ValueError(
+            &#34;&#39;{0}&#39;.output_path of the &#39;{1}&#39; instance needs to be `npy`&#34;
+            &#34; A value of `{2}` was passed instead.&#34;.format(
+                attribute.name, instance.__class__.__name__, value.output_format
+            )
+        )
 
 
 def _normed_val(instance, attribute, value):
@@ -135,7 +146,7 @@ class SmoothOptions:
     &#34;&#34;&#34;
     What units `window_size` is given in. Should be compatible with
     [pandas offset aliases](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
-    If `None`, `window_size` refers to the number of samples comprising a window.
+    \nIf `None`, `window_size` refers to the number of samples comprising a window.
     &#34;&#34;&#34;
 
     @units.validator
@@ -172,27 +183,27 @@ class ProcessingOptions:
     &#34;&#34;&#34;
     Configuration options for specifying which outliers to drop.
     Is performed before any unit conversion.
-    If `None`, no outlier removal is performed.
+    \nIf `None`, no outlier removal is performed.
     &#34;&#34;&#34;
     periodic_options: Optional[PeriodicOptions] = attrib(default=None)
     &#34;&#34;&#34;
     Configuration options for treating data that is periodic in nature,
     such as normalizing the desired range of values.
     Is performed before any unit conversion.
-    If `None`, no processing in this regard is performed.
+    \nIf `None`, no processing in this regard is performed.
     &#34;&#34;&#34;
     conversion_options: Optional[ConversionOptions] = attrib(
         default=None,
     )
     &#34;&#34;&#34;
     Configuration options for converting a field from one unit to another
-    If `None`, no conversion is performed.
+    \nIf `None`, no conversion is performed.
     &#34;&#34;&#34;
     smooth_options: Optional[SmoothOptions] = attrib(default=None)
     &#34;&#34;&#34;
     Configuration options for smoothing the field.
     Is performed at the end of all other processing.
-    If `None`, no smoothing is performed.
+    \nIf `None`, no smoothing is performed.
     &#34;&#34;&#34;
 
 
@@ -212,12 +223,12 @@ class DataField:
     preprocessing_options: Optional[ProcessingOptions] = attrib(default=None)
     &#34;&#34;&#34;
     Configuration options for how to pre-process the field
-    If `None`, no preprocessing will be performed.
+    \nIf `None`, no preprocessing will be performed.
     &#34;&#34;&#34;
     postprocessing_options: Optional[ProcessingOptions] = attrib(default=None)
     &#34;&#34;&#34;
     Configuration options for how to post-process the field
-    If `None`, no post-processing will be performed.
+    \nIf `None`, no post-processing will be performed.
     &#34;&#34;&#34;
 
 
@@ -228,7 +239,7 @@ class SerializationOptions:
     serializing a given DataSource to disk
     &#34;&#34;&#34;
 
-    output_format: str = attrib(validator=validators.in_([&#34;csv&#34;, &#34;pickle&#34;]))
+    output_format: str = attrib(validator=validators.in_([&#34;csv&#34;, &#34;pickle&#34;, &#34;npy&#34;]))
     &#34;&#34;&#34;
     One of &#39;csv&#39;, or &#39;pickle&#39; to specify what format
     to save the DataSource as
@@ -258,7 +269,7 @@ class DataSource:
     preprocessing_output: Optional[SerializationOptions] = attrib(default=None)
     &#34;&#34;&#34;
     Configuration options for saving the preprocessing results to disk.
-    If `None`, no serialization of the preprocessing results will be performed.
+    \nIf `None`, no serialization of the preprocessing results will be performed.
     &#34;&#34;&#34;
 
     @fields.validator
@@ -300,22 +311,43 @@ class SyncOptions:
     sample_spacing: int = attrib()
     &#34;&#34;&#34;
     The desired amount of time in seconds between each sample.
-    If `None`, no re-sampling will be performed.
+    \nIf `None`, no re-sampling will be performed.
     &#34;&#34;&#34;
     chunk_options: ChunkOptions = attrib()
     &#34;&#34;&#34;
     Configuration options necessary for handling chunking operations.
     &#34;&#34;&#34;
-    output_options: Optional[SerializationOptions] = attrib(default=None)
+    data_output: Optional[SerializationOptions] = attrib(default=None)
     &#34;&#34;&#34;
-    Configuration options for saving the preprocessing results to disk.
-    If `None`, no serialization of the preprocessing results will be performed.
+    Configuration options for saving the resulting
+    synchronized dataframe to disk.
+    \nIf `None`, no serialization of the preprocessing results will be performed.
+    &#34;&#34;&#34;
+    chunks_output: Optional[SerializationOptions] = attrib(
+        default=None, validator=_enforce_npy
+    )
+    &#34;&#34;&#34;
+    Configuration options for saving the detected
+    chunk locations to disk. Only &#39;npy&#39; output_format
+    is accepted.
+    \nIf `None`, no serialization of the preprocessing results will be performed.
     &#34;&#34;&#34;
     diagnostic_plots: bool = attrib(default=True)
     &#34;&#34;&#34;
     Whether or not to show diagnostic plots, intended to help
     the user in configuration evaluation and decision making.
     &#34;&#34;&#34;
+
+
+@attrs(kw_only=True, frozen=True)
+class SplitOptions:
+    &#34;&#34;&#34;
+    Struct containing configuration attributes for splitting
+    a DataSet into test, train and validation sets
+    &#34;&#34;&#34;
+
+    train_split: Union[int, float, str] = attrib()
+    val_split: Union[int, float, str] = attrib()
 
 
 @attrs(kw_only=True, frozen=True)
@@ -333,8 +365,9 @@ class DataSet:
     sync_options: Optional[SyncOptions] = attrib(default=None)
     &#34;&#34;&#34;
     Configurations options for synchronizing the `data_sources`.
-    If `None`, no synchronization will be performed
-    &#34;&#34;&#34;</code></pre>
+    \nIf `None`, no synchronization will be performed
+    &#34;&#34;&#34;
+    split_options: Optional[SplitOptions] = attrib(default=None)</code></pre>
 </details>
 </section>
 <section>
@@ -514,7 +547,7 @@ of a given data field, achieved with a moving average operation.</p>
     &#34;&#34;&#34;
     What units `window_size` is given in. Should be compatible with
     [pandas offset aliases](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
-    If `None`, `window_size` refers to the number of samples comprising a window.
+    \nIf `None`, `window_size` refers to the number of samples comprising a window.
     &#34;&#34;&#34;
 
     @units.validator
@@ -543,8 +576,8 @@ of a given data field, achieved with a moving average operation.</p>
 <dt id="nowcastlib.pipeline.structs.SmoothOptions.units"><code class="name">var <span class="ident">units</span> : Union[str, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>What units <code>window_size</code> is given in. Should be compatible with
-<a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases">pandas offset aliases</a>.
-If <code>None</code>, <code>window_size</code> refers to the number of samples comprising a window.</p></div>
+<a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases">pandas offset aliases</a>.</p>
+<p>If <code>None</code>, <code>window_size</code> refers to the number of samples comprising a window.</p></div>
 </dd>
 </dl>
 </dd>
@@ -575,27 +608,27 @@ a given field of a given data source</p>
     &#34;&#34;&#34;
     Configuration options for specifying which outliers to drop.
     Is performed before any unit conversion.
-    If `None`, no outlier removal is performed.
+    \nIf `None`, no outlier removal is performed.
     &#34;&#34;&#34;
     periodic_options: Optional[PeriodicOptions] = attrib(default=None)
     &#34;&#34;&#34;
     Configuration options for treating data that is periodic in nature,
     such as normalizing the desired range of values.
     Is performed before any unit conversion.
-    If `None`, no processing in this regard is performed.
+    \nIf `None`, no processing in this regard is performed.
     &#34;&#34;&#34;
     conversion_options: Optional[ConversionOptions] = attrib(
         default=None,
     )
     &#34;&#34;&#34;
     Configuration options for converting a field from one unit to another
-    If `None`, no conversion is performed.
+    \nIf `None`, no conversion is performed.
     &#34;&#34;&#34;
     smooth_options: Optional[SmoothOptions] = attrib(default=None)
     &#34;&#34;&#34;
     Configuration options for smoothing the field.
     Is performed at the end of all other processing.
-    If `None`, no smoothing is performed.
+    \nIf `None`, no smoothing is performed.
     &#34;&#34;&#34;</code></pre>
 </details>
 <h3>Class variables</h3>
@@ -608,26 +641,26 @@ Otherwise appends a new field to the dataframe.</p></div>
 <dt id="nowcastlib.pipeline.structs.ProcessingOptions.outlier_options"><code class="name">var <span class="ident">outlier_options</span> : Union[<a title="nowcastlib.pipeline.structs.OutlierOptions" href="#nowcastlib.pipeline.structs.OutlierOptions">OutlierOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for specifying which outliers to drop.
-Is performed before any unit conversion.
-If <code>None</code>, no outlier removal is performed.</p></div>
+Is performed before any unit conversion.</p>
+<p>If <code>None</code>, no outlier removal is performed.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.ProcessingOptions.periodic_options"><code class="name">var <span class="ident">periodic_options</span> : Union[<a title="nowcastlib.pipeline.structs.PeriodicOptions" href="#nowcastlib.pipeline.structs.PeriodicOptions">PeriodicOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for treating data that is periodic in nature,
 such as normalizing the desired range of values.
-Is performed before any unit conversion.
-If <code>None</code>, no processing in this regard is performed.</p></div>
+Is performed before any unit conversion.</p>
+<p>If <code>None</code>, no processing in this regard is performed.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.ProcessingOptions.conversion_options"><code class="name">var <span class="ident">conversion_options</span> : Union[<a title="nowcastlib.pipeline.structs.ConversionOptions" href="#nowcastlib.pipeline.structs.ConversionOptions">ConversionOptions</a>, NoneType]</code></dt>
 <dd>
-<div class="desc"><p>Configuration options for converting a field from one unit to another
-If <code>None</code>, no conversion is performed.</p></div>
+<div class="desc"><p>Configuration options for converting a field from one unit to another</p>
+<p>If <code>None</code>, no conversion is performed.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.ProcessingOptions.smooth_options"><code class="name">var <span class="ident">smooth_options</span> : Union[<a title="nowcastlib.pipeline.structs.SmoothOptions" href="#nowcastlib.pipeline.structs.SmoothOptions">SmoothOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for smoothing the field.
-Is performed at the end of all other processing.
-If <code>None</code>, no smoothing is performed.</p></div>
+Is performed at the end of all other processing.</p>
+<p>If <code>None</code>, no smoothing is performed.</p></div>
 </dd>
 </dl>
 </dd>
@@ -658,12 +691,12 @@ of a given DataSource</p>
     preprocessing_options: Optional[ProcessingOptions] = attrib(default=None)
     &#34;&#34;&#34;
     Configuration options for how to pre-process the field
-    If `None`, no preprocessing will be performed.
+    \nIf `None`, no preprocessing will be performed.
     &#34;&#34;&#34;
     postprocessing_options: Optional[ProcessingOptions] = attrib(default=None)
     &#34;&#34;&#34;
     Configuration options for how to post-process the field
-    If `None`, no post-processing will be performed.
+    \nIf `None`, no post-processing will be performed.
     &#34;&#34;&#34;</code></pre>
 </details>
 <h3>Class variables</h3>
@@ -682,13 +715,13 @@ of a given DataSource</p>
 </dd>
 <dt id="nowcastlib.pipeline.structs.DataField.preprocessing_options"><code class="name">var <span class="ident">preprocessing_options</span> : Union[<a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, NoneType]</code></dt>
 <dd>
-<div class="desc"><p>Configuration options for how to pre-process the field
-If <code>None</code>, no preprocessing will be performed.</p></div>
+<div class="desc"><p>Configuration options for how to pre-process the field</p>
+<p>If <code>None</code>, no preprocessing will be performed.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.DataField.postprocessing_options"><code class="name">var <span class="ident">postprocessing_options</span> : Union[<a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, NoneType]</code></dt>
 <dd>
-<div class="desc"><p>Configuration options for how to post-process the field
-If <code>None</code>, no post-processing will be performed.</p></div>
+<div class="desc"><p>Configuration options for how to post-process the field</p>
+<p>If <code>None</code>, no post-processing will be performed.</p></div>
 </dd>
 </dl>
 </dd>
@@ -710,7 +743,7 @@ serializing a given DataSource to disk</p>
     serializing a given DataSource to disk
     &#34;&#34;&#34;
 
-    output_format: str = attrib(validator=validators.in_([&#34;csv&#34;, &#34;pickle&#34;]))
+    output_format: str = attrib(validator=validators.in_([&#34;csv&#34;, &#34;pickle&#34;, &#34;npy&#34;]))
     &#34;&#34;&#34;
     One of &#39;csv&#39;, or &#39;pickle&#39; to specify what format
     to save the DataSource as
@@ -764,7 +797,7 @@ an individual Data Source</p>
     preprocessing_output: Optional[SerializationOptions] = attrib(default=None)
     &#34;&#34;&#34;
     Configuration options for saving the preprocessing results to disk.
-    If `None`, no serialization of the preprocessing results will be performed.
+    \nIf `None`, no serialization of the preprocessing results will be performed.
     &#34;&#34;&#34;
 
     @fields.validator
@@ -797,8 +830,8 @@ an individual Data Source</p>
 </dd>
 <dt id="nowcastlib.pipeline.structs.DataSource.preprocessing_output"><code class="name">var <span class="ident">preprocessing_output</span> : Union[<a title="nowcastlib.pipeline.structs.SerializationOptions" href="#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>, NoneType]</code></dt>
 <dd>
-<div class="desc"><p>Configuration options for saving the preprocessing results to disk.
-If <code>None</code>, no serialization of the preprocessing results will be performed.</p></div>
+<div class="desc"><p>Configuration options for saving the preprocessing results to disk.</p>
+<p>If <code>None</code>, no serialization of the preprocessing results will be performed.</p></div>
 </dd>
 </dl>
 </dd>
@@ -845,7 +878,7 @@ to be considered.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.SyncOptions"><code class="flex name class">
 <span>class <span class="ident">SyncOptions</span></span>
-<span>(</span><span>*, sample_spacing: int, chunk_options: <a title="nowcastlib.pipeline.structs.ChunkOptions" href="#nowcastlib.pipeline.structs.ChunkOptions">ChunkOptions</a>, output_options: Union[<a title="nowcastlib.pipeline.structs.SerializationOptions" href="#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>, NoneType] = None, diagnostic_plots: bool = True)</span>
+<span>(</span><span>*, sample_spacing: int, chunk_options: <a title="nowcastlib.pipeline.structs.ChunkOptions" href="#nowcastlib.pipeline.structs.ChunkOptions">ChunkOptions</a>, data_output: Union[<a title="nowcastlib.pipeline.structs.SerializationOptions" href="#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>, NoneType] = None, chunks_output: Union[<a title="nowcastlib.pipeline.structs.SerializationOptions" href="#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>, NoneType] = None, diagnostic_plots: bool = True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Struct containing configuration attributes for synchronizing
@@ -864,16 +897,26 @@ a DataSet</p>
     sample_spacing: int = attrib()
     &#34;&#34;&#34;
     The desired amount of time in seconds between each sample.
-    If `None`, no re-sampling will be performed.
+    \nIf `None`, no re-sampling will be performed.
     &#34;&#34;&#34;
     chunk_options: ChunkOptions = attrib()
     &#34;&#34;&#34;
     Configuration options necessary for handling chunking operations.
     &#34;&#34;&#34;
-    output_options: Optional[SerializationOptions] = attrib(default=None)
+    data_output: Optional[SerializationOptions] = attrib(default=None)
     &#34;&#34;&#34;
-    Configuration options for saving the preprocessing results to disk.
-    If `None`, no serialization of the preprocessing results will be performed.
+    Configuration options for saving the resulting
+    synchronized dataframe to disk.
+    \nIf `None`, no serialization of the preprocessing results will be performed.
+    &#34;&#34;&#34;
+    chunks_output: Optional[SerializationOptions] = attrib(
+        default=None, validator=_enforce_npy
+    )
+    &#34;&#34;&#34;
+    Configuration options for saving the detected
+    chunk locations to disk. Only &#39;npy&#39; output_format
+    is accepted.
+    \nIf `None`, no serialization of the preprocessing results will be performed.
     &#34;&#34;&#34;
     diagnostic_plots: bool = attrib(default=True)
     &#34;&#34;&#34;
@@ -885,17 +928,25 @@ a DataSet</p>
 <dl>
 <dt id="nowcastlib.pipeline.structs.SyncOptions.sample_spacing"><code class="name">var <span class="ident">sample_spacing</span> : int</code></dt>
 <dd>
-<div class="desc"><p>The desired amount of time in seconds between each sample.
-If <code>None</code>, no re-sampling will be performed.</p></div>
+<div class="desc"><p>The desired amount of time in seconds between each sample.</p>
+<p>If <code>None</code>, no re-sampling will be performed.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.SyncOptions.chunk_options"><code class="name">var <span class="ident">chunk_options</span> : <a title="nowcastlib.pipeline.structs.ChunkOptions" href="#nowcastlib.pipeline.structs.ChunkOptions">ChunkOptions</a></code></dt>
 <dd>
 <div class="desc"><p>Configuration options necessary for handling chunking operations.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.SyncOptions.output_options"><code class="name">var <span class="ident">output_options</span> : Union[<a title="nowcastlib.pipeline.structs.SerializationOptions" href="#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.SyncOptions.data_output"><code class="name">var <span class="ident">data_output</span> : Union[<a title="nowcastlib.pipeline.structs.SerializationOptions" href="#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>, NoneType]</code></dt>
 <dd>
-<div class="desc"><p>Configuration options for saving the preprocessing results to disk.
-If <code>None</code>, no serialization of the preprocessing results will be performed.</p></div>
+<div class="desc"><p>Configuration options for saving the resulting
+synchronized dataframe to disk.</p>
+<p>If <code>None</code>, no serialization of the preprocessing results will be performed.</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.SyncOptions.chunks_output"><code class="name">var <span class="ident">chunks_output</span> : Union[<a title="nowcastlib.pipeline.structs.SerializationOptions" href="#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>, NoneType]</code></dt>
+<dd>
+<div class="desc"><p>Configuration options for saving the detected
+chunk locations to disk. Only 'npy' output_format
+is accepted.</p>
+<p>If <code>None</code>, no serialization of the preprocessing results will be performed.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.SyncOptions.diagnostic_plots"><code class="name">var <span class="ident">diagnostic_plots</span> : bool</code></dt>
 <dd>
@@ -904,9 +955,42 @@ the user in configuration evaluation and decision making.</p></div>
 </dd>
 </dl>
 </dd>
+<dt id="nowcastlib.pipeline.structs.SplitOptions"><code class="flex name class">
+<span>class <span class="ident">SplitOptions</span></span>
+<span>(</span><span>*, train_split: Union[int, float, str], val_split: Union[int, float, str])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Struct containing configuration attributes for splitting
+a DataSet into test, train and validation sets</p>
+<p>Method generated by attrs for class SplitOptions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SplitOptions:
+    &#34;&#34;&#34;
+    Struct containing configuration attributes for splitting
+    a DataSet into test, train and validation sets
+    &#34;&#34;&#34;
+
+    train_split: Union[int, float, str] = attrib()
+    val_split: Union[int, float, str] = attrib()</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="nowcastlib.pipeline.structs.SplitOptions.train_split"><code class="name">var <span class="ident">train_split</span> : Union[int, float, str]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.SplitOptions.val_split"><code class="name">var <span class="ident">val_split</span> : Union[int, float, str]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
 <dt id="nowcastlib.pipeline.structs.DataSet"><code class="flex name class">
 <span>class <span class="ident">DataSet</span></span>
-<span>(</span><span>*, data_sources: Tuple[<a title="nowcastlib.pipeline.structs.DataSource" href="#nowcastlib.pipeline.structs.DataSource">DataSource</a>, ...], sync_options: Union[<a title="nowcastlib.pipeline.structs.SyncOptions" href="#nowcastlib.pipeline.structs.SyncOptions">SyncOptions</a>, NoneType] = None)</span>
+<span>(</span><span>*, data_sources: Tuple[<a title="nowcastlib.pipeline.structs.DataSource" href="#nowcastlib.pipeline.structs.DataSource">DataSource</a>, ...], sync_options: Union[<a title="nowcastlib.pipeline.structs.SyncOptions" href="#nowcastlib.pipeline.structs.SyncOptions">SyncOptions</a>, NoneType] = None, split_options: Union[<a title="nowcastlib.pipeline.structs.SplitOptions" href="#nowcastlib.pipeline.structs.SplitOptions">SplitOptions</a>, NoneType] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Struct containing configuration attributes for processing
@@ -930,8 +1014,9 @@ a set of Data Sources</p>
     sync_options: Optional[SyncOptions] = attrib(default=None)
     &#34;&#34;&#34;
     Configurations options for synchronizing the `data_sources`.
-    If `None`, no synchronization will be performed
-    &#34;&#34;&#34;</code></pre>
+    \nIf `None`, no synchronization will be performed
+    &#34;&#34;&#34;
+    split_options: Optional[SplitOptions] = attrib(default=None)</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
@@ -942,8 +1027,12 @@ to process, each originating from a different file.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.DataSet.sync_options"><code class="name">var <span class="ident">sync_options</span> : Union[<a title="nowcastlib.pipeline.structs.SyncOptions" href="#nowcastlib.pipeline.structs.SyncOptions">SyncOptions</a>, NoneType]</code></dt>
 <dd>
-<div class="desc"><p>Configurations options for synchronizing the <code>data_sources</code>.
-If <code>None</code>, no synchronization will be performed</p></div>
+<div class="desc"><p>Configurations options for synchronizing the <code>data_sources</code>.</p>
+<p>If <code>None</code>, no synchronization will be performed</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.DataSet.split_options"><code class="name">var <span class="ident">split_options</span> : Union[<a title="nowcastlib.pipeline.structs.SplitOptions" href="#nowcastlib.pipeline.structs.SplitOptions">SplitOptions</a>, NoneType]</code></dt>
+<dd>
+<div class="desc"></div>
 </dd>
 </dl>
 </dd>
@@ -1040,8 +1129,16 @@ If <code>None</code>, no synchronization will be performed</p></div>
 <ul class="">
 <li><code><a title="nowcastlib.pipeline.structs.SyncOptions.sample_spacing" href="#nowcastlib.pipeline.structs.SyncOptions.sample_spacing">sample_spacing</a></code></li>
 <li><code><a title="nowcastlib.pipeline.structs.SyncOptions.chunk_options" href="#nowcastlib.pipeline.structs.SyncOptions.chunk_options">chunk_options</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.SyncOptions.output_options" href="#nowcastlib.pipeline.structs.SyncOptions.output_options">output_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.SyncOptions.data_output" href="#nowcastlib.pipeline.structs.SyncOptions.data_output">data_output</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.SyncOptions.chunks_output" href="#nowcastlib.pipeline.structs.SyncOptions.chunks_output">chunks_output</a></code></li>
 <li><code><a title="nowcastlib.pipeline.structs.SyncOptions.diagnostic_plots" href="#nowcastlib.pipeline.structs.SyncOptions.diagnostic_plots">diagnostic_plots</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="nowcastlib.pipeline.structs.SplitOptions" href="#nowcastlib.pipeline.structs.SplitOptions">SplitOptions</a></code></h4>
+<ul class="">
+<li><code><a title="nowcastlib.pipeline.structs.SplitOptions.train_split" href="#nowcastlib.pipeline.structs.SplitOptions.train_split">train_split</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.SplitOptions.val_split" href="#nowcastlib.pipeline.structs.SplitOptions.val_split">val_split</a></code></li>
 </ul>
 </li>
 <li>
@@ -1049,6 +1146,7 @@ If <code>None</code>, no synchronization will be performed</p></div>
 <ul class="">
 <li><code><a title="nowcastlib.pipeline.structs.DataSet.data_sources" href="#nowcastlib.pipeline.structs.DataSet.data_sources">data_sources</a></code></li>
 <li><code><a title="nowcastlib.pipeline.structs.DataSet.sync_options" href="#nowcastlib.pipeline.structs.DataSet.sync_options">sync_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.DataSet.split_options" href="#nowcastlib.pipeline.structs.DataSet.split_options">split_options</a></code></li>
 </ul>
 </li>
 </ul>
