@@ -1,6 +1,7 @@
 # custom
 *.hdf5
 examples/data
+*.pptx
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
