@@ -361,6 +361,7 @@ class ValidationOptions:
     train_extent: Optional[float] = attrib(default=0.6, validator=[_normed_val])
     val_extent: Optional[float] = attrib(default=0.1, validator=[_normed_val])
     iterations: Optional[int] = attrib(default=5)
+
     @iterations.validator
     def at_least_3(self, attribute, value):
         &#34;&#34;&#34;ensures at least 3 iterations are used for validation&#34;&#34;&#34;
@@ -381,6 +382,10 @@ class EvaluationOptions:
     &#34;&#34;&#34;
 
     train_split: Union[int, float, str] = attrib()
+    &#34;&#34;&#34;
+    The index, percentage or date to use as the final
+    point in the training set. The closest non-nan row will be used.
+    &#34;&#34;&#34;
     validation: ValidationOptions = attrib()
 
 
@@ -1010,6 +1015,7 @@ configuring model validation</p>
     train_extent: Optional[float] = attrib(default=0.6, validator=[_normed_val])
     val_extent: Optional[float] = attrib(default=0.1, validator=[_normed_val])
     iterations: Optional[int] = attrib(default=5)
+
     @iterations.validator
     def at_least_3(self, attribute, value):
         &#34;&#34;&#34;ensures at least 3 iterations are used for validation&#34;&#34;&#34;
@@ -1080,13 +1086,18 @@ model evaluation</p>
     &#34;&#34;&#34;
 
     train_split: Union[int, float, str] = attrib()
+    &#34;&#34;&#34;
+    The index, percentage or date to use as the final
+    point in the training set. The closest non-nan row will be used.
+    &#34;&#34;&#34;
     validation: ValidationOptions = attrib()</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
 <dt id="nowcastlib.pipeline.structs.EvaluationOptions.train_split"><code class="name">var <span class="ident">train_split</span> : Union[int, float, str]</code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>The index, percentage or date to use as the final
+point in the training set. The closest non-nan row will be used.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.EvaluationOptions.validation"><code class="name">var <span class="ident">validation</span> : <a title="nowcastlib.pipeline.structs.ValidationOptions" href="#nowcastlib.pipeline.structs.ValidationOptions">ValidationOptions</a></code></dt>
 <dd>

@@ -97,26 +97,31 @@ from . import structs
 from . import preprocess
 from . import sync
 from . import split
-# from . import postprocess
+from . import postprocess
 
 
-# def pipe_dataset(config: structs.DataSet):
-#     &#34;&#34;&#34;
-#     Runs all configured steps of the Nowcast Library Pipeline
-#     on a set of data described by the input DataSet instance
-#     &#34;&#34;&#34;
-#     preprocessed_dfs = preprocess.preprocess_dataset(config)
-
-#     chunked_df, chunk_locs = sync.synchronize_dataset(config, preprocessed_dfs)
-
-#     train_chunked_df, test_chunked_df = split.train_test_split_sparse(
-#         chunked_df, chunk_locs
-#     )
-#     val_train_data, val_test_data = split.rep_holdout_split(train_data, config)
-
-#     val_train_data, val_test_data = postproces.postprocess_dataset(
-#         config, val_train_data, val_test_data
-#     )</code></pre>
+def pipe_dataset(config: structs.DataSet):
+    &#34;&#34;&#34;
+    Runs all configured steps of the Nowcast Library Pipeline
+    on a set of data described by the input DataSet instance
+    &#34;&#34;&#34;
+    # preprocessing
+    preprocessed_dfs = preprocess.preprocess_dataset(config)
+    # syncing
+    chunked_df, chunk_locs = sync.synchronize_dataset(config, preprocessed_dfs)
+    # splitting
+    # outer train and test split
+    train_data, test_data = split.train_test_split_sparse(
+        chunked_df, config, chunk_locs
+    )
+    # inner train and validation split(s)
+    val_train, val_test = split.rep_holdout_split(train_data[0], config)
+    # postprocessing
+    proc_val_train, proc_val_test = postprocess.postprocess_dataset(
+        config,
+        val_train[0],
+        val_test_data[0],
+    )</code></pre>
 </details>
 </section>
 <section>
@@ -153,6 +158,43 @@ Classes listed here should be viewed as dictionaries, with class
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="nowcastlib.pipeline.pipe_dataset"><code class="name flex">
+<span>def <span class="ident">pipe_dataset</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.DataSet" href="structs.html#nowcastlib.pipeline.structs.DataSet">DataSet</a>)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Runs all configured steps of the Nowcast Library Pipeline
+on a set of data described by the input DataSet instance</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def pipe_dataset(config: structs.DataSet):
+    &#34;&#34;&#34;
+    Runs all configured steps of the Nowcast Library Pipeline
+    on a set of data described by the input DataSet instance
+    &#34;&#34;&#34;
+    # preprocessing
+    preprocessed_dfs = preprocess.preprocess_dataset(config)
+    # syncing
+    chunked_df, chunk_locs = sync.synchronize_dataset(config, preprocessed_dfs)
+    # splitting
+    # outer train and test split
+    train_data, test_data = split.train_test_split_sparse(
+        chunked_df, config, chunk_locs
+    )
+    # inner train and validation split(s)
+    val_train, val_test = split.rep_holdout_split(train_data[0], config)
+    # postprocessing
+    proc_val_train, proc_val_test = postprocess.postprocess_dataset(
+        config,
+        val_train[0],
+        val_test_data[0],
+    )</code></pre>
+</details>
+</dd>
+</dl>
 </section>
 <section>
 </section>
@@ -187,6 +229,11 @@ Classes listed here should be viewed as dictionaries, with class
 <li><code><a title="nowcastlib.pipeline.structs" href="structs.html">nowcastlib.pipeline.structs</a></code></li>
 <li><code><a title="nowcastlib.pipeline.sync" href="sync/index.html">nowcastlib.pipeline.sync</a></code></li>
 <li><code><a title="nowcastlib.pipeline.utils" href="utils.html">nowcastlib.pipeline.utils</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="nowcastlib.pipeline.pipe_dataset" href="#nowcastlib.pipeline.pipe_dataset">pipe_dataset</a></code></li>
 </ul>
 </li>
 </ul>

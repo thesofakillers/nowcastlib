@@ -30,11 +30,42 @@
 <pre><code class="python">&#34;&#34;&#34;
 Functions for splitting data
 &#34;&#34;&#34;
+from typing import Optional
+import numpy as np
+import pandas as pd
+from nowcastlib.pipeline import structs
 
-def train_test_split_sparse(sparse_df, block_locs=None):
+
+def train_test_split_sparse(
+    sparse_df: pd.core.frame.DataFrame,
+    config: structs.EvaluationOptions,
+    block_locs: Optional[np.ndarray] = None,
+):
     &#34;&#34;&#34;
     Splits a sparse dataframe in train and test sets
+
+    Parameters
+    ---------
+    sparse_df : pandas.core.frame.DataFrame
+        The DataFrame we wish to split into train and test sets
+    config : structs.EvaluationOptions
+        config options for determining where to split our datasets
+    block_locs : numpy.ndarray, default None
+
+    Returns
+    -------
+    train_data : tuple
+        Tuple of length 2 containing the resulting training data.
+        The first element is the dataframe, the second element
+        is the updated accompanying `block_locs` if originally
+        provided, `None` otherwise
+    test_data : tuple
+        Tuple of length 2 containing the resulting testing data.
+        The first element is the dataframe, the second element
+        is the updated accompanying `block_locs` if originally
+        provided, `None` otherwise.
     &#34;&#34;&#34;
+
 
 def rep_holdout_split_sparse(sparse_df, block_locs=None):
     &#34;&#34;&#34;
@@ -51,17 +82,64 @@ def rep_holdout_split_sparse(sparse_df, block_locs=None):
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="nowcastlib.pipeline.split.train_test_split_sparse"><code class="name flex">
-<span>def <span class="ident">train_test_split_sparse</span></span>(<span>sparse_df, block_locs=None)</span>
+<span>def <span class="ident">train_test_split_sparse</span></span>(<span>sparse_df: pandas.core.frame.DataFrame, config: <a title="nowcastlib.pipeline.structs.EvaluationOptions" href="../structs.html#nowcastlib.pipeline.structs.EvaluationOptions">EvaluationOptions</a>, block_locs: Union[numpy.ndarray, NoneType] = None)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Splits a sparse dataframe in train and test sets</p></div>
+<div class="desc"><p>Splits a sparse dataframe in train and test sets</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>sparse_df</code></strong> :&ensp;<code>pandas.core.frame.DataFrame</code></dt>
+<dd>The DataFrame we wish to split into train and test sets</dd>
+<dt><strong><code>config</code></strong> :&ensp;<code>structs.EvaluationOptions</code></dt>
+<dd>config options for determining where to split our datasets</dd>
+<dt><strong><code>block_locs</code></strong> :&ensp;<code>numpy.ndarray</code>, default <code>None</code></dt>
+<dd>&nbsp;</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>train_data</code></strong> :&ensp;<code>tuple</code></dt>
+<dd>Tuple of length 2 containing the resulting training data.
+The first element is the dataframe, the second element
+is the updated accompanying <code>block_locs</code> if originally
+provided, <code>None</code> otherwise</dd>
+<dt><strong><code>test_data</code></strong> :&ensp;<code>tuple</code></dt>
+<dd>Tuple of length 2 containing the resulting testing data.
+The first element is the dataframe, the second element
+is the updated accompanying <code>block_locs</code> if originally
+provided, <code>None</code> otherwise.</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def train_test_split_sparse(sparse_df, block_locs=None):
+<pre><code class="python">def train_test_split_sparse(
+    sparse_df: pd.core.frame.DataFrame,
+    config: structs.EvaluationOptions,
+    block_locs: Optional[np.ndarray] = None,
+):
     &#34;&#34;&#34;
     Splits a sparse dataframe in train and test sets
+
+    Parameters
+    ---------
+    sparse_df : pandas.core.frame.DataFrame
+        The DataFrame we wish to split into train and test sets
+    config : structs.EvaluationOptions
+        config options for determining where to split our datasets
+    block_locs : numpy.ndarray, default None
+
+    Returns
+    -------
+    train_data : tuple
+        Tuple of length 2 containing the resulting training data.
+        The first element is the dataframe, the second element
+        is the updated accompanying `block_locs` if originally
+        provided, `None` otherwise
+    test_data : tuple
+        Tuple of length 2 containing the resulting testing data.
+        The first element is the dataframe, the second element
+        is the updated accompanying `block_locs` if originally
+        provided, `None` otherwise.
     &#34;&#34;&#34;</code></pre>
 </details>
 </dd>
