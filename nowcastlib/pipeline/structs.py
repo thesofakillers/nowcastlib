@@ -3,7 +3,7 @@ Module containing custom structures used throughout the pipeline submodule.
 Classes listed here should be viewed as dictionaries, with class variables
 being treated analogous to dictionary keys.
 """
-from typing import Tuple, Optional, Dict, Callable
+from typing import Union, Tuple, Optional, Dict, Callable
 from attr import attrs, attrib, validators
 import numpy as np
 import pandas as pd
@@ -307,6 +307,56 @@ class SyncOptions:
 
 
 @attrs(kw_only=True, frozen=True)
+class ValidationOptions:
+    """
+    Struct containing configuration attributes for
+    configuring model validation
+    """
+
+    train_extent: Optional[float] = attrib(default=0.6, validator=[_normed_val])
+    """
+    Percentage of the data to allocate to the training set.
+    """
+    val_extent: Optional[float] = attrib(default=0.1, validator=[_normed_val])
+    """
+    Percentage of the data to allocate to the validation set.
+    """
+    iterations: Optional[int] = attrib(default=5)
+    """
+    How many splits to make. Must be at least 3.
+    """
+
+    @iterations.validator
+    def at_least_3(self, attribute, value):
+        """ensures at least 3 iterations are used for validation"""
+        if value < 3:
+            raise ValueError(
+                "'{0}' of the '{1}' instance needs to be at least 3."
+                " A value of {2} was passed instead.".format(
+                    attribute.name, self.__class__.__name__, value
+                )
+            )
+
+
+@attrs(kw_only=True, frozen=True)
+class EvaluationOptions:
+    """
+    Struct containing configuration attributes for
+    model evaluation
+    """
+
+    train_split: Union[int, float, str] = attrib()
+    """
+    The index, percentage or date to use as the final
+    point in the training set. The closest non-nan row will be used.
+    """
+    validation: ValidationOptions = attrib()
+    """
+    configuration options for further splits of the data for validation.
+    """
+
+
+@attrs(kw_only=True, frozen=True)
 class DataSet:
     """
     Struct containing configuration attributes for processing
@@ -323,3 +373,4 @@ class DataSet:
     Configurations options for synchronizing the `data_sources`.
     \nIf `None`, no synchronization will be performed
     """
+    eval_options: Optional[EvaluationOptions] = attrib(default=None)
