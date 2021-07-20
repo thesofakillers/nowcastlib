@@ -147,9 +147,14 @@ def synchronize_dataset(
 
     Returns
     -------
-    list[pandas.core.frame.DataFrame]
-        a list where each elements corresponds to a contiguous chunk
-        of synchronized data
+    pandas.core.frame.DataFrame
+        A single dataframe containing the
+        synchronized data. The dataframe is sparse,
+        with individual rows comprising solely of NaNs.
+    numpy.ndarray
+        2D numpy array containing the start and end
+        integer indices of the contiguous chunks of data
+        in the input dataframe. Shape is (-1, 2).
     """
     sync_config = config.sync_options
     assert (
