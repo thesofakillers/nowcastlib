@@ -282,6 +282,19 @@ def compute_dataframe_mask(
     return computed_mask, chunk_locations
 
 
+def get_contiguous_locs(input_df):
+    """
+    Produces a 2D numpy array of start and end indices
+    of the contiguous chunks of a sparse pandas dataframe
+    """
+    sparse_ts = input_df.iloc[:, 0].astype(pd.SparseDtype("float"))
+    # extract block length and locations
+    starts = sparse_ts.values.sp_index.to_block_index().blocs
+    lengths = sparse_ts.values.sp_index.to_block_index().blengths
+    ends = starts + lengths
+    block_locs = np.array((starts, ends)).T
+    return block_locs
+
 def make_chunks(input_df, chunk_locations=None):
     """
     Given a sparse pandas DataFrame (i.e. data interrupted by NaNs),
@@ -303,14 +316,9 @@ def make_chunks(input_df, chunk_locations=None):
     """
     # need to compute chunk_locations if not provided
     if chunk_locations is None:
-        sparse_ts = input_df.iloc[:, 0].astype(pd.SparseDtype("float"))
-        # extract block length and locations
-        starts = sparse_ts.values.sp_index.to_block_index().blocs
-        lengths = sparse_ts.values.sp_index.to_block_index().blengths
-        ends = starts + lengths
-        block_locs = np.array((starts, ends)).T
+        block_locs = get_contiguous_locs(input_df)
     else:
-        block_locs = chunk_locations
+        block_locs = chunk_locations.copy()
     # use these to index our dataframe and populate our chunk list
     blocks = [input_df.iloc[start:end] for (start, end) in block_locs]
     return blocks
