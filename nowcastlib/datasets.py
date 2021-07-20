@@ -117,7 +117,7 @@ def compute_large_gap_mask(data_array, max_gap):
     return (diff < max_gap) | ~isnan
 
 
-def contiguous_regions(input_array):
+def contiguous_locs_array(input_array):
     """
     Finds the start and end indices of contiguous `True`
     regions in the input array.
@@ -151,6 +151,27 @@ def contiguous_regions(input_array):
     # Reshape the result into two colums
     idx.shape = (-1, 2)
     return idx
+
+
+def contiguous_locs_df(input_df):
+    """
+    Produces a 2D numpy array of start and end indices
+    of the contiguous chunks of a sparse pandas dataframe
+
+    Returns
+    -------
+    numpy.ndarray
+        2D numpy array containing the start and end
+        indices of the contiguous regions of data
+        (i.e. where no column is Nan). Shape is (-1, 2).
+    """
+    sparse_ts = input_df.iloc[:, 0].astype(pd.SparseDtype("float"))
+    # extract block length and locations
+    starts = sparse_ts.values.sp_index.to_block_index().blocs
+    lengths = sparse_ts.values.sp_index.to_block_index().blengths
+    ends = starts + lengths
+    block_locs = np.array((starts, ends)).T
+    return block_locs
 
 
 def fill_start_end(start, end):
@@ -269,7 +290,7 @@ def compute_dataframe_mask(
     # find the intersection of all these masks, to only keep overlapping points
     computed_mask = np.logical_and.reduce(gap_masks)
     # where are the contiguous chunks in the mask?
-    chunk_locations = contiguous_regions(computed_mask)
+    chunk_locations = contiguous_locs_array(computed_mask)
     # filter mask and chunk_locs: get rid of contiguous chunks that are too short
     computed_mask, chunk_locations = filter_contiguous_regions(
         computed_mask, chunk_locations, min_length
@@ -281,19 +302,6 @@ def compute_dataframe_mask(
     # include chunk_locations in return in case we need to re-use them
     return computed_mask, chunk_locations
 
-
-def get_contiguous_locs(input_df):
-    """
-    Produces a 2D numpy array of start and end indices
-    of the contiguous chunks of a sparse pandas dataframe
-    """
-    sparse_ts = input_df.iloc[:, 0].astype(pd.SparseDtype("float"))
-    # extract block length and locations
-    starts = sparse_ts.values.sp_index.to_block_index().blocs
-    lengths = sparse_ts.values.sp_index.to_block_index().blengths
-    ends = starts + lengths
-    block_locs = np.array((starts, ends)).T
-    return block_locs
 
 def make_chunks(input_df, chunk_locations=None):
     """
@@ -316,7 +324,7 @@ def make_chunks(input_df, chunk_locations=None):
     """
     # need to compute chunk_locations if not provided
     if chunk_locations is None:
-        block_locs = get_contiguous_locs(input_df)
+        block_locs = contiguous_locs_df(input_df)
     else:
         block_locs = chunk_locations.copy()
     # use these to index our dataframe and populate our chunk list
