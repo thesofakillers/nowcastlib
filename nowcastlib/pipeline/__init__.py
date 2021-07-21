@@ -24,8 +24,11 @@ def pipe_dataset(config: structs.DataSet):
         train_data, test_data = split.train_test_split_sparse(
             chunked_df, config.eval_options, chunk_locs
         )
-    # # inner train and validation split(s)
-    # val_train, val_test = split.rep_holdout_split(train_data[0], config)
+        # inner train and validation split(s)
+        if config.eval_options.validation is not None:
+            train_dfs, val_dfs = split.rep_holdout_split_sparse(
+                train_data[0], config.eval_options.validation
+            )
     # # postprocessing
     # proc_val_train, proc_val_test = postprocess.postprocess_dataset(
     #     config,
