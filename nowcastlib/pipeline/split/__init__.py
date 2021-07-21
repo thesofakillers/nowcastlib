@@ -36,11 +36,7 @@ def train_test_split_sparse(
         is the updated accompanying `block_locs`.
     """
     # pylint: disable=too-many-locals
-    # get start and end indices of contiguous blocks of data
-    if chunk_locations is None:
-        block_locs = datasets.contiguous_locs_df(sparse_df)
-    else:
-        block_locs = chunk_locations.copy()
+    block_locs = datasets.contiguous_locs(sparse_df, chunk_locations)
     starts, ends = block_locs.T
     # find the desired index
     configured_split = config.train_split
@@ -66,8 +62,9 @@ def train_test_split_sparse(
     return (train_df, train_block_locs), (test_df, test_block_locs)
 
 
-# def rep_holdout_split_sparse(sparse_df, block_locs=None):
-#     """
-#     Splits a sparse dataframe in k train and validation sets
-#     for repeated holdout
-#     """
+def rep_holdout_split_sparse(sparse_df, config, chunk_locations=None):
+    """
+    Splits a sparse dataframe in k train and validation sets
+    for repeated holdout
+    """
+    block_locs = datasets.contiguous_locs(sparse_df, chunk_locations)

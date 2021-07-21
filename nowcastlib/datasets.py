@@ -1,6 +1,7 @@
 """
 Functions for syncing and chunking multiple datasets.
 """
+from typing import Union, Optional
 import pandas as pd
 import numpy as np
 
@@ -171,6 +172,25 @@ def contiguous_locs_df(input_df):
     lengths = sparse_ts.values.sp_index.to_block_index().blengths
     ends = starts + lengths
     block_locs = np.array((starts, ends)).T
+    return block_locs
+
+
+def contiguous_locs(
+    data: Union[pd.core.frame.DataFrame, np.ndarray],
+    chunk_locations: Optional[np.ndarray] = None,
+):
+    """
+    Wrapper function for finding start and end indices
+    of contiguous data either in an array or a dataframe
+    """
+    if chunk_locations is None:
+        if isinstance(data, np.ndarray):
+            block_locs = contiguous_locs_array(data)
+        elif isinstance(data, pd.core.frame.DataFrame):
+            block_locs = contiguous_locs_df(data)
+    else:
+        # if they are already provided, just use them obvs
+        block_locs = chunk_locations.copy()
     return block_locs
 
 
