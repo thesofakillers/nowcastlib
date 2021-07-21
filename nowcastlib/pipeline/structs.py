@@ -313,15 +313,15 @@ class ValidationOptions:
     configuring model validation
     """
 
-    train_extent: Optional[float] = attrib(default=0.6, validator=[_normed_val])
+    train_extent: float = attrib(default=0.6, validator=[_normed_val])
     """
     Percentage of the data to allocate to the training set.
     """
-    val_extent: Optional[float] = attrib(default=0.1, validator=[_normed_val])
+    val_extent: float = attrib(default=0.1, validator=[_normed_val])
     """
     Percentage of the data to allocate to the validation set.
     """
-    iterations: Optional[int] = attrib(default=5)
+    iterations: int = attrib(default=5)
     """
     How many splits to make. Must be at least 3.
     """
