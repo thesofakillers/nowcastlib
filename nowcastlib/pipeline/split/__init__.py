@@ -35,6 +35,7 @@ def train_test_split_sparse(
         The first element is the dataframe, the second element
         is the updated accompanying `block_locs`.
     """
+    # pylint: disable=too-many-locals
     # get start and end indices of contiguous blocks of data
     if chunk_locations is None:
         block_locs = datasets.contiguous_locs_df(sparse_df)
@@ -60,7 +61,7 @@ def train_test_split_sparse(
     test_df = sparse_df.iloc[test_start_index:]
     # update block_locs
     train_block_locs = block_locs[: (closest_edge_idx + 1)]
-    test_block_locs = block_locs[(closest_edge_idx + 1) :]
+    test_block_locs = block_locs[(closest_edge_idx + 1) :] - test_start_index
 
     return (train_df, train_block_locs), (test_df, test_block_locs)
 
