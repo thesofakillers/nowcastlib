@@ -62,9 +62,51 @@ def train_test_split_sparse(
     return (train_df, train_block_locs), (test_df, test_block_locs)
 
 
-def rep_holdout_split_sparse(sparse_df, config, chunk_locations=None):
+def rep_holdout_split_sparse(
+    sparse_df: pd.core.frame.DataFrame,
+    config: structs.ValidationOptions,
+    chunk_locations: Optional[np.ndarray] = None,
+):
     """
     Splits a sparse dataframe in k train and validation sets
     for repeated holdout
     """
     block_locs = datasets.contiguous_locs(sparse_df, chunk_locations)
+    starts, ends = block_locs.T
+    # not counting NaNs when taking percentages
+    idx_to_count = datasets.fill_start_end(starts, ends)
+    total_valid = len(idx_to_count)
+    # determine the implicitly requested start and end edge indices
+    train_samples = int(config.train_extent * total_valid)
+    val_samples = int((config.val_extent) * total_valid)
+    req_val_max_start = idx_to_count[-val_samples]
+    req_train_min_end = idx_to_count[train_samples]
+    # get the indices where the closest edges occur in the starts,ends arrays
+    max_val_start_idx = np.abs(starts - req_val_max_start).argmin()
+    min_train_end_idx = np.abs(ends - req_train_min_end).argmin()
+    # min end of training: window start; max start of val: window end
+    # get previous index of max start since we are concerned with ends
+    window_train_ends = ends[min_train_end_idx:max_val_start_idx]
+    window_val_starts = starts[min_train_end_idx + 1 : max_val_start_idx + 1]
+    # randomly sample n times without replacement to get split breakpoints
+    split_idxs = np.random.choice(window_train_ends.size, config.iterations, False)
+    split_train_ends = window_train_ends[split_idxs]
+    split_val_starts = window_val_starts[split_idxs]
+    # find where training should start based on splitting index
+    ideal_train_starts = split_train_ends - train_samples
+    # fix so it coincides to a chunk start
+    train_starts = starts[
+        [np.abs(starts - ideal_start).argmin() for ideal_start in ideal_train_starts]
+    ]
+    # find where validation should end based on splitting index
+    ideal_val_ends = split_val_starts + val_samples
+    # fix so it coincides to a chunk end
+    val_ends = ends[[np.abs(ends - ideal_end).argmin() for ideal_end in ideal_val_ends]]
+    # finally build our dataframes
+    train_dfs = [
+        sparse_df.iloc[start:end] for start, end in zip(train_starts, split_train_ends)
+    ]
+    test_dfs = [
+        sparse_df.iloc[start:end] for start, end in zip(split_val_starts, val_ends)
+    ]
+    return train_dfs, test_dfs
