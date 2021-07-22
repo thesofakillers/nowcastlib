@@ -113,7 +113,7 @@ def build_field_name(config: structs.ProcessingOptions, field_name: str):
     if config.overwrite:
         computed_field_name = field_name
     else:
-        computed_field_name = "preprocessed_{}".format(field_name)
+        computed_field_name = "processed_{}".format(field_name)
     return computed_field_name
 
 
