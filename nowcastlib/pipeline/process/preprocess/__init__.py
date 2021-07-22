@@ -5,7 +5,8 @@ import logging
 from typing import Union
 import pandas as pd
 from nowcastlib.pipeline import structs
-from nowcastlib.pipeline import utils
+from nowcastlib.pipeline import utils as pipeline_utils
+from nowcastlib.pipeline.process import utils as process_utils
 
 logger = logging.getLogger(__name__)
 
@@ -94,29 +95,6 @@ def drop_outliers(input_series: pd.core.series.Series, config: structs.OutlierOp
         ]
 
 
-def build_field_name(config: structs.ProcessingOptions, field_name: str):
-    """
-    Builds the appropriate field name depending on whether
-    the user wishes to overwrite the current field or not
-
-    Parameters
-    ----------
-    config : nowcastlib.pipeline.structs.ProcessingOptions
-    field_name : str
-        the name of the current field we are acting on
-
-    Returns
-    -------
-    str
-        the resulting string
-    """
-    if config.overwrite:
-        computed_field_name = field_name
-    else:
-        computed_field_name = "processed_{}".format(field_name)
-    return computed_field_name
-
-
 def preprocess_datasource(config: structs.DataSource):
     """
     Runs preprocessing on a given data source given options outlined
@@ -149,7 +127,9 @@ def preprocess_datasource(config: structs.DataSource):
         options = field.preprocessing_options
         if options is not None:
             # next two lines handle whether user wishes to overwrite field or not
-            computed_field_name = build_field_name(options, field.field_name)
+            computed_field_name = process_utils.build_field_name(
+                options, field.field_name
+            )
             data_df[computed_field_name] = data_df[field.field_name].copy()
             if options.outlier_options is not None:
                 logger.debug("Dropping outliers...")
@@ -175,7 +155,7 @@ def preprocess_datasource(config: structs.DataSource):
     data_df = data_df.dropna()
     if config.preprocessing_output is not None:
         logger.debug("Serializing preprocessing output...")
-        utils.handle_serialization(data_df, config.preprocessing_output)
+        pipeline_utils.handle_serialization(data_df, config.preprocessing_output)
     return data_df
 
 
