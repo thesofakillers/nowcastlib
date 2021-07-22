@@ -77,11 +77,12 @@ def rep_holdout_split_sparse(
     tscv = TimeSeriesSplit(
         n_splits=config.iterations,
         max_train_size=int(config.train_extent * n_samples),
-        train_size=int(config.val_extent * n_samples),
+        test_size=int(config.val_extent * n_samples),
     )
     train_dfs = []
     val_dfs = []
-    for train_idxs, val_idxs in tscv(sparse_df):
+    for train_idxs, val_idxs in tscv.split(sparse_df):
         train_dfs.append(sparse_df.iloc[train_idxs])
         val_dfs.append(sparse_df.iloc[val_idxs])
     return train_dfs, val_dfs
+    # TODO update and return chunk_locations
