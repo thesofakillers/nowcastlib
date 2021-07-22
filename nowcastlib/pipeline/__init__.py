@@ -3,10 +3,9 @@ Data processing and Model evaluation pipeline for the Nowcast Library
 .. include:: PIPELINE.md
 """
 from . import structs
-from . import preprocess
+from . import process
 from . import sync
 from . import split
-from . import postprocess
 
 
 def pipe_dataset(config: structs.DataSet):
@@ -15,7 +14,7 @@ def pipe_dataset(config: structs.DataSet):
     on a set of data described by the input DataSet instance
     """
     # preprocessing
-    preprocessed_dfs = preprocess.preprocess_dataset(config)
+    preprocessed_dfs = process.preprocess.preprocess_dataset(config)
     # syncing
     chunked_df, chunk_locs = sync.synchronize_dataset(config, preprocessed_dfs)
     # splitting

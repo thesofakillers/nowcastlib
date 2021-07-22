@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from nowcastlib.pipeline import structs
-from nowcastlib.pipeline import preprocess
+from nowcastlib.pipeline.process import preprocess
 from nowcastlib.pipeline import utils
 from nowcastlib import datasets
 

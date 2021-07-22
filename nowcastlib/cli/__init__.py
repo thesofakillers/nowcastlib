@@ -4,7 +4,7 @@ Command-Line interfaces for the Nowcast Library
 import logging
 import argparse
 import configargparse
-from nowcastlib.pipeline.preprocess import cli as preprocess_cli
+from nowcastlib.pipeline.process.preprocess import cli as preprocess_cli
 from nowcastlib.pipeline.sync import cli as sync_cli
 from . import triangulate
 

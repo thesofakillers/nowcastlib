@@ -94,10 +94,9 @@ Data processing and Model evaluation pipeline for the Nowcast Library
 .. include:: PIPELINE.md
 &#34;&#34;&#34;
 from . import structs
-from . import preprocess
+from . import process
 from . import sync
 from . import split
-from . import postprocess
 
 
 def pipe_dataset(config: structs.DataSet):
@@ -106,34 +105,34 @@ def pipe_dataset(config: structs.DataSet):
     on a set of data described by the input DataSet instance
     &#34;&#34;&#34;
     # preprocessing
-    preprocessed_dfs = preprocess.preprocess_dataset(config)
+    preprocessed_dfs = process.preprocess.preprocess_dataset(config)
     # syncing
     chunked_df, chunk_locs = sync.synchronize_dataset(config, preprocessed_dfs)
     # splitting
     # outer train and test split
-    train_data, test_data = split.train_test_split_sparse(
-        chunked_df, config, chunk_locs
-    )
-    # inner train and validation split(s)
-    val_train, val_test = split.rep_holdout_split(train_data[0], config)
-    # postprocessing
-    proc_val_train, proc_val_test = postprocess.postprocess_dataset(
-        config,
-        val_train[0],
-        val_test_data[0],
-    )</code></pre>
+    if config.eval_options is not None:
+        train_data, test_data = split.train_test_split_sparse(
+            chunked_df, config.eval_options, chunk_locs
+        )
+        # inner train and validation split(s)
+        if config.eval_options.validation is not None:
+            train_dfs, val_dfs = split.rep_holdout_split_sparse(
+                train_data[0], config.eval_options.validation
+            )
+    # # postprocessing
+    # proc_val_train, proc_val_test = postprocess.postprocess_dataset(
+    #     config,
+    #     val_train[0],
+    #     val_test_data[0],
+    # )</code></pre>
 </details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
-<dt><code class="name"><a title="nowcastlib.pipeline.postprocess" href="postprocess/index.html">nowcastlib.pipeline.postprocess</a></code></dt>
+<dt><code class="name"><a title="nowcastlib.pipeline.process" href="process/index.html">nowcastlib.pipeline.process</a></code></dt>
 <dd>
-<div class="desc"><p>Functions for post-processing of data</p></div>
-</dd>
-<dt><code class="name"><a title="nowcastlib.pipeline.preprocess" href="preprocess/index.html">nowcastlib.pipeline.preprocess</a></code></dt>
-<dd>
-<div class="desc"><p>Functions for pre-processing of data.</p></div>
+<div class="desc"></div>
 </dd>
 <dt><code class="name"><a title="nowcastlib.pipeline.split" href="split/index.html">nowcastlib.pipeline.split</a></code></dt>
 <dd>
@@ -176,22 +175,20 @@ on a set of data described by the input DataSet instance</p></div>
     on a set of data described by the input DataSet instance
     &#34;&#34;&#34;
     # preprocessing
-    preprocessed_dfs = preprocess.preprocess_dataset(config)
+    preprocessed_dfs = process.preprocess.preprocess_dataset(config)
     # syncing
     chunked_df, chunk_locs = sync.synchronize_dataset(config, preprocessed_dfs)
     # splitting
     # outer train and test split
-    train_data, test_data = split.train_test_split_sparse(
-        chunked_df, config, chunk_locs
-    )
-    # inner train and validation split(s)
-    val_train, val_test = split.rep_holdout_split(train_data[0], config)
-    # postprocessing
-    proc_val_train, proc_val_test = postprocess.postprocess_dataset(
-        config,
-        val_train[0],
-        val_test_data[0],
-    )</code></pre>
+    if config.eval_options is not None:
+        train_data, test_data = split.train_test_split_sparse(
+            chunked_df, config.eval_options, chunk_locs
+        )
+        # inner train and validation split(s)
+        if config.eval_options.validation is not None:
+            train_dfs, val_dfs = split.rep_holdout_split_sparse(
+                train_data[0], config.eval_options.validation
+            )</code></pre>
 </details>
 </dd>
 </dl>
@@ -223,8 +220,7 @@ on a set of data described by the input DataSet instance</p></div>
 </li>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
-<li><code><a title="nowcastlib.pipeline.postprocess" href="postprocess/index.html">nowcastlib.pipeline.postprocess</a></code></li>
-<li><code><a title="nowcastlib.pipeline.preprocess" href="preprocess/index.html">nowcastlib.pipeline.preprocess</a></code></li>
+<li><code><a title="nowcastlib.pipeline.process" href="process/index.html">nowcastlib.pipeline.process</a></code></li>
 <li><code><a title="nowcastlib.pipeline.split" href="split/index.html">nowcastlib.pipeline.split</a></code></li>
 <li><code><a title="nowcastlib.pipeline.structs" href="structs.html">nowcastlib.pipeline.structs</a></code></li>
 <li><code><a title="nowcastlib.pipeline.sync" href="sync/index.html">nowcastlib.pipeline.sync</a></code></li>

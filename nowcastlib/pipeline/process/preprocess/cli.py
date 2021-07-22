@@ -5,7 +5,7 @@ import json
 import argparse
 import cattr
 from nowcastlib.pipeline import structs
-import nowcastlib.pipeline.preprocess as preprocess
+import nowcastlib.pipeline.process.preprocess as preprocess
 
 
 def configure_parser(action_object):
