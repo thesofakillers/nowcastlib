@@ -11,90 +11,6 @@ from nowcastlib.pipeline.process import utils as process_utils
 logger = logging.getLogger(__name__)
 
 
-def handle_smoothing(
-    input_series: pd.core.series.Series, config: structs.SmoothOptions
-):
-    """
-    Applies a moving average calculation to an input time series
-    so to achieve some form of smoothing
-
-    Parameters
-    ----------
-    input_series: pandas.core.series.Series
-    config : nowcastlib.pipeline.structs.SmoothOptions
-
-    Returns
-    -------
-    pandas.core.series.Series
-        the smoothed series
-    """
-    window_size = config.window_size
-    shift_size = int((window_size + 1) / 2)
-    units = config.units
-    window: Union[str, int]
-    if units is not None:
-        window = str(window_size) + units
-    else:
-        window = window_size
-    return (
-        input_series.rolling(
-            window=window,
-            closed="both",
-        )
-        .mean()
-        .shift(-shift_size, freq=units)
-    )
-
-
-def handle_periodic(
-    input_series: pd.core.series.Series, config: structs.PeriodicOptions
-):
-    """
-    Normalizes a periodic series such that its values lies in
-    the range [0, T-1] where T is the period length, as defined
-    in the input config object
-
-    Parameters
-    ----------
-    input_series: pandas.core.series.Series
-    config : nowcastlib.pipeline.structs.PeriodicOptions
-
-    Returns
-    -------
-    pandas.core.series.Series
-        the normalized series
-    """
-    return input_series % config.period_length
-
-
-def drop_outliers(input_series: pd.core.series.Series, config: structs.OutlierOptions):
-    """
-    drops 'outliers' from a given pandas input series
-    given inclusive thresholds specified in the input
-    config object
-
-    Parameters
-    ----------
-    input_series: pandas.core.series.Series
-    config : nowcastlib.pipeline.structs.OutlierOptions
-
-    Returns
-    -------
-    pandas.core.series.Series
-        the filtered series
-    """
-
-    if config.quantile_based:
-        return input_series[
-            (input_series.quantile(config.lower) <= input_series)
-            & (input_series <= input_series.quantile(config.upper))
-        ]
-    else:
-        return input_series[
-            (config.lower <= input_series) & (input_series <= config.upper)
-        ]
-
-
 def preprocess_datasource(config: structs.DataSource):
     """
     Runs preprocessing on a given data source given options outlined
@@ -131,26 +47,9 @@ def preprocess_datasource(config: structs.DataSource):
                 options, field.field_name
             )
             data_df[computed_field_name] = data_df[field.field_name].copy()
-            if options.outlier_options is not None:
-                logger.debug("Dropping outliers...")
-                data_df[computed_field_name] = drop_outliers(
-                    data_df[computed_field_name], options.outlier_options
-                )
-            if options.periodic_options is not None:
-                logger.debug("Normalizing periodic ranges...")
-                data_df[computed_field_name] = handle_periodic(
-                    data_df[computed_field_name], options.periodic_options
-                )
-            if options.conversion_options is not None:
-                logger.debug("Converting units...")
-                data_df[computed_field_name] = options.conversion_options.conv_func(
-                    data_df[computed_field_name]
-                )
-            if options.smooth_options is not None:
-                logger.debug("Applying moving average for smoothing...")
-                data_df[computed_field_name] = handle_smoothing(
-                    data_df[computed_field_name], options.smooth_options
-                )
+            data_df[computed_field_name] = process_utils.process_field(
+                data_df[computed_field_name], options, True
+            )
     logger.debug("Dropping NaNs...")
     data_df = data_df.dropna()
     if config.preprocessing_output is not None:
