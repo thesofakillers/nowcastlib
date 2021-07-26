@@ -264,7 +264,21 @@ class ProcessingOptions:
     """
     If `True`, overwrites the input field in the input dataframe.
     Otherwise appends a new field to the dataframe.
+    Does not do anything when postprocessing.
     """
+
+    @overwrite.validator
+    def prevent_overwrite(self, attribute, value):
+        """cannot overwrite if performing smoothing"""
+        if value is True:
+            if self.smooth_options is not None:
+                raise ValueError(
+                    "'{0}' of the '{1}' instance needs to be `False`"
+                    " to perform smoothing. A value of {2} was passed instead.".format(
+                        attribute.name, self.__class__.__name__, value
+                    )
+                )
+
     outlier_options: Optional[OutlierOptions] = attrib(default=None)
     """
     Configuration options for specifying which outliers to drop.

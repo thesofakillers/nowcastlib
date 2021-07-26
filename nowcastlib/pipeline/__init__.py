@@ -23,14 +23,19 @@ def pipe_dataset(config: structs.DataSet):
         train_data, test_data = split.train_test_split_sparse(
             chunked_df, config.eval_options, chunk_locs
         )
+        # postprocessing
+        [proc_train_data], [proc_test_data] = process.postprocess.postprocess_dataset(
+            config, [train_data], [test_data]
+        )
         # inner train and validation split(s)
         if config.eval_options.validation is not None:
             train_dfs, val_dfs = split.rep_holdout_split_sparse(
                 train_data[0], config.eval_options.validation
             )
-    # # postprocessing
-    # proc_val_train, proc_val_test = postprocess.postprocess_dataset(
-    #     config,
-    #     val_train[0],
-    #     val_test_data[0],
-    # )
+            # postprocessing
+            (
+                proc_val_train_dfs,
+                proc_val_test_dfs,
+            ) = process.postprocess.postprocess_dataset(config, train_dfs, val_dfs)
+    # serialize?
+    # return
