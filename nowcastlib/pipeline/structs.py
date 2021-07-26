@@ -4,6 +4,7 @@ Classes listed here should be viewed as dictionaries, with class variables
 being treated analogous to dictionary keys.
 """
 from typing import Union, Tuple, Optional, Dict, Callable
+from enum import Enum
 from attr import attrs, attrib, validators
 import numpy as np
 import pandas as pd
@@ -132,6 +133,124 @@ class SmoothOptions:
                     )
                 )
                 raise ValueError(error_string) from invalid_freq
+
+
+brainstorming_dataset = {
+    "additional_postprocessing": {
+        "new_fields": [{"generator": "time_since_sunset", "placeholder": "TODO"}],
+        "standardize-fields": [{"field_name": "jkadshfla", "std_options": {}}],
+    }
+}
+
+
+class GeneratorFunction(Enum):
+    """Enum capturing the available Generator Functions"""
+
+    T_SINCE_SUNSET = "t_since_sunset"
+    """seconds elapsed since the last sunset"""
+    SUN_ELEVATION = "sun_elevation"
+    """the sun's current elevation"""
+    SIN_SEC = "sin_sec"
+    """sine of the second number in the current day out of 86400"""
+    COS_SEC = "cos_sec"
+    """cosine of the second number in the current day out of 86400"""
+    SIN_DAY_YEAR = "sin_day_year"
+    """sine of the day number out of 365 in the current year"""
+    COS_DAY_YEAR = "cos_day_year"
+    """cosine of the day number out of 365 in the current year"""
+    SIN_DAY_WEEK = "sin_day_week"
+    """sine of the day number out of 7 in the current week"""
+    COS_DAY_WEEK = "cos_day_week"
+    """cosine of the day number out of 7 in the current week"""
+    SIN_MONTH_YEAR = "sin_month_year"
+    """sine of the month number out of 12 in the current year"""
+    COS_MONTH_YEAR = "cos_month_year"
+    """cosine of the month number out of 12 in the current year"""
+    IS_WEEKEND = "is_weekend"
+    """whether the current day is a friday, saturday or sunday"""
+    CUSTOM = "custom"
+    """indicates the user will provide their own function"""
+
+
+@attrs(kw_only=True, frozen=True)
+class FieldGenOptions:
+    """
+    Struct containing configuration for specifying
+    how the pipeline should generate a new field of data
+    """
+
+    target_name: str = attrib()
+    """
+    What the new field should be named.
+    """
+    input_fields: Tuple[str] = attrib()
+    """
+    The names of the input fields to pass to the
+    generator function as *args.
+    "index", to specify the index
+    """
+    gen_func: GeneratorFunction = attrib()
+    """
+    The name of the generator function to use
+    for generating the new data.
+    """
+    func_path: Optional[str] = attrib(default=None)
+    """
+    The path to the file implementing a custom
+    generator function. To be specified if `gen_func` is `custom`
+    """
+
+    @func_path.validator
+    def only_if_custom(self, attribute, value):
+        """func_path should be defined only if the function is set to custom"""
+        if value is not None:
+            if self.gen_func != GeneratorFunction.CUSTOM:
+                raise ValueError(
+                    "'{0}' of the '{1}' instance should only be defined when the "
+                    " instance's `gen_func` is set to `GeneratorFunction.CUSTOM`."
+                    " A value of {2} was passed instead.".format(
+                        attribute.name, self.__class__.__name__, self.gen_func
+                    )
+                )
+
+
+@attrs(kw_only=True, frozen=True)
+class StandardizationOptions:
+    """TODO"""
+
+    # TODO
+
+
+@attrs(kw_only=True, frozen=True)
+class FieldStd:
+    """TODO"""
+
+    # TODO
+
+    name: str = attrib()
+    std_options: Optional[StandardizationOptions] = attrib(default=None)
+
+
+@attrs(kw_only=True, frozen=True)
+class PostprocessingOptions:
+    """
+    Struct for necessary additional postprocessing
+    configuration besides the generic processing specified
+    with a `ProcessingOptions` struct.
+    """
+
+    new_fields: Optional[Tuple[FieldGenOptions]] = attrib(default=None)
+    """
+    Configuration options for adding new fields to the data.
+    \nIf `None`, no new fields will be computed.
+    """
+    standardize_fields: Optional[Tuple[FieldStd]] = attrib(default=None)
+    """
+    Configuration options for standardizing DataFields.
+    Specified here because special attention needs to be
+    paid to test and train splits.
+    \nIf `None`, none of the fields will be standardized.
+    """
 
 
 @attrs(kw_only=True, frozen=True)
@@ -374,3 +493,14 @@ class DataSet:
     \nIf `None`, no synchronization will be performed
     """
     eval_options: Optional[EvaluationOptions] = attrib(default=None)
+    """
+    Configurations options for evaluating the models trained
+    on the data. Also handles data splitting options.
+    \nIf `None`, no splitting nor evaluation will be performed
+    """
+    extra_postprocessing: Optional[PostprocessingOptions] = attrib(default=None)
+    """
+    Configuration options for additional postprocessing such as
+    computing new fields and standardization.
+    \nIf `None`, no additional postprocessing will be performed.
+    """
