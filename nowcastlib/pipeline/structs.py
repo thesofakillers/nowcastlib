@@ -148,6 +148,10 @@ class GeneratorFunction(Enum):
 
     T_SINCE_SUNSET = "t_since_sunset"
     """seconds elapsed since the last sunset"""
+    SIN_T_SINCE_SUNSET = "t_since_sunset"
+    """sine of seconds elapsed since the last sunset out of 86400"""
+    COS_T_SINCE_SUNSET = "t_since_sunset"
+    """cosine of seconds elapsed since the last sunset out of 86400"""
     SUN_ELEVATION = "sun_elevation"
     """the sun's current elevation"""
     SIN_SEC = "sin_sec"
@@ -192,7 +196,13 @@ class FieldGenOptions:
     gen_func: GeneratorFunction = attrib()
     """
     The name of the generator function to use
-    for generating the new data.
+    for generating the new data. Specify as the
+    Enum string value when configuring via JSON.
+    """
+    additional_kwargs: Optional[dict] = attrib(default=None)
+    """
+    a dictionary containing additional keyword arguments to
+    to be passed to the function if necessary.
     """
     func_path: Optional[str] = attrib(default=None)
     """

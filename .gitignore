@@ -1,4 +1,5 @@
 # custom
+*.bsp
 *.hdf5
 examples/data
 *.pptx
