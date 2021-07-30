@@ -350,3 +350,22 @@ def make_chunks(input_df, chunk_locations=None):
     # use these to index our dataframe and populate our chunk list
     blocks = [input_df.iloc[start:end] for (start, end) in block_locs]
     return blocks
+
+
+def serialize_as_chunks(chunked_df, path):
+    """
+    Serializes a sparse dataframe as contiguous
+    chunks into an hdf5 file
+
+    Parameters
+    ----------
+    chunked_df : pandas.core.frame.DataFrame
+        the dataframe we wish to serialize as chunks
+    path : pathlib.PosixPath
+        the path to which we wish to save our hdf5 file,
+        including the file name and extension
+    """
+    chunks = make_chunks(chunked_df)
+    hdfs = pd.HDFStore(str(path))
+    for i, chunk in enumerate(chunks):
+        chunk.to_hdf(hdfs, "chunk_{:d}".format(i), format="table")
