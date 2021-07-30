@@ -16,21 +16,6 @@ plt.ion()
 logger = logging.getLogger(__name__)
 
 
-def yes_or_no(question):
-    """
-    Asks the user a yes or no question, parsing the answer
-    accordingly.
-    """
-    while "the answer is invalid":
-        reply = str(input(question + " (y/n): ")).lower().strip()
-        if reply[:1] == "y":
-            return True
-        if reply[:1] == "n":
-            return False
-        else:
-            print("Please enter either 'y'/'Y' or 'n'/'N'")
-
-
 def handle_diag_plots(
     config: structs.SyncOptions, dataframes: List[pd.core.frame.DataFrame]
 ):
@@ -52,12 +37,12 @@ def handle_diag_plots(
         running the pipeline or not
     """
     n_samples = 10000
-    fig, ax = plt.subplots(1, 1, figsize=(6, 4))
+    fig, ax1 = plt.subplots(1, 1, figsize=(6, 4))
     for i, data_df in enumerate(dataframes):
         sample_spacing = data_df.index.to_series().diff()
         data = sample_spacing.sample(n_samples).astype("timedelta64[s]")
         weights = np.ones_like(data) / n_samples
-        ax.hist(
+        ax1.hist(
             data,
             bins=np.arange(150, step=1),
             weights=weights,
@@ -65,22 +50,22 @@ def handle_diag_plots(
             histtype="step",
             linewidth=1.5,
         )
-    ax.axvline(config.sample_spacing, color="black", label="Selected Sample Spacing")
-    ax.set_xlabel("Sample Spacing [s]")
-    ax.set_ylabel("Prevalence")
-    ax.set_title(
+    ax1.axvline(config.sample_spacing, color="black", label="Selected Sample Spacing")
+    ax1.set_xlabel("Sample Spacing [s]")
+    ax1.set_ylabel("Prevalence")
+    ax1.set_title(
         "Sample spacing of {} random samples across the input Data Sources".format(
             n_samples
         )
     )
-    ax.legend()
+    ax1.legend()
     fig.set_tight_layout(True)
     logger.info("Press any button to exit. Use mouse to zoom and resize")
     while True:
         plt.draw()
         if plt.waitforbuttonpress():
             break
-    return yes_or_no("Are you satisfied with the target sample rate?")
+    return utils.yes_or_no("Are you satisfied with the target sample rate?")
 
 
 def handle_chunking(
