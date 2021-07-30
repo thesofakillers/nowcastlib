@@ -176,8 +176,41 @@ class GeneratorFunction(Enum):
     """indicates the user will provide their own function"""
 
 
+class StandardizationMethod(Enum):
+    POWER = "power"
+    ROBUST = "robust"
+    LOGNORM = "lognorm"
+
+
 @attrs(kw_only=True, frozen=True)
-class FieldGenOptions:
+class StandardizationOptions:
+    """TODO"""
+
+    method: StandardizationMethod = attrib()
+    """
+    Which of the available methods to use. Specify as the
+    Enum string value when configuring via JSON
+    """
+    diagnostic_plots: bool = attrib(default=True)
+    """
+    Whether or not to show diagnostic plots, intended to help
+    the user in configuration evaluation and decision making.
+    """
+    # TODO
+
+
+@attrs(kw_only=True, frozen=True)
+class BaseField:
+    """
+    Struct containing configuration options
+    shared by both Raw and Generated fields.
+    """
+
+    std_options: Optional[StandardizationOptions] = attrib(default=None)
+
+
+@attrs(kw_only=True, frozen=True)
+class GeneratedField(BaseField):
     """
     Struct containing configuration for specifying
     how the pipeline should generate a new field of data
@@ -222,45 +255,6 @@ class FieldGenOptions:
                         attribute.name, self.__class__.__name__, self.gen_func
                     )
                 )
-
-
-@attrs(kw_only=True, frozen=True)
-class StandardizationOptions:
-    """TODO"""
-
-    # TODO
-
-
-@attrs(kw_only=True, frozen=True)
-class FieldStd:
-    """TODO"""
-
-    # TODO
-
-    name: str = attrib()
-    std_options: Optional[StandardizationOptions] = attrib(default=None)
-
-
-@attrs(kw_only=True, frozen=True)
-class PostprocessingOptions:
-    """
-    Struct for necessary additional postprocessing
-    configuration besides the generic processing specified
-    with a `ProcessingOptions` struct.
-    """
-
-    new_fields: Optional[Tuple[FieldGenOptions]] = attrib(default=None)
-    """
-    Configuration options for adding new fields to the data.
-    \nIf `None`, no new fields will be computed.
-    """
-    standardize_fields: Optional[Tuple[FieldStd]] = attrib(default=None)
-    """
-    Configuration options for standardizing DataFields.
-    Specified here because special attention needs to be
-    paid to test and train splits.
-    \nIf `None`, none of the fields will be standardized.
-    """
 
 
 @attrs(kw_only=True, frozen=True)
@@ -318,9 +312,9 @@ class ProcessingOptions:
 
 
 @attrs(kw_only=True, frozen=True)
-class DataField:
+class RawField(BaseField):
     """
-    Struct containing configuration attributes for a given field
+    Struct containing configuration attributes for a raw field
     of a given DataSource
     """
 
@@ -372,7 +366,7 @@ class DataSource:
     """The name of the DataSource. Somewhat arbitrary but useful for legibility"""
     path: str = attrib()
     """The path to the csv file from which to read the data"""
-    fields: Tuple[DataField, ...] = attrib()
+    fields: Tuple[RawField, ...] = attrib()
     """Configuration options for each field the user is interested in"""
     comment_format: str = attrib(default="#")
     """Prefix used in csv file to signal comments, that will be dropped when reading"""
@@ -388,7 +382,7 @@ class DataSource:
         date_flags = [field.is_date for field in value if field.is_date]
         if len(date_flags) > 1:
             raise ValueError(
-                "{0} of the {1} instance must contain exactly one DataField with"
+                "{0} of the {1} instance must contain exactly one RawField with"
                 " is_date=True".format(attribute.name, self.__class__.__name__)
             )
 
@@ -522,9 +516,8 @@ class DataSet:
     on the data. Also handles data splitting options.
     \nIf `None`, no splitting nor evaluation will be performed
     """
-    extra_postprocessing: Optional[PostprocessingOptions] = attrib(default=None)
+    generated_fields: Optional[Tuple[GeneratedField]] = attrib(default=None)
     """
-    Configuration options for additional postprocessing such as
-    computing new fields and standardization.
-    \nIf `None`, no additional postprocessing will be performed.
+    Configuration options for adding new fields to the data.
+    \nIf `None`, no new fields will be computed.
     """
