@@ -34,116 +34,10 @@ import logging
 from typing import Union
 import pandas as pd
 from nowcastlib.pipeline import structs
-from nowcastlib.pipeline import utils
+from nowcastlib.pipeline import utils as pipeline_utils
+from nowcastlib.pipeline.process import utils as process_utils
 
 logger = logging.getLogger(__name__)
-
-
-def handle_smoothing(
-    input_series: pd.core.series.Series, config: structs.SmoothOptions
-):
-    &#34;&#34;&#34;
-    Applies a moving average calculation to an input time series
-    so to achieve some form of smoothing
-
-    Parameters
-    ----------
-    input_series: pandas.core.series.Series
-    config : nowcastlib.pipeline.structs.SmoothOptions
-
-    Returns
-    -------
-    pandas.core.series.Series
-        the smoothed series
-    &#34;&#34;&#34;
-    window_size = config.window_size
-    shift_size = int((window_size + 1) / 2)
-    units = config.units
-    window: Union[str, int]
-    if units is not None:
-        window = str(window_size) + units
-    else:
-        window = window_size
-    return (
-        input_series.rolling(
-            window=window,
-            closed=&#34;both&#34;,
-        )
-        .mean()
-        .shift(-shift_size, freq=units)
-    )
-
-
-def handle_periodic(
-    input_series: pd.core.series.Series, config: structs.PeriodicOptions
-):
-    &#34;&#34;&#34;
-    Normalizes a periodic series such that its values lies in
-    the range [0, T-1] where T is the period length, as defined
-    in the input config object
-
-    Parameters
-    ----------
-    input_series: pandas.core.series.Series
-    config : nowcastlib.pipeline.structs.PeriodicOptions
-
-    Returns
-    -------
-    pandas.core.series.Series
-        the normalized series
-    &#34;&#34;&#34;
-    return input_series % config.period_length
-
-
-def drop_outliers(input_series: pd.core.series.Series, config: structs.OutlierOptions):
-    &#34;&#34;&#34;
-    drops &#39;outliers&#39; from a given pandas input series
-    given inclusive thresholds specified in the input
-    config object
-
-    Parameters
-    ----------
-    input_series: pandas.core.series.Series
-    config : nowcastlib.pipeline.structs.OutlierOptions
-
-    Returns
-    -------
-    pandas.core.series.Series
-        the filtered series
-    &#34;&#34;&#34;
-
-    if config.quantile_based:
-        return input_series[
-            (input_series.quantile(config.lower) &lt;= input_series)
-            &amp; (input_series &lt;= input_series.quantile(config.upper))
-        ]
-    else:
-        return input_series[
-            (config.lower &lt;= input_series) &amp; (input_series &lt;= config.upper)
-        ]
-
-
-def build_field_name(config: structs.ProcessingOptions, field_name: str):
-    &#34;&#34;&#34;
-    Builds the appropriate field name depending on whether
-    the user wishes to overwrite the current field or not
-
-    Parameters
-    ----------
-    config : nowcastlib.pipeline.structs.ProcessingOptions
-    field_name : str
-        the name of the current field we are acting on
-
-    Returns
-    -------
-    str
-        the resulting string
-    &#34;&#34;&#34;
-    if config.overwrite:
-        computed_field_name = field_name
-    else:
-        computed_field_name = &#34;processed_{}&#34;.format(field_name)
-    return computed_field_name
 
 
 def preprocess_datasource(config: structs.DataSource):
@@ -178,33 +72,18 @@ def preprocess_datasource(config: structs.DataSource):
         options = field.preprocessing_options
         if options is not None:
             # next two lines handle whether user wishes to overwrite field or not
-            computed_field_name = build_field_name(options, field.field_name)
+            computed_field_name = process_utils.build_field_name(
+                options, field.field_name
+            )
             data_df[computed_field_name] = data_df[field.field_name].copy()
-            if options.outlier_options is not None:
-                logger.debug(&#34;Dropping outliers...&#34;)
-                data_df[computed_field_name] = drop_outliers(
-                    data_df[computed_field_name], options.outlier_options
-                )
-            if options.periodic_options is not None:
-                logger.debug(&#34;Normalizing periodic ranges...&#34;)
-                data_df[computed_field_name] = handle_periodic(
-                    data_df[computed_field_name], options.periodic_options
-                )
-            if options.conversion_options is not None:
-                logger.debug(&#34;Converting units...&#34;)
-                data_df[computed_field_name] = options.conversion_options.conv_func(
-                    data_df[computed_field_name]
-                )
-            if options.smooth_options is not None:
-                logger.debug(&#34;Applying moving average for smoothing...&#34;)
-                data_df[computed_field_name] = handle_smoothing(
-                    data_df[computed_field_name], options.smooth_options
-                )
+            data_df[computed_field_name] = process_utils.process_field(
+                data_df[computed_field_name], options, True
+            )
     logger.debug(&#34;Dropping NaNs...&#34;)
     data_df = data_df.dropna()
     if config.preprocessing_output is not None:
         logger.debug(&#34;Serializing preprocessing output...&#34;)
-        utils.handle_serialization(data_df, config.preprocessing_output)
+        pipeline_utils.handle_serialization(data_df, config.preprocessing_output)
     return data_df
 
 
@@ -243,203 +122,6 @@ def preprocess_dataset(config: structs.DataSet):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="nowcastlib.pipeline.process.preprocess.handle_smoothing"><code class="name flex">
-<span>def <span class="ident">handle_smoothing</span></span>(<span>input_series: pandas.core.series.Series, config: <a title="nowcastlib.pipeline.structs.SmoothOptions" href="../../structs.html#nowcastlib.pipeline.structs.SmoothOptions">SmoothOptions</a>)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Applies a moving average calculation to an input time series
-so to achieve some form of smoothing</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>input_series</code></strong> :&ensp;<code>pandas.core.series.Series</code></dt>
-<dd>&nbsp;</dd>
-<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.SmoothOptions" href="../../structs.html#nowcastlib.pipeline.structs.SmoothOptions">SmoothOptions</a></code></dt>
-<dd>&nbsp;</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>pandas.core.series.Series</code></dt>
-<dd>the smoothed series</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def handle_smoothing(
-    input_series: pd.core.series.Series, config: structs.SmoothOptions
-):
-    &#34;&#34;&#34;
-    Applies a moving average calculation to an input time series
-    so to achieve some form of smoothing
-
-    Parameters
-    ----------
-    input_series: pandas.core.series.Series
-    config : nowcastlib.pipeline.structs.SmoothOptions
-
-    Returns
-    -------
-    pandas.core.series.Series
-        the smoothed series
-    &#34;&#34;&#34;
-    window_size = config.window_size
-    shift_size = int((window_size + 1) / 2)
-    units = config.units
-    window: Union[str, int]
-    if units is not None:
-        window = str(window_size) + units
-    else:
-        window = window_size
-    return (
-        input_series.rolling(
-            window=window,
-            closed=&#34;both&#34;,
-        )
-        .mean()
-        .shift(-shift_size, freq=units)
-    )</code></pre>
-</details>
-</dd>
-<dt id="nowcastlib.pipeline.process.preprocess.handle_periodic"><code class="name flex">
-<span>def <span class="ident">handle_periodic</span></span>(<span>input_series: pandas.core.series.Series, config: <a title="nowcastlib.pipeline.structs.PeriodicOptions" href="../../structs.html#nowcastlib.pipeline.structs.PeriodicOptions">PeriodicOptions</a>)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Normalizes a periodic series such that its values lies in
-the range [0, T-1] where T is the period length, as defined
-in the input config object</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>input_series</code></strong> :&ensp;<code>pandas.core.series.Series</code></dt>
-<dd>&nbsp;</dd>
-<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.PeriodicOptions" href="../../structs.html#nowcastlib.pipeline.structs.PeriodicOptions">PeriodicOptions</a></code></dt>
-<dd>&nbsp;</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>pandas.core.series.Series</code></dt>
-<dd>the normalized series</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def handle_periodic(
-    input_series: pd.core.series.Series, config: structs.PeriodicOptions
-):
-    &#34;&#34;&#34;
-    Normalizes a periodic series such that its values lies in
-    the range [0, T-1] where T is the period length, as defined
-    in the input config object
-
-    Parameters
-    ----------
-    input_series: pandas.core.series.Series
-    config : nowcastlib.pipeline.structs.PeriodicOptions
-
-    Returns
-    -------
-    pandas.core.series.Series
-        the normalized series
-    &#34;&#34;&#34;
-    return input_series % config.period_length</code></pre>
-</details>
-</dd>
-<dt id="nowcastlib.pipeline.process.preprocess.drop_outliers"><code class="name flex">
-<span>def <span class="ident">drop_outliers</span></span>(<span>input_series: pandas.core.series.Series, config: <a title="nowcastlib.pipeline.structs.OutlierOptions" href="../../structs.html#nowcastlib.pipeline.structs.OutlierOptions">OutlierOptions</a>)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>drops 'outliers' from a given pandas input series
-given inclusive thresholds specified in the input
-config object</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>input_series</code></strong> :&ensp;<code>pandas.core.series.Series</code></dt>
-<dd>&nbsp;</dd>
-<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.OutlierOptions" href="../../structs.html#nowcastlib.pipeline.structs.OutlierOptions">OutlierOptions</a></code></dt>
-<dd>&nbsp;</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>pandas.core.series.Series</code></dt>
-<dd>the filtered series</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def drop_outliers(input_series: pd.core.series.Series, config: structs.OutlierOptions):
-    &#34;&#34;&#34;
-    drops &#39;outliers&#39; from a given pandas input series
-    given inclusive thresholds specified in the input
-    config object
-
-    Parameters
-    ----------
-    input_series: pandas.core.series.Series
-    config : nowcastlib.pipeline.structs.OutlierOptions
-
-    Returns
-    -------
-    pandas.core.series.Series
-        the filtered series
-    &#34;&#34;&#34;
-
-    if config.quantile_based:
-        return input_series[
-            (input_series.quantile(config.lower) &lt;= input_series)
-            &amp; (input_series &lt;= input_series.quantile(config.upper))
-        ]
-    else:
-        return input_series[
-            (config.lower &lt;= input_series) &amp; (input_series &lt;= config.upper)
-        ]</code></pre>
-</details>
-</dd>
-<dt id="nowcastlib.pipeline.process.preprocess.build_field_name"><code class="name flex">
-<span>def <span class="ident">build_field_name</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.ProcessingOptions" href="../../structs.html#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, field_name: str)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Builds the appropriate field name depending on whether
-the user wishes to overwrite the current field or not</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.ProcessingOptions" href="../../structs.html#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a></code></dt>
-<dd>&nbsp;</dd>
-<dt><strong><code>field_name</code></strong> :&ensp;<code>str</code></dt>
-<dd>the name of the current field we are acting on</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>str</code></dt>
-<dd>the resulting string</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def build_field_name(config: structs.ProcessingOptions, field_name: str):
-    &#34;&#34;&#34;
-    Builds the appropriate field name depending on whether
-    the user wishes to overwrite the current field or not
-
-    Parameters
-    ----------
-    config : nowcastlib.pipeline.structs.ProcessingOptions
-    field_name : str
-        the name of the current field we are acting on
-
-    Returns
-    -------
-    str
-        the resulting string
-    &#34;&#34;&#34;
-    if config.overwrite:
-        computed_field_name = field_name
-    else:
-        computed_field_name = &#34;processed_{}&#34;.format(field_name)
-    return computed_field_name</code></pre>
-</details>
-</dd>
 <dt id="nowcastlib.pipeline.process.preprocess.preprocess_datasource"><code class="name flex">
 <span>def <span class="ident">preprocess_datasource</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.DataSource" href="../../structs.html#nowcastlib.pipeline.structs.DataSource">DataSource</a>)</span>
 </code></dt>
@@ -492,33 +174,18 @@ in the input DataSource instance.</p>
         options = field.preprocessing_options
         if options is not None:
             # next two lines handle whether user wishes to overwrite field or not
-            computed_field_name = build_field_name(options, field.field_name)
+            computed_field_name = process_utils.build_field_name(
+                options, field.field_name
+            )
             data_df[computed_field_name] = data_df[field.field_name].copy()
-            if options.outlier_options is not None:
-                logger.debug(&#34;Dropping outliers...&#34;)
-                data_df[computed_field_name] = drop_outliers(
-                    data_df[computed_field_name], options.outlier_options
-                )
-            if options.periodic_options is not None:
-                logger.debug(&#34;Normalizing periodic ranges...&#34;)
-                data_df[computed_field_name] = handle_periodic(
-                    data_df[computed_field_name], options.periodic_options
-                )
-            if options.conversion_options is not None:
-                logger.debug(&#34;Converting units...&#34;)
-                data_df[computed_field_name] = options.conversion_options.conv_func(
-                    data_df[computed_field_name]
-                )
-            if options.smooth_options is not None:
-                logger.debug(&#34;Applying moving average for smoothing...&#34;)
-                data_df[computed_field_name] = handle_smoothing(
-                    data_df[computed_field_name], options.smooth_options
-                )
+            data_df[computed_field_name] = process_utils.process_field(
+                data_df[computed_field_name], options, True
+            )
     logger.debug(&#34;Dropping NaNs...&#34;)
     data_df = data_df.dropna()
     if config.preprocessing_output is not None:
         logger.debug(&#34;Serializing preprocessing output...&#34;)
-        utils.handle_serialization(data_df, config.preprocessing_output)
+        pipeline_utils.handle_serialization(data_df, config.preprocessing_output)
     return data_df</code></pre>
 </details>
 </dd>
@@ -586,10 +253,6 @@ in the input DataSet instance.</p>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.process.preprocess.handle_smoothing" href="#nowcastlib.pipeline.process.preprocess.handle_smoothing">handle_smoothing</a></code></li>
-<li><code><a title="nowcastlib.pipeline.process.preprocess.handle_periodic" href="#nowcastlib.pipeline.process.preprocess.handle_periodic">handle_periodic</a></code></li>
-<li><code><a title="nowcastlib.pipeline.process.preprocess.drop_outliers" href="#nowcastlib.pipeline.process.preprocess.drop_outliers">drop_outliers</a></code></li>
-<li><code><a title="nowcastlib.pipeline.process.preprocess.build_field_name" href="#nowcastlib.pipeline.process.preprocess.build_field_name">build_field_name</a></code></li>
 <li><code><a title="nowcastlib.pipeline.process.preprocess.preprocess_datasource" href="#nowcastlib.pipeline.process.preprocess.preprocess_datasource">preprocess_datasource</a></code></li>
 <li><code><a title="nowcastlib.pipeline.process.preprocess.preprocess_dataset" href="#nowcastlib.pipeline.process.preprocess.preprocess_dataset">preprocess_dataset</a></code></li>
 </ul>

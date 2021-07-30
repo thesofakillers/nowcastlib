@@ -30,17 +30,19 @@
 <pre><code class="python">&#34;&#34;&#34;
 Functions for splitting data
 &#34;&#34;&#34;
-from typing import Optional
+from typing import Optional, Tuple
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import TimeSeriesSplit
 from nowcastlib.pipeline import structs
+import nowcastlib.datasets as datasets
 
 
 def train_test_split_sparse(
     sparse_df: pd.core.frame.DataFrame,
     config: structs.EvaluationOptions,
-    block_locs: Optional[np.ndarray] = None,
-):
+    chunk_locations: Optional[np.ndarray] = None,
+) -&gt; Tuple:
     &#34;&#34;&#34;
     Splits a sparse dataframe in train and test sets
 
@@ -57,21 +59,62 @@ def train_test_split_sparse(
     train_data : tuple
         Tuple of length 2 containing the resulting training data.
         The first element is the dataframe, the second element
-        is the updated accompanying `block_locs` if originally
-        provided, `None` otherwise
+        is the updated accompanying `block_locs`.
     test_data : tuple
         Tuple of length 2 containing the resulting testing data.
         The first element is the dataframe, the second element
-        is the updated accompanying `block_locs` if originally
-        provided, `None` otherwise.
+        is the updated accompanying `block_locs`.
     &#34;&#34;&#34;
+    # pylint: disable=too-many-locals
+    block_locs = datasets.contiguous_locs(sparse_df, chunk_locations)
+    starts, ends = block_locs.T
+    # find the desired index
+    configured_split = config.train_split
+    if isinstance(configured_split, int):
+        desired_index = configured_split
+    elif isinstance(configured_split, str):
+        desired_index = len(sparse_df.truncate(after=configured_split)) - 1
+    elif isinstance(configured_split, float):
+        idx_to_count = datasets.fill_start_end(starts, ends)
+        total_valid = len(idx_to_count)
+        desired_index = idx_to_count[int(configured_split * total_valid)]
+    # find the closest relevant nan edges to the desired index
+    closest_edge_idx = np.abs(ends - desired_index).argmin()
+    train_end_index = ends[closest_edge_idx]
+    test_start_index = starts[closest_edge_idx + 1]
+    # finally split
+    train_df = sparse_df.iloc[:train_end_index]
+    test_df = sparse_df.iloc[test_start_index:]
+    # update block_locs
+    train_block_locs = block_locs[: (closest_edge_idx + 1)]
+    test_block_locs = block_locs[(closest_edge_idx + 1) :] - test_start_index
+
+    return (train_df, train_block_locs), (test_df, test_block_locs)
 
 
-def rep_holdout_split_sparse(sparse_df, block_locs=None):
+def rep_holdout_split_sparse(
+    sparse_df: pd.core.frame.DataFrame,
+    config: structs.ValidationOptions,
+    chunk_locations: Optional[np.ndarray] = None,
+):
     &#34;&#34;&#34;
     Splits a sparse dataframe in k train and validation sets
-    for repeated holdout
-    &#34;&#34;&#34;</code></pre>
+    for repeated holdout. Split is approximate due to sparse
+    &#39;chunked&#39; nature of the input dataframe.
+    &#34;&#34;&#34;
+    n_samples = len(sparse_df)
+    tscv = TimeSeriesSplit(
+        n_splits=config.iterations,
+        max_train_size=int(config.train_extent * n_samples),
+        test_size=int(config.val_extent * n_samples),
+    )
+    train_dfs = []
+    val_dfs = []
+    for train_idxs, val_idxs in tscv.split(sparse_df):
+        train_dfs.append(sparse_df.iloc[train_idxs])
+        val_dfs.append(sparse_df.iloc[val_idxs])
+    return train_dfs, val_dfs
+    # TODO update and return chunk_locations</code></pre>
 </details>
 </section>
 <section>
@@ -82,7 +125,7 @@ def rep_holdout_split_sparse(sparse_df, block_locs=None):
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="nowcastlib.pipeline.split.train_test_split_sparse"><code class="name flex">
-<span>def <span class="ident">train_test_split_sparse</span></span>(<span>sparse_df: pandas.core.frame.DataFrame, config: <a title="nowcastlib.pipeline.structs.EvaluationOptions" href="../structs.html#nowcastlib.pipeline.structs.EvaluationOptions">EvaluationOptions</a>, block_locs: Union[numpy.ndarray, NoneType] = None)</span>
+<span>def <span class="ident">train_test_split_sparse</span></span>(<span>sparse_df: pandas.core.frame.DataFrame, config: <a title="nowcastlib.pipeline.structs.EvaluationOptions" href="../structs.html#nowcastlib.pipeline.structs.EvaluationOptions">EvaluationOptions</a>, chunk_locations: Union[numpy.ndarray, NoneType] = None) ‑> Tuple</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Splits a sparse dataframe in train and test sets</p>
@@ -100,13 +143,11 @@ def rep_holdout_split_sparse(sparse_df, block_locs=None):
 <dt><strong><code>train_data</code></strong> :&ensp;<code>tuple</code></dt>
 <dd>Tuple of length 2 containing the resulting training data.
 The first element is the dataframe, the second element
-is the updated accompanying <code>block_locs</code> if originally
-provided, <code>None</code> otherwise</dd>
+is the updated accompanying <code>block_locs</code>.</dd>
 <dt><strong><code>test_data</code></strong> :&ensp;<code>tuple</code></dt>
 <dd>Tuple of length 2 containing the resulting testing data.
 The first element is the dataframe, the second element
-is the updated accompanying <code>block_locs</code> if originally
-provided, <code>None</code> otherwise.</dd>
+is the updated accompanying <code>block_locs</code>.</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -115,8 +156,8 @@ provided, <code>None</code> otherwise.</dd>
 <pre><code class="python">def train_test_split_sparse(
     sparse_df: pd.core.frame.DataFrame,
     config: structs.EvaluationOptions,
-    block_locs: Optional[np.ndarray] = None,
-):
+    chunk_locations: Optional[np.ndarray] = None,
+) -&gt; Tuple:
     &#34;&#34;&#34;
     Splits a sparse dataframe in train and test sets
 
@@ -133,31 +174,72 @@ provided, <code>None</code> otherwise.</dd>
     train_data : tuple
         Tuple of length 2 containing the resulting training data.
         The first element is the dataframe, the second element
-        is the updated accompanying `block_locs` if originally
-        provided, `None` otherwise
+        is the updated accompanying `block_locs`.
     test_data : tuple
         Tuple of length 2 containing the resulting testing data.
         The first element is the dataframe, the second element
-        is the updated accompanying `block_locs` if originally
-        provided, `None` otherwise.
-    &#34;&#34;&#34;</code></pre>
+        is the updated accompanying `block_locs`.
+    &#34;&#34;&#34;
+    # pylint: disable=too-many-locals
+    block_locs = datasets.contiguous_locs(sparse_df, chunk_locations)
+    starts, ends = block_locs.T
+    # find the desired index
+    configured_split = config.train_split
+    if isinstance(configured_split, int):
+        desired_index = configured_split
+    elif isinstance(configured_split, str):
+        desired_index = len(sparse_df.truncate(after=configured_split)) - 1
+    elif isinstance(configured_split, float):
+        idx_to_count = datasets.fill_start_end(starts, ends)
+        total_valid = len(idx_to_count)
+        desired_index = idx_to_count[int(configured_split * total_valid)]
+    # find the closest relevant nan edges to the desired index
+    closest_edge_idx = np.abs(ends - desired_index).argmin()
+    train_end_index = ends[closest_edge_idx]
+    test_start_index = starts[closest_edge_idx + 1]
+    # finally split
+    train_df = sparse_df.iloc[:train_end_index]
+    test_df = sparse_df.iloc[test_start_index:]
+    # update block_locs
+    train_block_locs = block_locs[: (closest_edge_idx + 1)]
+    test_block_locs = block_locs[(closest_edge_idx + 1) :] - test_start_index
+
+    return (train_df, train_block_locs), (test_df, test_block_locs)</code></pre>
 </details>
 </dd>
 <dt id="nowcastlib.pipeline.split.rep_holdout_split_sparse"><code class="name flex">
-<span>def <span class="ident">rep_holdout_split_sparse</span></span>(<span>sparse_df, block_locs=None)</span>
+<span>def <span class="ident">rep_holdout_split_sparse</span></span>(<span>sparse_df: pandas.core.frame.DataFrame, config: <a title="nowcastlib.pipeline.structs.ValidationOptions" href="../structs.html#nowcastlib.pipeline.structs.ValidationOptions">ValidationOptions</a>, chunk_locations: Union[numpy.ndarray, NoneType] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Splits a sparse dataframe in k train and validation sets
-for repeated holdout</p></div>
+for repeated holdout. Split is approximate due to sparse
+'chunked' nature of the input dataframe.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def rep_holdout_split_sparse(sparse_df, block_locs=None):
+<pre><code class="python">def rep_holdout_split_sparse(
+    sparse_df: pd.core.frame.DataFrame,
+    config: structs.ValidationOptions,
+    chunk_locations: Optional[np.ndarray] = None,
+):
     &#34;&#34;&#34;
     Splits a sparse dataframe in k train and validation sets
-    for repeated holdout
-    &#34;&#34;&#34;</code></pre>
+    for repeated holdout. Split is approximate due to sparse
+    &#39;chunked&#39; nature of the input dataframe.
+    &#34;&#34;&#34;
+    n_samples = len(sparse_df)
+    tscv = TimeSeriesSplit(
+        n_splits=config.iterations,
+        max_train_size=int(config.train_extent * n_samples),
+        test_size=int(config.val_extent * n_samples),
+    )
+    train_dfs = []
+    val_dfs = []
+    for train_idxs, val_idxs in tscv.split(sparse_df):
+        train_dfs.append(sparse_df.iloc[train_idxs])
+        val_dfs.append(sparse_df.iloc[val_idxs])
+    return train_dfs, val_dfs</code></pre>
 </details>
 </dd>
 </dl>

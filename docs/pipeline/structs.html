@@ -37,6 +37,7 @@ Classes listed here should be viewed as dictionaries, with class variables
 being treated analogous to dictionary keys.
 &#34;&#34;&#34;
 from typing import Union, Tuple, Optional, Dict, Callable
+from enum import Enum
 from attr import attrs, attrib, validators
 import numpy as np
 import pandas as pd
@@ -167,6 +168,128 @@ class SmoothOptions:
                 raise ValueError(error_string) from invalid_freq
 
 
+brainstorming_dataset = {
+    &#34;additional_postprocessing&#34;: {
+        &#34;new_fields&#34;: [{&#34;generator&#34;: &#34;time_since_sunset&#34;, &#34;placeholder&#34;: &#34;TODO&#34;}],
+        &#34;standardize-fields&#34;: [{&#34;field_name&#34;: &#34;jkadshfla&#34;, &#34;std_options&#34;: {}}],
+    }
+}
+
+
+class GeneratorFunction(Enum):
+    &#34;&#34;&#34;Enum capturing the available Generator Functions&#34;&#34;&#34;
+
+    T_SINCE_SUNSET = &#34;t_since_sunset&#34;
+    &#34;&#34;&#34;seconds elapsed since the last sunset&#34;&#34;&#34;
+    SIN_T_SINCE_SUNSET = &#34;t_since_sunset&#34;
+    &#34;&#34;&#34;sine of seconds elapsed since the last sunset out of 86400&#34;&#34;&#34;
+    COS_T_SINCE_SUNSET = &#34;t_since_sunset&#34;
+    &#34;&#34;&#34;cosine of seconds elapsed since the last sunset out of 86400&#34;&#34;&#34;
+    SUN_ELEVATION = &#34;sun_elevation&#34;
+    &#34;&#34;&#34;the sun&#39;s current elevation&#34;&#34;&#34;
+    SIN_SEC = &#34;sin_sec&#34;
+    &#34;&#34;&#34;sine of the second number in the current day out of 86400&#34;&#34;&#34;
+    COS_SEC = &#34;cos_sec&#34;
+    &#34;&#34;&#34;cosine of the second number in the current day out of 86400&#34;&#34;&#34;
+    SIN_DAY_YEAR = &#34;sin_day_year&#34;
+    &#34;&#34;&#34;sine of the day number out of 365 in the current year&#34;&#34;&#34;
+    COS_DAY_YEAR = &#34;cos_day_year&#34;
+    &#34;&#34;&#34;cosine of the day number out of 365 in the current year&#34;&#34;&#34;
+    SIN_DAY_WEEK = &#34;sin_day_week&#34;
+    &#34;&#34;&#34;sine of the day number out of 7 in the current week&#34;&#34;&#34;
+    COS_DAY_WEEK = &#34;cos_day_week&#34;
+    &#34;&#34;&#34;cosine of the day number out of 7 in the current week&#34;&#34;&#34;
+    SIN_MONTH_YEAR = &#34;sin_month_year&#34;
+    &#34;&#34;&#34;sine of the month number out of 12 in the current year&#34;&#34;&#34;
+    COS_MONTH_YEAR = &#34;cos_month_year&#34;
+    &#34;&#34;&#34;cosine of the month number out of 12 in the current year&#34;&#34;&#34;
+    IS_WEEKEND = &#34;is_weekend&#34;
+    &#34;&#34;&#34;whether the current day is a friday, saturday or sunday&#34;&#34;&#34;
+    CUSTOM = &#34;custom&#34;
+    &#34;&#34;&#34;indicates the user will provide their own function&#34;&#34;&#34;
+
+
+class StandardizationMethod(Enum):
+    POWER = &#34;power&#34;
+    ROBUST = &#34;robust&#34;
+    LOGNORM = &#34;lognorm&#34;
+
+
+@attrs(kw_only=True, frozen=True)
+class StandardizationOptions:
+    &#34;&#34;&#34;TODO&#34;&#34;&#34;
+
+    method: StandardizationMethod = attrib()
+    &#34;&#34;&#34;
+    Which of the available methods to use. Specify as the
+    Enum string value when configuring via JSON
+    &#34;&#34;&#34;
+    diagnostic_plots: bool = attrib(default=True)
+    &#34;&#34;&#34;
+    Whether or not to show diagnostic plots, intended to help
+    the user in configuration evaluation and decision making.
+    &#34;&#34;&#34;
+    # TODO
+
+
+@attrs(kw_only=True, frozen=True)
+class BaseField:
+    &#34;&#34;&#34;
+    Struct containing configuration options
+    shared by both Raw and Generated fields.
+    &#34;&#34;&#34;
+
+    std_options: Optional[StandardizationOptions] = attrib(default=None)
+
+
+@attrs(kw_only=True, frozen=True)
+class GeneratedField(BaseField):
+    &#34;&#34;&#34;
+    Struct containing configuration for specifying
+    how the pipeline should generate a new field of data
+    &#34;&#34;&#34;
+
+    target_name: str = attrib()
+    &#34;&#34;&#34;
+    What the new field should be named.
+    &#34;&#34;&#34;
+    input_fields: Tuple[str] = attrib()
+    &#34;&#34;&#34;
+    The names of the input fields to pass to the
+    generator function as *args.
+    &#34;index&#34;, to specify the index
+    &#34;&#34;&#34;
+    gen_func: GeneratorFunction = attrib()
+    &#34;&#34;&#34;
+    The name of the generator function to use
+    for generating the new data. Specify as the
+    Enum string value when configuring via JSON.
+    &#34;&#34;&#34;
+    additional_kwargs: Optional[dict] = attrib(default=None)
+    &#34;&#34;&#34;
+    a dictionary containing additional keyword arguments to
+    to be passed to the function if necessary.
+    &#34;&#34;&#34;
+    func_path: Optional[str] = attrib(default=None)
+    &#34;&#34;&#34;
+    The path to the file implementing a custom
+    generator function. To be specified if `gen_func` is `custom`
+    &#34;&#34;&#34;
+
+    @func_path.validator
+    def only_if_custom(self, attribute, value):
+        &#34;&#34;&#34;func_path should be defined only if the function is set to custom&#34;&#34;&#34;
+        if value is not None:
+            if self.gen_func != GeneratorFunction.CUSTOM:
+                raise ValueError(
+                    &#34;&#39;{0}&#39; of the &#39;{1}&#39; instance should only be defined when the &#34;
+                    &#34; instance&#39;s `gen_func` is set to `GeneratorFunction.CUSTOM`.&#34;
+                    &#34; A value of {2} was passed instead.&#34;.format(
+                        attribute.name, self.__class__.__name__, self.gen_func
+                    )
+                )
+
+
 @attrs(kw_only=True, frozen=True)
 class ProcessingOptions:
     &#34;&#34;&#34;
@@ -178,7 +301,21 @@ class ProcessingOptions:
     &#34;&#34;&#34;
     If `True`, overwrites the input field in the input dataframe.
     Otherwise appends a new field to the dataframe.
+    Does not do anything when postprocessing.
     &#34;&#34;&#34;
+
+    @overwrite.validator
+    def prevent_overwrite(self, attribute, value):
+        &#34;&#34;&#34;cannot overwrite if performing smoothing&#34;&#34;&#34;
+        if value is True:
+            if self.smooth_options is not None:
+                raise ValueError(
+                    &#34;&#39;{0}&#39; of the &#39;{1}&#39; instance needs to be `False`&#34;
+                    &#34; to perform smoothing. A value of {2} was passed instead.&#34;.format(
+                        attribute.name, self.__class__.__name__, value
+                    )
+                )
+
     outlier_options: Optional[OutlierOptions] = attrib(default=None)
     &#34;&#34;&#34;
     Configuration options for specifying which outliers to drop.
@@ -208,9 +345,9 @@ class ProcessingOptions:
 
 
 @attrs(kw_only=True, frozen=True)
-class DataField:
+class RawField(BaseField):
     &#34;&#34;&#34;
-    Struct containing configuration attributes for a given field
+    Struct containing configuration attributes for a raw field
     of a given DataSource
     &#34;&#34;&#34;
 
@@ -262,7 +399,7 @@ class DataSource:
     &#34;&#34;&#34;The name of the DataSource. Somewhat arbitrary but useful for legibility&#34;&#34;&#34;
     path: str = attrib()
     &#34;&#34;&#34;The path to the csv file from which to read the data&#34;&#34;&#34;
-    fields: Tuple[DataField, ...] = attrib()
+    fields: Tuple[RawField, ...] = attrib()
     &#34;&#34;&#34;Configuration options for each field the user is interested in&#34;&#34;&#34;
     comment_format: str = attrib(default=&#34;#&#34;)
     &#34;&#34;&#34;Prefix used in csv file to signal comments, that will be dropped when reading&#34;&#34;&#34;
@@ -278,7 +415,7 @@ class DataSource:
         date_flags = [field.is_date for field in value if field.is_date]
         if len(date_flags) &gt; 1:
             raise ValueError(
-                &#34;{0} of the {1} instance must contain exactly one DataField with&#34;
+                &#34;{0} of the {1} instance must contain exactly one RawField with&#34;
                 &#34; is_date=True&#34;.format(attribute.name, self.__class__.__name__)
             )
 
@@ -339,18 +476,6 @@ class SyncOptions:
     &#34;&#34;&#34;
 
 
-brainstorming = {
-    &#34;split_options&#34;: {
-        &#34;validation&#34;: {
-            &#34;train_extent&#34;: 0.6,
-            &#34;val_extent&#34;: 0.1,
-            &#34;iterations&#34;: 5,
-        },
-        &#34;evaluation&#34;: {&#34;train_split&#34;: 0.8},
-    }
-}
-
-
 @attrs(kw_only=True, frozen=True)
 class ValidationOptions:
     &#34;&#34;&#34;
@@ -358,9 +483,18 @@ class ValidationOptions:
     configuring model validation
     &#34;&#34;&#34;
 
-    train_extent: Optional[float] = attrib(default=0.6, validator=[_normed_val])
-    val_extent: Optional[float] = attrib(default=0.1, validator=[_normed_val])
-    iterations: Optional[int] = attrib(default=5)
+    train_extent: float = attrib(default=0.6, validator=[_normed_val])
+    &#34;&#34;&#34;
+    Percentage of the data to allocate to the training set.
+    &#34;&#34;&#34;
+    val_extent: float = attrib(default=0.1, validator=[_normed_val])
+    &#34;&#34;&#34;
+    Percentage of the data to allocate to the validation set.
+    &#34;&#34;&#34;
+    iterations: int = attrib(default=5)
+    &#34;&#34;&#34;
+    How many splits to make. Must be at least 3.
+    &#34;&#34;&#34;
 
     @iterations.validator
     def at_least_3(self, attribute, value):
@@ -387,6 +521,9 @@ class EvaluationOptions:
     point in the training set. The closest non-nan row will be used.
     &#34;&#34;&#34;
     validation: ValidationOptions = attrib()
+    &#34;&#34;&#34;
+    configuration options for further splits of the data for validation.
+    &#34;&#34;&#34;
 
 
 @attrs(kw_only=True, frozen=True)
@@ -406,7 +543,17 @@ class DataSet:
     Configurations options for synchronizing the `data_sources`.
     \nIf `None`, no synchronization will be performed
     &#34;&#34;&#34;
-    split_options: Optional[EvaluationOptions] = attrib(default=None)</code></pre>
+    eval_options: Optional[EvaluationOptions] = attrib(default=None)
+    &#34;&#34;&#34;
+    Configurations options for evaluating the models trained
+    on the data. Also handles data splitting options.
+    \nIf `None`, no splitting nor evaluation will be performed
+    &#34;&#34;&#34;
+    generated_fields: Optional[Tuple[GeneratedField]] = attrib(default=None)
+    &#34;&#34;&#34;
+    Configuration options for adding new fields to the data.
+    \nIf `None`, no new fields will be computed.
+    &#34;&#34;&#34;</code></pre>
 </details>
 </section>
 <section>
@@ -620,6 +767,337 @@ of a given data field, achieved with a moving average operation.</p>
 </dd>
 </dl>
 </dd>
+<dt id="nowcastlib.pipeline.structs.GeneratorFunction"><code class="flex name class">
+<span>class <span class="ident">GeneratorFunction</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Enum capturing the available Generator Functions</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class GeneratorFunction(Enum):
+    &#34;&#34;&#34;Enum capturing the available Generator Functions&#34;&#34;&#34;
+
+    T_SINCE_SUNSET = &#34;t_since_sunset&#34;
+    &#34;&#34;&#34;seconds elapsed since the last sunset&#34;&#34;&#34;
+    SIN_T_SINCE_SUNSET = &#34;t_since_sunset&#34;
+    &#34;&#34;&#34;sine of seconds elapsed since the last sunset out of 86400&#34;&#34;&#34;
+    COS_T_SINCE_SUNSET = &#34;t_since_sunset&#34;
+    &#34;&#34;&#34;cosine of seconds elapsed since the last sunset out of 86400&#34;&#34;&#34;
+    SUN_ELEVATION = &#34;sun_elevation&#34;
+    &#34;&#34;&#34;the sun&#39;s current elevation&#34;&#34;&#34;
+    SIN_SEC = &#34;sin_sec&#34;
+    &#34;&#34;&#34;sine of the second number in the current day out of 86400&#34;&#34;&#34;
+    COS_SEC = &#34;cos_sec&#34;
+    &#34;&#34;&#34;cosine of the second number in the current day out of 86400&#34;&#34;&#34;
+    SIN_DAY_YEAR = &#34;sin_day_year&#34;
+    &#34;&#34;&#34;sine of the day number out of 365 in the current year&#34;&#34;&#34;
+    COS_DAY_YEAR = &#34;cos_day_year&#34;
+    &#34;&#34;&#34;cosine of the day number out of 365 in the current year&#34;&#34;&#34;
+    SIN_DAY_WEEK = &#34;sin_day_week&#34;
+    &#34;&#34;&#34;sine of the day number out of 7 in the current week&#34;&#34;&#34;
+    COS_DAY_WEEK = &#34;cos_day_week&#34;
+    &#34;&#34;&#34;cosine of the day number out of 7 in the current week&#34;&#34;&#34;
+    SIN_MONTH_YEAR = &#34;sin_month_year&#34;
+    &#34;&#34;&#34;sine of the month number out of 12 in the current year&#34;&#34;&#34;
+    COS_MONTH_YEAR = &#34;cos_month_year&#34;
+    &#34;&#34;&#34;cosine of the month number out of 12 in the current year&#34;&#34;&#34;
+    IS_WEEKEND = &#34;is_weekend&#34;
+    &#34;&#34;&#34;whether the current day is a friday, saturday or sunday&#34;&#34;&#34;
+    CUSTOM = &#34;custom&#34;
+    &#34;&#34;&#34;indicates the user will provide their own function&#34;&#34;&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="nowcastlib.pipeline.structs.GeneratorFunction.T_SINCE_SUNSET"><code class="name">var <span class="ident">T_SINCE_SUNSET</span></code></dt>
+<dd>
+<div class="desc"><p>seconds elapsed since the last sunset</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratorFunction.SIN_T_SINCE_SUNSET"><code class="name">var <span class="ident">SIN_T_SINCE_SUNSET</span></code></dt>
+<dd>
+<div class="desc"><p>sine of seconds elapsed since the last sunset out of 86400</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratorFunction.COS_T_SINCE_SUNSET"><code class="name">var <span class="ident">COS_T_SINCE_SUNSET</span></code></dt>
+<dd>
+<div class="desc"><p>cosine of seconds elapsed since the last sunset out of 86400</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratorFunction.SUN_ELEVATION"><code class="name">var <span class="ident">SUN_ELEVATION</span></code></dt>
+<dd>
+<div class="desc"><p>the sun's current elevation</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratorFunction.SIN_SEC"><code class="name">var <span class="ident">SIN_SEC</span></code></dt>
+<dd>
+<div class="desc"><p>sine of the second number in the current day out of 86400</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratorFunction.COS_SEC"><code class="name">var <span class="ident">COS_SEC</span></code></dt>
+<dd>
+<div class="desc"><p>cosine of the second number in the current day out of 86400</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratorFunction.SIN_DAY_YEAR"><code class="name">var <span class="ident">SIN_DAY_YEAR</span></code></dt>
+<dd>
+<div class="desc"><p>sine of the day number out of 365 in the current year</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratorFunction.COS_DAY_YEAR"><code class="name">var <span class="ident">COS_DAY_YEAR</span></code></dt>
+<dd>
+<div class="desc"><p>cosine of the day number out of 365 in the current year</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratorFunction.SIN_DAY_WEEK"><code class="name">var <span class="ident">SIN_DAY_WEEK</span></code></dt>
+<dd>
+<div class="desc"><p>sine of the day number out of 7 in the current week</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratorFunction.COS_DAY_WEEK"><code class="name">var <span class="ident">COS_DAY_WEEK</span></code></dt>
+<dd>
+<div class="desc"><p>cosine of the day number out of 7 in the current week</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratorFunction.SIN_MONTH_YEAR"><code class="name">var <span class="ident">SIN_MONTH_YEAR</span></code></dt>
+<dd>
+<div class="desc"><p>sine of the month number out of 12 in the current year</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratorFunction.COS_MONTH_YEAR"><code class="name">var <span class="ident">COS_MONTH_YEAR</span></code></dt>
+<dd>
+<div class="desc"><p>cosine of the month number out of 12 in the current year</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratorFunction.IS_WEEKEND"><code class="name">var <span class="ident">IS_WEEKEND</span></code></dt>
+<dd>
+<div class="desc"><p>whether the current day is a friday, saturday or sunday</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratorFunction.CUSTOM"><code class="name">var <span class="ident">CUSTOM</span></code></dt>
+<dd>
+<div class="desc"><p>indicates the user will provide their own function</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="nowcastlib.pipeline.structs.StandardizationMethod"><code class="flex name class">
+<span>class <span class="ident">StandardizationMethod</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class StandardizationMethod(Enum):
+    POWER = &#34;power&#34;
+    ROBUST = &#34;robust&#34;
+    LOGNORM = &#34;lognorm&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="nowcastlib.pipeline.structs.StandardizationMethod.POWER"><code class="name">var <span class="ident">POWER</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.StandardizationMethod.ROBUST"><code class="name">var <span class="ident">ROBUST</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.StandardizationMethod.LOGNORM"><code class="name">var <span class="ident">LOGNORM</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="nowcastlib.pipeline.structs.StandardizationOptions"><code class="flex name class">
+<span>class <span class="ident">StandardizationOptions</span></span>
+<span>(</span><span>*, method: <a title="nowcastlib.pipeline.structs.StandardizationMethod" href="#nowcastlib.pipeline.structs.StandardizationMethod">StandardizationMethod</a>, diagnostic_plots: bool = True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>TODO</p>
+<p>Method generated by attrs for class StandardizationOptions.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class StandardizationOptions:
+    &#34;&#34;&#34;TODO&#34;&#34;&#34;
+
+    method: StandardizationMethod = attrib()
+    &#34;&#34;&#34;
+    Which of the available methods to use. Specify as the
+    Enum string value when configuring via JSON
+    &#34;&#34;&#34;
+    diagnostic_plots: bool = attrib(default=True)
+    &#34;&#34;&#34;
+    Whether or not to show diagnostic plots, intended to help
+    the user in configuration evaluation and decision making.
+    &#34;&#34;&#34;</code></pre>
+</details>
+<h3>Class variables</h3>
+<dl>
+<dt id="nowcastlib.pipeline.structs.StandardizationOptions.method"><code class="name">var <span class="ident">method</span> : <a title="nowcastlib.pipeline.structs.StandardizationMethod" href="#nowcastlib.pipeline.structs.StandardizationMethod">StandardizationMethod</a></code></dt>
+<dd>
+<div class="desc"><p>Which of the available methods to use. Specify as the
+Enum string value when configuring via JSON</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.StandardizationOptions.diagnostic_plots"><code class="name">var <span class="ident">diagnostic_plots</span> : bool</code></dt>
+<dd>
+<div class="desc"><p>Whether or not to show diagnostic plots, intended to help
+the user in configuration evaluation and decision making.</p></div>
+</dd>
+</dl>
+</dd>
+<dt id="nowcastlib.pipeline.structs.BaseField"><code class="flex name class">
+<span>class <span class="ident">BaseField</span></span>
+<span>(</span><span>*, std_options: Union[<a title="nowcastlib.pipeline.structs.StandardizationOptions" href="#nowcastlib.pipeline.structs.StandardizationOptions">StandardizationOptions</a>, NoneType] = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Struct containing configuration options
+shared by both Raw and Generated fields.</p>
+<p>Method generated by attrs for class BaseField.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class BaseField:
+    &#34;&#34;&#34;
+    Struct containing configuration options
+    shared by both Raw and Generated fields.
+    &#34;&#34;&#34;
+
+    std_options: Optional[StandardizationOptions] = attrib(default=None)</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="nowcastlib.pipeline.structs.GeneratedField" href="#nowcastlib.pipeline.structs.GeneratedField">GeneratedField</a></li>
+<li><a title="nowcastlib.pipeline.structs.RawField" href="#nowcastlib.pipeline.structs.RawField">RawField</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="nowcastlib.pipeline.structs.BaseField.std_options"><code class="name">var <span class="ident">std_options</span> : Union[<a title="nowcastlib.pipeline.structs.StandardizationOptions" href="#nowcastlib.pipeline.structs.StandardizationOptions">StandardizationOptions</a>, NoneType]</code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratedField"><code class="flex name class">
+<span>class <span class="ident">GeneratedField</span></span>
+<span>(</span><span>*, std_options: Union[<a title="nowcastlib.pipeline.structs.StandardizationOptions" href="#nowcastlib.pipeline.structs.StandardizationOptions">StandardizationOptions</a>, NoneType] = None, target_name: str, input_fields: Tuple[str], gen_func: <a title="nowcastlib.pipeline.structs.GeneratorFunction" href="#nowcastlib.pipeline.structs.GeneratorFunction">GeneratorFunction</a>, additional_kwargs: Union[dict, NoneType] = None, func_path: Union[str, NoneType] = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Struct containing configuration for specifying
+how the pipeline should generate a new field of data</p>
+<p>Method generated by attrs for class GeneratedField.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class GeneratedField(BaseField):
+    &#34;&#34;&#34;
+    Struct containing configuration for specifying
+    how the pipeline should generate a new field of data
+    &#34;&#34;&#34;
+
+    target_name: str = attrib()
+    &#34;&#34;&#34;
+    What the new field should be named.
+    &#34;&#34;&#34;
+    input_fields: Tuple[str] = attrib()
+    &#34;&#34;&#34;
+    The names of the input fields to pass to the
+    generator function as *args.
+    &#34;index&#34;, to specify the index
+    &#34;&#34;&#34;
+    gen_func: GeneratorFunction = attrib()
+    &#34;&#34;&#34;
+    The name of the generator function to use
+    for generating the new data. Specify as the
+    Enum string value when configuring via JSON.
+    &#34;&#34;&#34;
+    additional_kwargs: Optional[dict] = attrib(default=None)
+    &#34;&#34;&#34;
+    a dictionary containing additional keyword arguments to
+    to be passed to the function if necessary.
+    &#34;&#34;&#34;
+    func_path: Optional[str] = attrib(default=None)
+    &#34;&#34;&#34;
+    The path to the file implementing a custom
+    generator function. To be specified if `gen_func` is `custom`
+    &#34;&#34;&#34;
+
+    @func_path.validator
+    def only_if_custom(self, attribute, value):
+        &#34;&#34;&#34;func_path should be defined only if the function is set to custom&#34;&#34;&#34;
+        if value is not None:
+            if self.gen_func != GeneratorFunction.CUSTOM:
+                raise ValueError(
+                    &#34;&#39;{0}&#39; of the &#39;{1}&#39; instance should only be defined when the &#34;
+                    &#34; instance&#39;s `gen_func` is set to `GeneratorFunction.CUSTOM`.&#34;
+                    &#34; A value of {2} was passed instead.&#34;.format(
+                        attribute.name, self.__class__.__name__, self.gen_func
+                    )
+                )</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="nowcastlib.pipeline.structs.BaseField" href="#nowcastlib.pipeline.structs.BaseField">BaseField</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="nowcastlib.pipeline.structs.GeneratedField.target_name"><code class="name">var <span class="ident">target_name</span> : str</code></dt>
+<dd>
+<div class="desc"><p>What the new field should be named.</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratedField.input_fields"><code class="name">var <span class="ident">input_fields</span> : Tuple[str]</code></dt>
+<dd>
+<div class="desc"><p>The names of the input fields to pass to the
+generator function as *args.
+"index", to specify the index</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratedField.gen_func"><code class="name">var <span class="ident">gen_func</span> : <a title="nowcastlib.pipeline.structs.GeneratorFunction" href="#nowcastlib.pipeline.structs.GeneratorFunction">GeneratorFunction</a></code></dt>
+<dd>
+<div class="desc"><p>The name of the generator function to use
+for generating the new data. Specify as the
+Enum string value when configuring via JSON.</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratedField.additional_kwargs"><code class="name">var <span class="ident">additional_kwargs</span> : Union[dict, NoneType]</code></dt>
+<dd>
+<div class="desc"><p>a dictionary containing additional keyword arguments to
+to be passed to the function if necessary.</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.GeneratedField.func_path"><code class="name">var <span class="ident">func_path</span> : Union[str, NoneType]</code></dt>
+<dd>
+<div class="desc"><p>The path to the file implementing a custom
+generator function. To be specified if <code>gen_func</code> is <code>custom</code></p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="nowcastlib.pipeline.structs.GeneratedField.only_if_custom"><code class="name flex">
+<span>def <span class="ident">only_if_custom</span></span>(<span>self, attribute, value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>func_path should be defined only if the function is set to custom</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@func_path.validator
+def only_if_custom(self, attribute, value):
+    &#34;&#34;&#34;func_path should be defined only if the function is set to custom&#34;&#34;&#34;
+    if value is not None:
+        if self.gen_func != GeneratorFunction.CUSTOM:
+            raise ValueError(
+                &#34;&#39;{0}&#39; of the &#39;{1}&#39; instance should only be defined when the &#34;
+                &#34; instance&#39;s `gen_func` is set to `GeneratorFunction.CUSTOM`.&#34;
+                &#34; A value of {2} was passed instead.&#34;.format(
+                    attribute.name, self.__class__.__name__, self.gen_func
+                )
+            )</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
 <dt id="nowcastlib.pipeline.structs.ProcessingOptions"><code class="flex name class">
 <span>class <span class="ident">ProcessingOptions</span></span>
 <span>(</span><span>*, overwrite: bool = False, outlier_options: Union[<a title="nowcastlib.pipeline.structs.OutlierOptions" href="#nowcastlib.pipeline.structs.OutlierOptions">OutlierOptions</a>, NoneType] = None, periodic_options: Union[<a title="nowcastlib.pipeline.structs.PeriodicOptions" href="#nowcastlib.pipeline.structs.PeriodicOptions">PeriodicOptions</a>, NoneType] = None, conversion_options: Union[<a title="nowcastlib.pipeline.structs.ConversionOptions" href="#nowcastlib.pipeline.structs.ConversionOptions">ConversionOptions</a>, NoneType] = None, smooth_options: Union[<a title="nowcastlib.pipeline.structs.SmoothOptions" href="#nowcastlib.pipeline.structs.SmoothOptions">SmoothOptions</a>, NoneType] = None)</span>
@@ -642,7 +1120,21 @@ a given field of a given data source</p>
     &#34;&#34;&#34;
     If `True`, overwrites the input field in the input dataframe.
     Otherwise appends a new field to the dataframe.
+    Does not do anything when postprocessing.
     &#34;&#34;&#34;
+
+    @overwrite.validator
+    def prevent_overwrite(self, attribute, value):
+        &#34;&#34;&#34;cannot overwrite if performing smoothing&#34;&#34;&#34;
+        if value is True:
+            if self.smooth_options is not None:
+                raise ValueError(
+                    &#34;&#39;{0}&#39; of the &#39;{1}&#39; instance needs to be `False`&#34;
+                    &#34; to perform smoothing. A value of {2} was passed instead.&#34;.format(
+                        attribute.name, self.__class__.__name__, value
+                    )
+                )
+
     outlier_options: Optional[OutlierOptions] = attrib(default=None)
     &#34;&#34;&#34;
     Configuration options for specifying which outliers to drop.
@@ -675,7 +1167,8 @@ a given field of a given data source</p>
 <dt id="nowcastlib.pipeline.structs.ProcessingOptions.overwrite"><code class="name">var <span class="ident">overwrite</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>If <code>True</code>, overwrites the input field in the input dataframe.
-Otherwise appends a new field to the dataframe.</p></div>
+Otherwise appends a new field to the dataframe.
+Does not do anything when postprocessing.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.ProcessingOptions.outlier_options"><code class="name">var <span class="ident">outlier_options</span> : Union[<a title="nowcastlib.pipeline.structs.OutlierOptions" href="#nowcastlib.pipeline.structs.OutlierOptions">OutlierOptions</a>, NoneType]</code></dt>
 <dd>
@@ -702,22 +1195,47 @@ Is performed at the end of all other processing.</p>
 <p>If <code>None</code>, no smoothing is performed.</p></div>
 </dd>
 </dl>
-</dd>
-<dt id="nowcastlib.pipeline.structs.DataField"><code class="flex name class">
-<span>class <span class="ident">DataField</span></span>
-<span>(</span><span>*, field_name: str, is_date: bool = False, date_format: str = '%Y-%m-%dT%H:%M:%S', preprocessing_options: Union[<a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, NoneType] = None, postprocessing_options: Union[<a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, NoneType] = None)</span>
+<h3>Methods</h3>
+<dl>
+<dt id="nowcastlib.pipeline.structs.ProcessingOptions.prevent_overwrite"><code class="name flex">
+<span>def <span class="ident">prevent_overwrite</span></span>(<span>self, attribute, value)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Struct containing configuration attributes for a given field
-of a given DataSource</p>
-<p>Method generated by attrs for class DataField.</p></div>
+<div class="desc"><p>cannot overwrite if performing smoothing</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class DataField:
+<pre><code class="python">@overwrite.validator
+def prevent_overwrite(self, attribute, value):
+    &#34;&#34;&#34;cannot overwrite if performing smoothing&#34;&#34;&#34;
+    if value is True:
+        if self.smooth_options is not None:
+            raise ValueError(
+                &#34;&#39;{0}&#39; of the &#39;{1}&#39; instance needs to be `False`&#34;
+                &#34; to perform smoothing. A value of {2} was passed instead.&#34;.format(
+                    attribute.name, self.__class__.__name__, value
+                )
+            )</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="nowcastlib.pipeline.structs.RawField"><code class="flex name class">
+<span>class <span class="ident">RawField</span></span>
+<span>(</span><span>*, std_options: Union[<a title="nowcastlib.pipeline.structs.StandardizationOptions" href="#nowcastlib.pipeline.structs.StandardizationOptions">StandardizationOptions</a>, NoneType] = None, field_name: str, is_date: bool = False, date_format: str = '%Y-%m-%dT%H:%M:%S', preprocessing_options: Union[<a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, NoneType] = None, postprocessing_options: Union[<a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, NoneType] = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Struct containing configuration attributes for a raw field
+of a given DataSource</p>
+<p>Method generated by attrs for class RawField.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class RawField(BaseField):
     &#34;&#34;&#34;
-    Struct containing configuration attributes for a given field
+    Struct containing configuration attributes for a raw field
     of a given DataSource
     &#34;&#34;&#34;
 
@@ -738,26 +1256,30 @@ of a given DataSource</p>
     \nIf `None`, no post-processing will be performed.
     &#34;&#34;&#34;</code></pre>
 </details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="nowcastlib.pipeline.structs.BaseField" href="#nowcastlib.pipeline.structs.BaseField">BaseField</a></li>
+</ul>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.DataField.field_name"><code class="name">var <span class="ident">field_name</span> : str</code></dt>
+<dt id="nowcastlib.pipeline.structs.RawField.field_name"><code class="name">var <span class="ident">field_name</span> : str</code></dt>
 <dd>
 <div class="desc"><p>The name of the field as specified in the input file</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DataField.is_date"><code class="name">var <span class="ident">is_date</span> : bool</code></dt>
+<dt id="nowcastlib.pipeline.structs.RawField.is_date"><code class="name">var <span class="ident">is_date</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>Whether the field is a date and therefore is the index of the DataSource</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DataField.date_format"><code class="name">var <span class="ident">date_format</span> : str</code></dt>
+<dt id="nowcastlib.pipeline.structs.RawField.date_format"><code class="name">var <span class="ident">date_format</span> : str</code></dt>
 <dd>
 <div class="desc"><p>What format the date is presented in if the field is a date</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DataField.preprocessing_options"><code class="name">var <span class="ident">preprocessing_options</span> : Union[<a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.RawField.preprocessing_options"><code class="name">var <span class="ident">preprocessing_options</span> : Union[<a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for how to pre-process the field</p>
 <p>If <code>None</code>, no preprocessing will be performed.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DataField.postprocessing_options"><code class="name">var <span class="ident">postprocessing_options</span> : Union[<a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.RawField.postprocessing_options"><code class="name">var <span class="ident">postprocessing_options</span> : Union[<a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for how to post-process the field</p>
 <p>If <code>None</code>, no post-processing will be performed.</p></div>
@@ -809,7 +1331,7 @@ Folders containing the output file should exist before running.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.DataSource"><code class="flex name class">
 <span>class <span class="ident">DataSource</span></span>
-<span>(</span><span>*, name: str, path: str, fields: Tuple[<a title="nowcastlib.pipeline.structs.DataField" href="#nowcastlib.pipeline.structs.DataField">DataField</a>, ...], comment_format: str = '#', preprocessing_output: Union[<a title="nowcastlib.pipeline.structs.SerializationOptions" href="#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>, NoneType] = None)</span>
+<span>(</span><span>*, name: str, path: str, fields: Tuple[<a title="nowcastlib.pipeline.structs.RawField" href="#nowcastlib.pipeline.structs.RawField">RawField</a>, ...], comment_format: str = '#', preprocessing_output: Union[<a title="nowcastlib.pipeline.structs.SerializationOptions" href="#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>, NoneType] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Struct containing configuration attributes for processing
@@ -829,7 +1351,7 @@ an individual Data Source</p>
     &#34;&#34;&#34;The name of the DataSource. Somewhat arbitrary but useful for legibility&#34;&#34;&#34;
     path: str = attrib()
     &#34;&#34;&#34;The path to the csv file from which to read the data&#34;&#34;&#34;
-    fields: Tuple[DataField, ...] = attrib()
+    fields: Tuple[RawField, ...] = attrib()
     &#34;&#34;&#34;Configuration options for each field the user is interested in&#34;&#34;&#34;
     comment_format: str = attrib(default=&#34;#&#34;)
     &#34;&#34;&#34;Prefix used in csv file to signal comments, that will be dropped when reading&#34;&#34;&#34;
@@ -845,7 +1367,7 @@ an individual Data Source</p>
         date_flags = [field.is_date for field in value if field.is_date]
         if len(date_flags) &gt; 1:
             raise ValueError(
-                &#34;{0} of the {1} instance must contain exactly one DataField with&#34;
+                &#34;{0} of the {1} instance must contain exactly one RawField with&#34;
                 &#34; is_date=True&#34;.format(attribute.name, self.__class__.__name__)
             )</code></pre>
 </details>
@@ -859,7 +1381,7 @@ an individual Data Source</p>
 <dd>
 <div class="desc"><p>The path to the csv file from which to read the data</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DataSource.fields"><code class="name">var <span class="ident">fields</span> : Tuple[<a title="nowcastlib.pipeline.structs.DataField" href="#nowcastlib.pipeline.structs.DataField">DataField</a>, ...]</code></dt>
+<dt id="nowcastlib.pipeline.structs.DataSource.fields"><code class="name">var <span class="ident">fields</span> : Tuple[<a title="nowcastlib.pipeline.structs.RawField" href="#nowcastlib.pipeline.structs.RawField">RawField</a>, ...]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for each field the user is interested in</p></div>
 </dd>
@@ -996,7 +1518,7 @@ the user in configuration evaluation and decision making.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.ValidationOptions"><code class="flex name class">
 <span>class <span class="ident">ValidationOptions</span></span>
-<span>(</span><span>*, train_extent: Union[float, NoneType] = 0.6, val_extent: Union[float, NoneType] = 0.1, iterations: Union[int, NoneType] = 5)</span>
+<span>(</span><span>*, train_extent: float = 0.6, val_extent: float = 0.1, iterations: int = 5)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Struct containing configuration attributes for
@@ -1012,9 +1534,18 @@ configuring model validation</p>
     configuring model validation
     &#34;&#34;&#34;
 
-    train_extent: Optional[float] = attrib(default=0.6, validator=[_normed_val])
-    val_extent: Optional[float] = attrib(default=0.1, validator=[_normed_val])
-    iterations: Optional[int] = attrib(default=5)
+    train_extent: float = attrib(default=0.6, validator=[_normed_val])
+    &#34;&#34;&#34;
+    Percentage of the data to allocate to the training set.
+    &#34;&#34;&#34;
+    val_extent: float = attrib(default=0.1, validator=[_normed_val])
+    &#34;&#34;&#34;
+    Percentage of the data to allocate to the validation set.
+    &#34;&#34;&#34;
+    iterations: int = attrib(default=5)
+    &#34;&#34;&#34;
+    How many splits to make. Must be at least 3.
+    &#34;&#34;&#34;
 
     @iterations.validator
     def at_least_3(self, attribute, value):
@@ -1029,17 +1560,17 @@ configuring model validation</p>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.ValidationOptions.train_extent"><code class="name">var <span class="ident">train_extent</span> : Union[float, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.ValidationOptions.train_extent"><code class="name">var <span class="ident">train_extent</span> : float</code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Percentage of the data to allocate to the training set.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.ValidationOptions.val_extent"><code class="name">var <span class="ident">val_extent</span> : Union[float, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.ValidationOptions.val_extent"><code class="name">var <span class="ident">val_extent</span> : float</code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Percentage of the data to allocate to the validation set.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.ValidationOptions.iterations"><code class="name">var <span class="ident">iterations</span> : Union[int, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.ValidationOptions.iterations"><code class="name">var <span class="ident">iterations</span> : int</code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>How many splits to make. Must be at least 3.</p></div>
 </dd>
 </dl>
 <h3>Methods</h3>
@@ -1090,7 +1621,10 @@ model evaluation</p>
     The index, percentage or date to use as the final
     point in the training set. The closest non-nan row will be used.
     &#34;&#34;&#34;
-    validation: ValidationOptions = attrib()</code></pre>
+    validation: ValidationOptions = attrib()
+    &#34;&#34;&#34;
+    configuration options for further splits of the data for validation.
+    &#34;&#34;&#34;</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
@@ -1101,13 +1635,13 @@ point in the training set. The closest non-nan row will be used.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.EvaluationOptions.validation"><code class="name">var <span class="ident">validation</span> : <a title="nowcastlib.pipeline.structs.ValidationOptions" href="#nowcastlib.pipeline.structs.ValidationOptions">ValidationOptions</a></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>configuration options for further splits of the data for validation.</p></div>
 </dd>
 </dl>
 </dd>
 <dt id="nowcastlib.pipeline.structs.DataSet"><code class="flex name class">
 <span>class <span class="ident">DataSet</span></span>
-<span>(</span><span>*, data_sources: Tuple[<a title="nowcastlib.pipeline.structs.DataSource" href="#nowcastlib.pipeline.structs.DataSource">DataSource</a>, ...], sync_options: Union[<a title="nowcastlib.pipeline.structs.SyncOptions" href="#nowcastlib.pipeline.structs.SyncOptions">SyncOptions</a>, NoneType] = None, split_options: Union[<a title="nowcastlib.pipeline.structs.EvaluationOptions" href="#nowcastlib.pipeline.structs.EvaluationOptions">EvaluationOptions</a>, NoneType] = None)</span>
+<span>(</span><span>*, data_sources: Tuple[<a title="nowcastlib.pipeline.structs.DataSource" href="#nowcastlib.pipeline.structs.DataSource">DataSource</a>, ...], sync_options: Union[<a title="nowcastlib.pipeline.structs.SyncOptions" href="#nowcastlib.pipeline.structs.SyncOptions">SyncOptions</a>, NoneType] = None, eval_options: Union[<a title="nowcastlib.pipeline.structs.EvaluationOptions" href="#nowcastlib.pipeline.structs.EvaluationOptions">EvaluationOptions</a>, NoneType] = None, generated_fields: Union[Tuple[<a title="nowcastlib.pipeline.structs.GeneratedField" href="#nowcastlib.pipeline.structs.GeneratedField">GeneratedField</a>], NoneType] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Struct containing configuration attributes for processing
@@ -1133,7 +1667,17 @@ a set of Data Sources</p>
     Configurations options for synchronizing the `data_sources`.
     \nIf `None`, no synchronization will be performed
     &#34;&#34;&#34;
-    split_options: Optional[EvaluationOptions] = attrib(default=None)</code></pre>
+    eval_options: Optional[EvaluationOptions] = attrib(default=None)
+    &#34;&#34;&#34;
+    Configurations options for evaluating the models trained
+    on the data. Also handles data splitting options.
+    \nIf `None`, no splitting nor evaluation will be performed
+    &#34;&#34;&#34;
+    generated_fields: Optional[Tuple[GeneratedField]] = attrib(default=None)
+    &#34;&#34;&#34;
+    Configuration options for adding new fields to the data.
+    \nIf `None`, no new fields will be computed.
+    &#34;&#34;&#34;</code></pre>
 </details>
 <h3>Class variables</h3>
 <dl>
@@ -1147,9 +1691,16 @@ to process, each originating from a different file.</p></div>
 <div class="desc"><p>Configurations options for synchronizing the <code>data_sources</code>.</p>
 <p>If <code>None</code>, no synchronization will be performed</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DataSet.split_options"><code class="name">var <span class="ident">split_options</span> : Union[<a title="nowcastlib.pipeline.structs.EvaluationOptions" href="#nowcastlib.pipeline.structs.EvaluationOptions">EvaluationOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.DataSet.eval_options"><code class="name">var <span class="ident">eval_options</span> : Union[<a title="nowcastlib.pipeline.structs.EvaluationOptions" href="#nowcastlib.pipeline.structs.EvaluationOptions">EvaluationOptions</a>, NoneType]</code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Configurations options for evaluating the models trained
+on the data. Also handles data splitting options.</p>
+<p>If <code>None</code>, no splitting nor evaluation will be performed</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.DataSet.generated_fields"><code class="name">var <span class="ident">generated_fields</span> : Union[Tuple[<a title="nowcastlib.pipeline.structs.GeneratedField" href="#nowcastlib.pipeline.structs.GeneratedField">GeneratedField</a>], NoneType]</code></dt>
+<dd>
+<div class="desc"><p>Configuration options for adding new fields to the data.</p>
+<p>If <code>None</code>, no new fields will be computed.</p></div>
 </dd>
 </dl>
 </dd>
@@ -1198,8 +1749,60 @@ to process, each originating from a different file.</p></div>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.GeneratorFunction" href="#nowcastlib.pipeline.structs.GeneratorFunction">GeneratorFunction</a></code></h4>
+<ul class="two-column">
+<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.T_SINCE_SUNSET" href="#nowcastlib.pipeline.structs.GeneratorFunction.T_SINCE_SUNSET">T_SINCE_SUNSET</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.SIN_T_SINCE_SUNSET" href="#nowcastlib.pipeline.structs.GeneratorFunction.SIN_T_SINCE_SUNSET">SIN_T_SINCE_SUNSET</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.COS_T_SINCE_SUNSET" href="#nowcastlib.pipeline.structs.GeneratorFunction.COS_T_SINCE_SUNSET">COS_T_SINCE_SUNSET</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.SUN_ELEVATION" href="#nowcastlib.pipeline.structs.GeneratorFunction.SUN_ELEVATION">SUN_ELEVATION</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.SIN_SEC" href="#nowcastlib.pipeline.structs.GeneratorFunction.SIN_SEC">SIN_SEC</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.COS_SEC" href="#nowcastlib.pipeline.structs.GeneratorFunction.COS_SEC">COS_SEC</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.SIN_DAY_YEAR" href="#nowcastlib.pipeline.structs.GeneratorFunction.SIN_DAY_YEAR">SIN_DAY_YEAR</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.COS_DAY_YEAR" href="#nowcastlib.pipeline.structs.GeneratorFunction.COS_DAY_YEAR">COS_DAY_YEAR</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.SIN_DAY_WEEK" href="#nowcastlib.pipeline.structs.GeneratorFunction.SIN_DAY_WEEK">SIN_DAY_WEEK</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.COS_DAY_WEEK" href="#nowcastlib.pipeline.structs.GeneratorFunction.COS_DAY_WEEK">COS_DAY_WEEK</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.SIN_MONTH_YEAR" href="#nowcastlib.pipeline.structs.GeneratorFunction.SIN_MONTH_YEAR">SIN_MONTH_YEAR</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.COS_MONTH_YEAR" href="#nowcastlib.pipeline.structs.GeneratorFunction.COS_MONTH_YEAR">COS_MONTH_YEAR</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.IS_WEEKEND" href="#nowcastlib.pipeline.structs.GeneratorFunction.IS_WEEKEND">IS_WEEKEND</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.CUSTOM" href="#nowcastlib.pipeline.structs.GeneratorFunction.CUSTOM">CUSTOM</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="nowcastlib.pipeline.structs.StandardizationMethod" href="#nowcastlib.pipeline.structs.StandardizationMethod">StandardizationMethod</a></code></h4>
 <ul class="">
+<li><code><a title="nowcastlib.pipeline.structs.StandardizationMethod.POWER" href="#nowcastlib.pipeline.structs.StandardizationMethod.POWER">POWER</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.StandardizationMethod.ROBUST" href="#nowcastlib.pipeline.structs.StandardizationMethod.ROBUST">ROBUST</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.StandardizationMethod.LOGNORM" href="#nowcastlib.pipeline.structs.StandardizationMethod.LOGNORM">LOGNORM</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="nowcastlib.pipeline.structs.StandardizationOptions" href="#nowcastlib.pipeline.structs.StandardizationOptions">StandardizationOptions</a></code></h4>
+<ul class="">
+<li><code><a title="nowcastlib.pipeline.structs.StandardizationOptions.method" href="#nowcastlib.pipeline.structs.StandardizationOptions.method">method</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.StandardizationOptions.diagnostic_plots" href="#nowcastlib.pipeline.structs.StandardizationOptions.diagnostic_plots">diagnostic_plots</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="nowcastlib.pipeline.structs.BaseField" href="#nowcastlib.pipeline.structs.BaseField">BaseField</a></code></h4>
+<ul class="">
+<li><code><a title="nowcastlib.pipeline.structs.BaseField.std_options" href="#nowcastlib.pipeline.structs.BaseField.std_options">std_options</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="nowcastlib.pipeline.structs.GeneratedField" href="#nowcastlib.pipeline.structs.GeneratedField">GeneratedField</a></code></h4>
+<ul class="two-column">
+<li><code><a title="nowcastlib.pipeline.structs.GeneratedField.only_if_custom" href="#nowcastlib.pipeline.structs.GeneratedField.only_if_custom">only_if_custom</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratedField.target_name" href="#nowcastlib.pipeline.structs.GeneratedField.target_name">target_name</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratedField.input_fields" href="#nowcastlib.pipeline.structs.GeneratedField.input_fields">input_fields</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratedField.gen_func" href="#nowcastlib.pipeline.structs.GeneratedField.gen_func">gen_func</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratedField.additional_kwargs" href="#nowcastlib.pipeline.structs.GeneratedField.additional_kwargs">additional_kwargs</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.GeneratedField.func_path" href="#nowcastlib.pipeline.structs.GeneratedField.func_path">func_path</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a></code></h4>
+<ul class="two-column">
+<li><code><a title="nowcastlib.pipeline.structs.ProcessingOptions.prevent_overwrite" href="#nowcastlib.pipeline.structs.ProcessingOptions.prevent_overwrite">prevent_overwrite</a></code></li>
 <li><code><a title="nowcastlib.pipeline.structs.ProcessingOptions.overwrite" href="#nowcastlib.pipeline.structs.ProcessingOptions.overwrite">overwrite</a></code></li>
 <li><code><a title="nowcastlib.pipeline.structs.ProcessingOptions.outlier_options" href="#nowcastlib.pipeline.structs.ProcessingOptions.outlier_options">outlier_options</a></code></li>
 <li><code><a title="nowcastlib.pipeline.structs.ProcessingOptions.periodic_options" href="#nowcastlib.pipeline.structs.ProcessingOptions.periodic_options">periodic_options</a></code></li>
@@ -1208,13 +1811,13 @@ to process, each originating from a different file.</p></div>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.DataField" href="#nowcastlib.pipeline.structs.DataField">DataField</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.RawField" href="#nowcastlib.pipeline.structs.RawField">RawField</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.DataField.field_name" href="#nowcastlib.pipeline.structs.DataField.field_name">field_name</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.DataField.is_date" href="#nowcastlib.pipeline.structs.DataField.is_date">is_date</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.DataField.date_format" href="#nowcastlib.pipeline.structs.DataField.date_format">date_format</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.DataField.preprocessing_options" href="#nowcastlib.pipeline.structs.DataField.preprocessing_options">preprocessing_options</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.DataField.postprocessing_options" href="#nowcastlib.pipeline.structs.DataField.postprocessing_options">postprocessing_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.RawField.field_name" href="#nowcastlib.pipeline.structs.RawField.field_name">field_name</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.RawField.is_date" href="#nowcastlib.pipeline.structs.RawField.is_date">is_date</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.RawField.date_format" href="#nowcastlib.pipeline.structs.RawField.date_format">date_format</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.RawField.preprocessing_options" href="#nowcastlib.pipeline.structs.RawField.preprocessing_options">preprocessing_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.RawField.postprocessing_options" href="#nowcastlib.pipeline.structs.RawField.postprocessing_options">postprocessing_options</a></code></li>
 </ul>
 </li>
 <li>
@@ -1272,7 +1875,8 @@ to process, each originating from a different file.</p></div>
 <ul class="">
 <li><code><a title="nowcastlib.pipeline.structs.DataSet.data_sources" href="#nowcastlib.pipeline.structs.DataSet.data_sources">data_sources</a></code></li>
 <li><code><a title="nowcastlib.pipeline.structs.DataSet.sync_options" href="#nowcastlib.pipeline.structs.DataSet.sync_options">sync_options</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.DataSet.split_options" href="#nowcastlib.pipeline.structs.DataSet.split_options">split_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.DataSet.eval_options" href="#nowcastlib.pipeline.structs.DataSet.eval_options">eval_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.DataSet.generated_fields" href="#nowcastlib.pipeline.structs.DataSet.generated_fields">generated_fields</a></code></li>
 </ul>
 </li>
 </ul>
