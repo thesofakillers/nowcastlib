@@ -484,6 +484,32 @@ class ValidationOptions:
 
 
 @attrs(kw_only=True, frozen=True)
+class DirSerializationOptions:
+    """
+    Struct configuration attributes for serializing
+    to specific directories, used for organizing splits
+    """
+
+    parent_path: str = attrib()
+    """
+    The path to the directory where to serialize the resulting splits.
+    Within the directory, 2 subdirectories will be created: `main_split/`
+    and `cv_split`, respectively storing the main split and the cross
+    validation split.
+    """
+    overwrite: bool = attrib(default=False)
+    """
+    Whether to overwrite existing directories and files if they exist
+    already. Default `False`
+    """
+    create_parents: bool = attrib(default=False)
+    """
+    Whether parent directories of `parent_path` should be created
+    if they do not exist
+    """
+
+
+@attrs(kw_only=True, frozen=True)
 class SplitOptions:
     """
     Struct containing configuration attributes for
@@ -497,7 +523,13 @@ class SplitOptions:
     """
     validation: ValidationOptions = attrib()
     """
-    configuration options for further splits of the data for validation.
+    Configuration options for further splits of the data for validation.
+    """
+    output_options: Optional[DirSerializationOptions] = attrib(default=None)
+    """
+    Configuration options for serializing the resulting splits
+    in organized directories.
+    \nIf `None`, no serialization will be performed.
     """
 
 
