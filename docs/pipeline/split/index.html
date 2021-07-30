@@ -40,9 +40,12 @@ import nowcastlib.datasets as datasets
 
 def train_test_split_sparse(
     sparse_df: pd.core.frame.DataFrame,
-    config: structs.EvaluationOptions,
+    config: structs.SplitOptions,
     chunk_locations: Optional[np.ndarray] = None,
-) -&gt; Tuple:
+) -&gt; Tuple[
+    Tuple[pd.core.frame.DataFrame, np.ndarray],
+    Tuple[pd.core.frame.DataFrame, np.ndarray],
+]:
     &#34;&#34;&#34;
     Splits a sparse dataframe in train and test sets
 
@@ -50,7 +53,7 @@ def train_test_split_sparse(
     ---------
     sparse_df : pandas.core.frame.DataFrame
         The DataFrame we wish to split into train and test sets
-    config : structs.EvaluationOptions
+    config : structs.SplitOptions
         config options for determining where to split our datasets
     block_locs : numpy.ndarray, default None
 
@@ -125,7 +128,7 @@ def rep_holdout_split_sparse(
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="nowcastlib.pipeline.split.train_test_split_sparse"><code class="name flex">
-<span>def <span class="ident">train_test_split_sparse</span></span>(<span>sparse_df: pandas.core.frame.DataFrame, config: <a title="nowcastlib.pipeline.structs.EvaluationOptions" href="../structs.html#nowcastlib.pipeline.structs.EvaluationOptions">EvaluationOptions</a>, chunk_locations: Union[numpy.ndarray, NoneType] = None) ‑> Tuple</span>
+<span>def <span class="ident">train_test_split_sparse</span></span>(<span>sparse_df: pandas.core.frame.DataFrame, config: <a title="nowcastlib.pipeline.structs.SplitOptions" href="../structs.html#nowcastlib.pipeline.structs.SplitOptions">SplitOptions</a>, chunk_locations: Union[numpy.ndarray, NoneType] = None) ‑> Tuple[Tuple[pandas.core.frame.DataFrame, numpy.ndarray], Tuple[pandas.core.frame.DataFrame, numpy.ndarray]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Splits a sparse dataframe in train and test sets</p>
@@ -133,7 +136,7 @@ def rep_holdout_split_sparse(
 <dl>
 <dt><strong><code>sparse_df</code></strong> :&ensp;<code>pandas.core.frame.DataFrame</code></dt>
 <dd>The DataFrame we wish to split into train and test sets</dd>
-<dt><strong><code>config</code></strong> :&ensp;<code>structs.EvaluationOptions</code></dt>
+<dt><strong><code>config</code></strong> :&ensp;<code>structs.SplitOptions</code></dt>
 <dd>config options for determining where to split our datasets</dd>
 <dt><strong><code>block_locs</code></strong> :&ensp;<code>numpy.ndarray</code>, default <code>None</code></dt>
 <dd>&nbsp;</dd>
@@ -155,9 +158,12 @@ is the updated accompanying <code>block_locs</code>.</dd>
 </summary>
 <pre><code class="python">def train_test_split_sparse(
     sparse_df: pd.core.frame.DataFrame,
-    config: structs.EvaluationOptions,
+    config: structs.SplitOptions,
     chunk_locations: Optional[np.ndarray] = None,
-) -&gt; Tuple:
+) -&gt; Tuple[
+    Tuple[pd.core.frame.DataFrame, np.ndarray],
+    Tuple[pd.core.frame.DataFrame, np.ndarray],
+]:
     &#34;&#34;&#34;
     Splits a sparse dataframe in train and test sets
 
@@ -165,7 +171,7 @@ is the updated accompanying <code>block_locs</code>.</dd>
     ---------
     sparse_df : pandas.core.frame.DataFrame
         The DataFrame we wish to split into train and test sets
-    config : structs.EvaluationOptions
+    config : structs.SplitOptions
         config options for determining where to split our datasets
     block_locs : numpy.ndarray, default None
 

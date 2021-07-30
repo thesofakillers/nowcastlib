@@ -378,7 +378,26 @@ def make_chunks(input_df, chunk_locations=None):
         block_locs = chunk_locations.copy()
     # use these to index our dataframe and populate our chunk list
     blocks = [input_df.iloc[start:end] for (start, end) in block_locs]
-    return blocks</code></pre>
+    return blocks
+
+
+def serialize_as_chunks(chunked_df, path):
+    &#34;&#34;&#34;
+    Serializes a sparse dataframe as contiguous
+    chunks into an hdf5 file
+
+    Parameters
+    ----------
+    chunked_df : pandas.core.frame.DataFrame
+        the dataframe we wish to serialize as chunks
+    path : pathlib.PosixPath
+        the path to which we wish to save our hdf5 file,
+        including the file name and extension
+    &#34;&#34;&#34;
+    chunks = make_chunks(chunked_df)
+    hdfs = pd.HDFStore(str(path))
+    for i, chunk in enumerate(chunks):
+        chunk.to_hdf(hdfs, &#34;chunk_{:d}&#34;.format(i), format=&#34;table&#34;)</code></pre>
 </details>
 </section>
 <section>
@@ -976,6 +995,43 @@ original</dd>
     return blocks</code></pre>
 </details>
 </dd>
+<dt id="nowcastlib.datasets.serialize_as_chunks"><code class="name flex">
+<span>def <span class="ident">serialize_as_chunks</span></span>(<span>chunked_df, path)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Serializes a sparse dataframe as contiguous
+chunks into an hdf5 file</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>chunked_df</code></strong> :&ensp;<code>pandas.core.frame.DataFrame</code></dt>
+<dd>the dataframe we wish to serialize as chunks</dd>
+<dt><strong><code>path</code></strong> :&ensp;<code>pathlib.PosixPath</code></dt>
+<dd>the path to which we wish to save our hdf5 file,
+including the file name and extension</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def serialize_as_chunks(chunked_df, path):
+    &#34;&#34;&#34;
+    Serializes a sparse dataframe as contiguous
+    chunks into an hdf5 file
+
+    Parameters
+    ----------
+    chunked_df : pandas.core.frame.DataFrame
+        the dataframe we wish to serialize as chunks
+    path : pathlib.PosixPath
+        the path to which we wish to save our hdf5 file,
+        including the file name and extension
+    &#34;&#34;&#34;
+    chunks = make_chunks(chunked_df)
+    hdfs = pd.HDFStore(str(path))
+    for i, chunk in enumerate(chunks):
+        chunk.to_hdf(hdfs, &#34;chunk_{:d}&#34;.format(i), format=&#34;table&#34;)</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -1004,6 +1060,7 @@ original</dd>
 <li><code><a title="nowcastlib.datasets.filter_contiguous_regions" href="#nowcastlib.datasets.filter_contiguous_regions">filter_contiguous_regions</a></code></li>
 <li><code><a title="nowcastlib.datasets.compute_dataframe_mask" href="#nowcastlib.datasets.compute_dataframe_mask">compute_dataframe_mask</a></code></li>
 <li><code><a title="nowcastlib.datasets.make_chunks" href="#nowcastlib.datasets.make_chunks">make_chunks</a></code></li>
+<li><code><a title="nowcastlib.datasets.serialize_as_chunks" href="#nowcastlib.datasets.serialize_as_chunks">serialize_as_chunks</a></code></li>
 </ul>
 </li>
 </ul>
