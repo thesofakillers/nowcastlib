@@ -177,6 +177,8 @@ class GeneratorFunction(Enum):
 
 
 class StandardizationMethod(Enum):
+    """The available standardization methods"""
+
     POWER = "power"
     ROBUST = "robust"
     LOGNORM = "lognorm"
@@ -184,7 +186,10 @@ class StandardizationMethod(Enum):
 
 @attrs(kw_only=True, frozen=True)
 class StandardizationOptions:
-    """TODO"""
+    """
+    Struct containing configuration options
+    for standardizing a given field.
+    """
 
     method: StandardizationMethod = attrib()
     """
@@ -196,7 +201,6 @@ class StandardizationOptions:
     Whether or not to show diagnostic plots, intended to help
     the user in configuration evaluation and decision making.
     """
-    # TODO
 
 
 @attrs(kw_only=True, frozen=True)
@@ -207,6 +211,10 @@ class BaseField:
     """
 
     std_options: Optional[StandardizationOptions] = attrib(default=None)
+    """
+    Configuration options for standardizing
+    (scaling or normalizing) the field
+    """
 
 
 @attrs(kw_only=True, frozen=True)
@@ -476,7 +484,7 @@ class ValidationOptions:
 
 
 @attrs(kw_only=True, frozen=True)
-class EvaluationOptions:
+class SplitOptions:
     """
     Struct containing configuration attributes for
     model evaluation
@@ -510,11 +518,10 @@ class DataSet:
     Configurations options for synchronizing the `data_sources`.
     \nIf `None`, no synchronization will be performed
     """
-    eval_options: Optional[EvaluationOptions] = attrib(default=None)
+    split_options: Optional[SplitOptions] = attrib(default=None)
     """
-    Configurations options for evaluating the models trained
-    on the data. Also handles data splitting options.
-    \nIf `None`, no splitting nor evaluation will be performed
+    Configurations options for handling data splitting.
+    \nIf `None`, no splitting will be performed
     """
     generated_fields: Optional[Tuple[GeneratedField]] = attrib(default=None)
     """

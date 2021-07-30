@@ -11,7 +11,7 @@ import nowcastlib.datasets as datasets
 
 def train_test_split_sparse(
     sparse_df: pd.core.frame.DataFrame,
-    config: structs.EvaluationOptions,
+    config: structs.SplitOptions,
     chunk_locations: Optional[np.ndarray] = None,
 ) -> Tuple:
     """
@@ -21,7 +21,7 @@ def train_test_split_sparse(
     ---------
     sparse_df : pandas.core.frame.DataFrame
         The DataFrame we wish to split into train and test sets
-    config : structs.EvaluationOptions
+    config : structs.SplitOptions
         config options for determining where to split our datasets
     block_locs : numpy.ndarray, default None
 
