@@ -13,7 +13,10 @@ def train_test_split_sparse(
     sparse_df: pd.core.frame.DataFrame,
     config: structs.SplitOptions,
     chunk_locations: Optional[np.ndarray] = None,
-) -> Tuple:
+) -> Tuple[
+    Tuple[pd.core.frame.DataFrame, np.ndarray],
+    Tuple[pd.core.frame.DataFrame, np.ndarray],
+]:
     """
     Splits a sparse dataframe in train and test sets
 
