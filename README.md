@@ -98,36 +98,36 @@ CI tool triggered by a push/merge to the master branch:
 
 2. Update the documentation by running
 
-   ```console
-   make document
-   ```
+    ```console
+    make document
+    ```
 
 3. Prepare the package by running
 
-   ```console
-   poetry build
-   ```
+    ```console
+    poetry build
+    ```
 
 4. Ensure you have [TestPyPi](https://test.pypi.org/) and PyPi configured as
    your poetry repositories:
 
-   ```console
-   poetry config repositories.testpypi https://test.pypi.org/legacy/
-   poetry config repositories.pypi https://pypi.org/
-   ```
+    ```console
+    poetry config repositories.testpypi https://test.pypi.org/legacy/
+    poetry config repositories.pypi https://pypi.org/
+    ```
 
 5. Publish the repository to TestPyPi, to see that everything works as expected:
 
-   ```console
-   poetry publish -r testpypi
-   ```
+    ```console
+    poetry publish -r testpypi
+    ```
 
 6. Stage, commit and push your changes (to master) with git.
 7. Publish the repository to PyPi:
 
-   ```console
-   poetry publish -r pypi
-   ```
+    ```console
+    poetry publish -r pypi
+    ```
 
 Upon successful deployment, the library should be available for install via
 `pip`

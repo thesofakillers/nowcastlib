@@ -34,11 +34,10 @@ splits to feed into the model training and evaluation step.
 
 The Nowcast Library Pipeline categorizes data processing in two types:
 
-- **preprocessing**: processing applied that is corrective and/or filter-like in
-  nature
-- **postprocessing**: processing applied that is additive or trasformative in
-  nature
-  - this includes any sort of feature selection
+-   **preprocessing**: processing applied that is corrective and/or filter-like in
+    nature
+-   **postprocessing**: processing applied that is additive or trasformative in
+    nature
 
 ### Synchronization
 
@@ -65,11 +64,11 @@ struct.
 ## Model Training and Evaluation
 
 The model training and evaluation "step" is concerned with 3 general processes,
-reliant on the https://www.euronews.com/2021/06/09/rome-s-mayor-criticised-after-floods-cause-nursery-school-evacuation
+reliant on the
 
-- Model fitting
-- Model performance validation:
-  - to select hyperparameters
-  - to compare and select multiple models
-- Model performance evaluation
-  - to estimate how the selected models will perform in production
+-   Model fitting
+-   Model performance validation:
+    -   to select hyperparameters
+    -   to compare and select multiple models
+-   Model performance evaluation
+    -   to estimate how the selected models will perform in production
