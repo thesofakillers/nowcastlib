@@ -6,6 +6,7 @@ import argparse
 import configargparse
 from nowcastlib.pipeline.process.preprocess import cli as preprocess_cli
 from nowcastlib.pipeline.sync import cli as sync_cli
+from nowcastlib.pipeline.process.postprocess import cli as postprocess_cli
 from . import triangulate
 
 
@@ -26,6 +27,7 @@ def main():
     triangulate.configure_parser(command_parsers)
     preprocess_cli.configure_parser(command_parsers)
     sync_cli.configure_parser(command_parsers)
+    postprocess_cli.configure_parser(command_parsers)
 
     args = parser.parse_args()
 
@@ -43,3 +45,5 @@ def main():
         preprocess_cli.run(args)
     elif command == "sync":
         sync_cli.run(args)
+    elif command == "postprocess":
+        postprocess_cli.run(args)
