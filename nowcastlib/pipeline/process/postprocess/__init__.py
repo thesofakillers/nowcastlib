@@ -168,7 +168,7 @@ def rename_protected_field(field: structs.RawField) -> structs.RawField:
         return field
 
 
-def postprocess_dataset(
+def postprocess_splits(
     config: structs.DataSet,
     train_dfs: List[pd.core.frame.DataFrame],
     test_dfs: List[pd.core.frame.DataFrame],

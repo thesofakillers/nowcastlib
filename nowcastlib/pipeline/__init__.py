@@ -27,7 +27,7 @@ def pipe_dataset(config: structs.DataSet):
             chunked_df, config.split_options, chunk_locs
         )
         # postprocessing
-        [proc_train_data], [proc_test_data] = process.postprocess.postprocess_dataset(
+        [proc_train_data], [proc_test_data] = process.postprocess.postprocess_splits(
             config, [train_data], [test_data]
         )
         # inner train and validation split(s)
@@ -38,7 +38,7 @@ def pipe_dataset(config: structs.DataSet):
         (
             proc_val_train_dfs,
             proc_val_test_dfs,
-        ) = process.postprocess.postprocess_dataset(config, train_dfs, val_dfs)
+        ) = process.postprocess.postprocess_splits(config, train_dfs, val_dfs)
         # serialize
         if config.split_options.output_options is not None:
             serialize_splits(
