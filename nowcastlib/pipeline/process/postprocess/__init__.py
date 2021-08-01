@@ -60,66 +60,6 @@ def generate_field(
     return func(*[input_df[col] for col in input_df], **additional_args)
 
 
-def postprocess_dataset(
-    config: structs.DataSet,
-    train_dfs: List[pd.core.frame.DataFrame],
-    test_dfs: List[pd.core.frame.DataFrame],
-):
-    """
-    Postprocesses a set of data sources given options outlined
-    in the input DataSet config instance.
-    """
-    logger.info("Postprocessing dataset...")
-    raw_fields: List[structs.RawField] = [
-        field for source in config.data_sources for field in source.fields
-    ]
-    # rename overwrite-protected fields so to avoid acting on the original field
-    fields_to_process = [rename_protected_field(field) for field in raw_fields]
-    # start processing with processes that act the same on test and train dfs
-    for train_df, test_df in zip(train_dfs, test_dfs):
-        for field in fields_to_process:
-            logger.debug("Processing field %s...", field.field_name)
-            if field.postprocessing_options is not None:
-                for dataframe in [train_df, test_df]:
-                    dataframe[field.field_name] = process_utils.process_field(
-                        dataframe[field.field_name], field.postprocessing_options, False
-                    )
-        # compute and process new fields if necessary
-        if config.generated_fields is not None:
-            for new_field in config.generated_fields:
-                logger.debug("Generating field %s...", new_field.target_name)
-                for dataframe in [train_df, test_df]:
-                    # generate
-                    dataframe[new_field.target_name] = generate_field(
-                        dataframe, new_field
-                    )
-                # standardize
-                if new_field.std_options is not None:
-
-                    logger.debug("Standardizing field %s...", new_field.target_name)
-                    (
-                        train_df[new_field.target_name],
-                        test_df[new_field.target_name],
-                    ) = standardize_field(
-                        train_df[new_field.target_name],
-                        test_df[new_field.target_name],
-                        new_field.std_options,
-                    )
-        # standardize processed raw fields _after_ using them for computing gen fields
-        for field in fields_to_process:
-            if field.std_options is not None:
-                logger.debug("Standardizing field %s...", field.field_name)
-                (
-                    train_df[field.field_name],
-                    test_df[field.field_name],
-                ) = standardize_field(
-                    train_df[field.field_name],
-                    test_df[field.field_name],
-                    field.std_options,
-                )
-        return train_dfs, test_dfs
-
-
 def handle_diag_plots(
     input_series: pd.core.series.Series,
     configured_method: structs.StandardizationMethod,
@@ -226,3 +166,63 @@ def rename_protected_field(field: structs.RawField) -> structs.RawField:
             return field
     else:
         return field
+
+
+def postprocess_dataset(
+    config: structs.DataSet,
+    train_dfs: List[pd.core.frame.DataFrame],
+    test_dfs: List[pd.core.frame.DataFrame],
+):
+    """
+    Postprocesses a set of data sources given options outlined
+    in the input DataSet config instance.
+    """
+    logger.info("Postprocessing dataset...")
+    raw_fields: List[structs.RawField] = [
+        field for source in config.data_sources for field in source.fields
+    ]
+    # rename overwrite-protected fields so to avoid acting on the original field
+    fields_to_process = [rename_protected_field(field) for field in raw_fields]
+    # start processing with processes that act the same on test and train dfs
+    for train_df, test_df in zip(train_dfs, test_dfs):
+        for field in fields_to_process:
+            logger.debug("Processing field %s...", field.field_name)
+            if field.postprocessing_options is not None:
+                for dataframe in [train_df, test_df]:
+                    dataframe[field.field_name] = process_utils.process_field(
+                        dataframe[field.field_name], field.postprocessing_options, False
+                    )
+        # compute and process new fields if necessary
+        if config.generated_fields is not None:
+            for new_field in config.generated_fields:
+                logger.debug("Generating field %s...", new_field.target_name)
+                for dataframe in [train_df, test_df]:
+                    # generate
+                    dataframe[new_field.target_name] = generate_field(
+                        dataframe, new_field
+                    )
+                # standardize
+                if new_field.std_options is not None:
+
+                    logger.debug("Standardizing field %s...", new_field.target_name)
+                    (
+                        train_df[new_field.target_name],
+                        test_df[new_field.target_name],
+                    ) = standardize_field(
+                        train_df[new_field.target_name],
+                        test_df[new_field.target_name],
+                        new_field.std_options,
+                    )
+        # standardize processed raw fields _after_ using them for computing gen fields
+        for field in fields_to_process:
+            if field.std_options is not None:
+                logger.debug("Standardizing field %s...", field.field_name)
+                (
+                    train_df[field.field_name],
+                    test_df[field.field_name],
+                ) = standardize_field(
+                    train_df[field.field_name],
+                    test_df[field.field_name],
+                    field.std_options,
+                )
+        return train_dfs, test_dfs
