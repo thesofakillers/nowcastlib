@@ -155,9 +155,9 @@ class GeneratorFunction(Enum):
 
     T_SINCE_SUNSET = "t_since_sunset"
     """seconds elapsed since the last sunset"""
-    SIN_T_SINCE_SUNSET = "t_since_sunset"
+    SIN_T_SINCE_SUNSET = "sin_t_since_sunset"
     """sine of seconds elapsed since the last sunset out of 86400"""
-    COS_T_SINCE_SUNSET = "t_since_sunset"
+    COS_T_SINCE_SUNSET = "cos_t_since_sunset"
     """cosine of seconds elapsed since the last sunset out of 86400"""
     SUN_ELEVATION = "sun_elevation"
     """the sun's current elevation"""
