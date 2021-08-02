@@ -201,8 +201,8 @@ def postprocess_splits(
             logger.debug("Processing field %s...", field.field_name)
             if field.postprocessing_options is not None:
                 for dataframe in [train_df, test_df]:
-                    dataframe.loc[:, field.field_name] = process_utils.process_field(
-                        dataframe.loc[:, field.field_name],
+                    dataframe[field.field_name] = process_utils.process_field(
+                        dataframe[field.field_name],
                         field.postprocessing_options,
                         False,
                     )
@@ -212,7 +212,7 @@ def postprocess_splits(
                 logger.debug("Generating field %s...", new_field.target_name)
                 for dataframe in [train_df, test_df]:
                     # generate
-                    dataframe.loc[:, new_field.target_name] = generate_field(
+                    dataframe[new_field.target_name] = generate_field(
                         dataframe, new_field
                     )
                 # standardize
@@ -256,8 +256,8 @@ def serialize_splits(config, train_data, test_data, val_train_dfs, val_test_dfs)
     cv_split = parent_dir / "cv_split"
     cv_split.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
     for i, (train_df, test_df) in enumerate(zip(val_train_dfs, val_test_dfs)):
-        serialize_as_chunks(train_df, cv_split / "train_data_{}.hdf5".format(i+1))
-        serialize_as_chunks(test_df, cv_split / "val_data_{}.hdf5".format(i+1))
+        serialize_as_chunks(train_df, cv_split / "train_data_{}.hdf5".format(i + 1))
+        serialize_as_chunks(test_df, cv_split / "val_data_{}.hdf5".format(i + 1))
 
 
 def postprocess_dataset(
