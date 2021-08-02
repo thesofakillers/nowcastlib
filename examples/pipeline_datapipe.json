@@ -1,0 +1,149 @@
+{
+    "data_sources": [
+        {
+            "name": "lso_dimm",
+            "path": "data/LSO/lasilla_dimm.csv",
+            "fields": [
+                {
+                    "field_name": "Date time",
+                    "is_date": true
+                },
+                {
+                    "field_name": "DIMM Seeing [arcsec]",
+                    "std_options": {
+                        "method": "robust",
+                        "diagnostic_plots": false
+                    },
+                    "preprocessing_options": {
+                        "overwrite": false,
+                        "outlier_options": {
+                            "lower": 0,
+                            "upper": 5,
+                            "quantile_based": false
+                        }
+                    },
+                    "postprocessing_options": {
+                        "smooth_options": { "window_size": 30, "units": "min" }
+                    }
+                }
+            ],
+            "comment_format": "#"
+        },
+        {
+            "name": "lso_meteo",
+            "path": "data/LSO/lasilla_meteo.csv",
+            "fields": [
+                {
+                    "field_name": "Date time",
+                    "is_date": true
+                },
+                {
+                    "field_name": "Wind Speed at 10m [m/s]",
+                    "std_options": {
+                        "method": "robust",
+                        "diagnostic_plots": false
+                    },
+                    "preprocessing_options": {
+                        "overwrite": false,
+                        "outlier_options": {
+                            "lower": 0,
+                            "upper": 100,
+                            "quantile_based": false
+                        }
+                    },
+                    "postprocessing_options": {
+                        "smooth_options": { "window_size": 30, "units": "min" }
+                    }
+                },
+                {
+                    "field_name": "Wind Direction at 10m [deg]",
+                    "preprocessing_options": {
+                        "overwrite": false,
+                        "periodic_options": { "period_length": 360 },
+                        "conversion_options": { "key": "deg2rad" }
+                    },
+                    "postprocessing_options": {
+                        "smooth_options": { "window_size": 30, "units": "min" }
+                    }
+                }
+            ],
+            "comment_format": "#"
+        },
+        {
+            "name": "lco_dimm",
+            "path": "data/LCO/lascampanas_dimm.csv",
+            "fields": [
+                {
+                    "field_name": "tsd",
+                    "is_date": true,
+                    "date_format": "%Y-%m-%d %H:%M:%S"
+                },
+                {
+                    "field_name": "FWHM",
+                    "std_options": {
+                        "method": "robust",
+                        "diagnostic_plots": false
+                    },
+                    "preprocessing_options": {
+                        "overwrite": false,
+                        "outlier_options": {
+                            "lower": 0,
+                            "upper": 5,
+                            "quantile_based": false
+                        }
+                    },
+                    "postprocessing_options": {
+                        "smooth_options": { "window_size": 30, "units": "min" }
+                    }
+                }
+            ]
+        }
+    ],
+    "sync_options": {
+        "sample_spacing": 60,
+        "chunk_options": { "max_gap_size": 600, "min_chunk_size": 3600 }
+    },
+    "split_options": {
+        "train_split": 0.9,
+        "validation": {
+            "train_extent": 0.7,
+            "val_extent": 0.1,
+            "iterations": 4
+        },
+        "output_options": {
+            "parent_path": "output/example_datapipe"
+        }
+    },
+    "generated_fields": [
+        {
+            "target_name": "sin_day_year",
+            "input_fields": ["index"],
+            "gen_func": "sin_day_year"
+        },
+        {
+            "target_name": "cos_day_year",
+            "input_fields": ["index"],
+            "gen_func": "cos_day_year"
+        },
+        {
+            "target_name": "sin_secs_since_sunset",
+            "input_fields": ["index"],
+            "additional_kwargs": {
+                "lat": -24.6275,
+                "lon": -70.4044,
+                "elevation": 2635
+            },
+            "gen_func": "sin_t_since_sunset"
+        },
+        {
+            "target_name": "cos_secs_since_sunset",
+            "input_fields": ["index"],
+            "additional_kwargs": {
+                "lat": -24.6275,
+                "lon": -70.4044,
+                "elevation": 2635
+            },
+            "gen_func": "cos_t_since_sunset"
+        }
+    ]
+}
