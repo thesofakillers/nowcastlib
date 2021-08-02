@@ -5,9 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
 <title>nowcastlib.pipeline.structs API documentation</title>
-<meta name="description" content="Module containing custom structures used throughout the pipeline submodule.
-Classes listed here should be viewed as dictionaries, with class
-…" />
+<meta name="description" content="Module containing custom structures used throughout the pipeline
+submodule to aid with configuration …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -24,17 +23,29 @@ Classes listed here should be viewed as dictionaries, with class
 <h1 class="title">Module <code>nowcastlib.pipeline.structs</code></h1>
 </header>
 <section id="section-intro">
-<p>Module containing custom structures used throughout the pipeline submodule.
-Classes listed here should be viewed as dictionaries, with class variables
-being treated analogous to dictionary keys.</p>
+<p>Module containing custom structures used throughout the pipeline
+submodule to aid with configuration.</p>
+<p>A <code>Union</code> type annotation indicates that the variable
+can be of any of the types listed in the <code>Union</code> type.
+Variables whose type is <code>Union</code> with <code>NoneType</code> are optional.</p>
+<p>Tuples are used instead of lists so to allow for hashing
+of the struct instances. These should be treated as lists
+when using .json files for specifying configuration.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
-Module containing custom structures used throughout the pipeline submodule.
-Classes listed here should be viewed as dictionaries, with class variables
-being treated analogous to dictionary keys.
+Module containing custom structures used throughout the pipeline
+submodule to aid with configuration.
+
+A `Union` type annotation indicates that the variable
+can be of any of the types listed in the `Union` type.
+Variables whose type is `Union` with `NoneType` are optional.
+
+Tuples are used instead of lists so to allow for hashing
+of the struct instances. These should be treated as lists
+when using .json files for specifying configuration.
 &#34;&#34;&#34;
 from typing import Union, Tuple, Optional, Dict, Callable
 from enum import Enum
@@ -177,7 +188,7 @@ brainstorming_dataset = {
 
 
 class GeneratorFunction(Enum):
-    &#34;&#34;&#34;Enum capturing the available Generator Functions&#34;&#34;&#34;
+    &#34;&#34;&#34;Enumeration of the available Generator Functions&#34;&#34;&#34;
 
     T_SINCE_SUNSET = &#34;t_since_sunset&#34;
     &#34;&#34;&#34;seconds elapsed since the last sunset&#34;&#34;&#34;
@@ -210,11 +221,17 @@ class GeneratorFunction(Enum):
 
 
 class StandardizationMethod(Enum):
-    &#34;&#34;&#34;The available standardization methods&#34;&#34;&#34;
+    &#34;&#34;&#34;Enumeration of the available standardization methods&#34;&#34;&#34;
 
     POWER = &#34;power&#34;
+    &#34;&#34;&#34;A power transform of the data (Yeo-Johnson)&#34;&#34;&#34;
     ROBUST = &#34;robust&#34;
+    &#34;&#34;&#34;
+    Rescales the data making use of its interquartile range.
+    \nSee https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html
+    &#34;&#34;&#34;
     LOGNORM = &#34;lognorm&#34;
+    &#34;&#34;&#34;Takes the logarithm of the data&#34;&#34;&#34;
 
 
 @attrs(kw_only=True, frozen=True)
@@ -227,7 +244,7 @@ class StandardizationOptions:
     method: StandardizationMethod = attrib()
     &#34;&#34;&#34;
     Which of the available methods to use. Specify as the
-    Enum string value when configuring via JSON
+    Enum lowercase string value when configuring via JSON
     &#34;&#34;&#34;
     diagnostic_plots: bool = attrib(default=True)
     &#34;&#34;&#34;
@@ -271,7 +288,7 @@ class GeneratedField(BaseField):
     &#34;&#34;&#34;
     The name of the generator function to use
     for generating the new data. Specify as the
-    Enum string value when configuring via JSON.
+    Enum lowercase string value when configuring via JSON.
     &#34;&#34;&#34;
     additional_kwargs: Optional[dict] = attrib(default=None)
     &#34;&#34;&#34;
@@ -811,13 +828,13 @@ of a given data field, achieved with a moving average operation.</p>
 <span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Enum capturing the available Generator Functions</p></div>
+<div class="desc"><p>Enumeration of the available Generator Functions</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class GeneratorFunction(Enum):
-    &#34;&#34;&#34;Enum capturing the available Generator Functions&#34;&#34;&#34;
+    &#34;&#34;&#34;Enumeration of the available Generator Functions&#34;&#34;&#34;
 
     T_SINCE_SUNSET = &#34;t_since_sunset&#34;
     &#34;&#34;&#34;seconds elapsed since the last sunset&#34;&#34;&#34;
@@ -917,17 +934,23 @@ of a given data field, achieved with a moving average operation.</p>
 <span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>The available standardization methods</p></div>
+<div class="desc"><p>Enumeration of the available standardization methods</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class StandardizationMethod(Enum):
-    &#34;&#34;&#34;The available standardization methods&#34;&#34;&#34;
+    &#34;&#34;&#34;Enumeration of the available standardization methods&#34;&#34;&#34;
 
     POWER = &#34;power&#34;
+    &#34;&#34;&#34;A power transform of the data (Yeo-Johnson)&#34;&#34;&#34;
     ROBUST = &#34;robust&#34;
-    LOGNORM = &#34;lognorm&#34;</code></pre>
+    &#34;&#34;&#34;
+    Rescales the data making use of its interquartile range.
+    \nSee https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html
+    &#34;&#34;&#34;
+    LOGNORM = &#34;lognorm&#34;
+    &#34;&#34;&#34;Takes the logarithm of the data&#34;&#34;&#34;</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -937,15 +960,16 @@ of a given data field, achieved with a moving average operation.</p>
 <dl>
 <dt id="nowcastlib.pipeline.structs.StandardizationMethod.POWER"><code class="name">var <span class="ident">POWER</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>A power transform of the data (Yeo-Johnson)</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.StandardizationMethod.ROBUST"><code class="name">var <span class="ident">ROBUST</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Rescales the data making use of its interquartile range.</p>
+<p>See <a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html">https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html</a></p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.StandardizationMethod.LOGNORM"><code class="name">var <span class="ident">LOGNORM</span></code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>Takes the logarithm of the data</p></div>
 </dd>
 </dl>
 </dd>
@@ -970,7 +994,7 @@ for standardizing a given field.</p>
     method: StandardizationMethod = attrib()
     &#34;&#34;&#34;
     Which of the available methods to use. Specify as the
-    Enum string value when configuring via JSON
+    Enum lowercase string value when configuring via JSON
     &#34;&#34;&#34;
     diagnostic_plots: bool = attrib(default=True)
     &#34;&#34;&#34;
@@ -983,7 +1007,7 @@ for standardizing a given field.</p>
 <dt id="nowcastlib.pipeline.structs.StandardizationOptions.method"><code class="name">var <span class="ident">method</span> : <a title="nowcastlib.pipeline.structs.StandardizationMethod" href="#nowcastlib.pipeline.structs.StandardizationMethod">StandardizationMethod</a></code></dt>
 <dd>
 <div class="desc"><p>Which of the available methods to use. Specify as the
-Enum string value when configuring via JSON</p></div>
+Enum lowercase string value when configuring via JSON</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.StandardizationOptions.diagnostic_plots"><code class="name">var <span class="ident">diagnostic_plots</span> : bool</code></dt>
 <dd>
@@ -1062,7 +1086,7 @@ how the pipeline should generate a new field of data</p>
     &#34;&#34;&#34;
     The name of the generator function to use
     for generating the new data. Specify as the
-    Enum string value when configuring via JSON.
+    Enum lowercase string value when configuring via JSON.
     &#34;&#34;&#34;
     additional_kwargs: Optional[dict] = attrib(default=None)
     &#34;&#34;&#34;
@@ -1108,7 +1132,7 @@ generator function as *args.
 <dd>
 <div class="desc"><p>The name of the generator function to use
 for generating the new data. Specify as the
-Enum string value when configuring via JSON.</p></div>
+Enum lowercase string value when configuring via JSON.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.GeneratedField.additional_kwargs"><code class="name">var <span class="ident">additional_kwargs</span> : Union[dict, NoneType]</code></dt>
 <dd>

@@ -16,8 +16,14 @@ pip install nowcastlib
 
 ## Usage and Documentation
 
-Nowcast Library consists in a collection of functions organized in submodules
-(API) and a tool accessible via the command line (CLI).
+Nowcast Library (nowcastlib) consists in a collection of functions organized in
+submodules (API) and a tool accessible via the command line (CLI). The latter is
+primarily intended for accessing the Nowcast Library Pipeline, an opinionated
+yet configurable set of processing steps for wrangling data and evaluating
+models in a consistent and rigorous way. More information can be found on the
+nowcastlib pipeline index page
+([link to markdown](nowcastlib/pipeline/README.md) and
+[link to hosted docs](https://giuliostarace.com/nowcastlib/pipeline))
 
 Please refer to the
 [examples folder](https://github.com/thesofakillers/nowcastlib/tree/master/examples)
@@ -52,14 +58,17 @@ Some of the library's functionality is bundled in configurable subcommands
 accessible via the terminal with the command `nowcastlib`:
 
 ```console
-usage: nowcastlib [-h] [-v] {triangulate,preprocess,sync} ...
+usage: nowcastlib [-h] [-v]
+                  {triangulate,preprocess,sync,postprocess,datapipe} ...
 
 positional arguments:
-  {triangulate,preprocess,sync}
+  {triangulate,preprocess,sync,postprocess,datapipe}
                         available commands
     triangulate         Run `nowcastlib triangulate -h` for further help
     preprocess          Run `nowcastlib preprocess -h` for further help
     sync                Run `nowcastlib sync -h` for further help
+    postprocess         Run `nowcastlib postprocess -h` for further help
+    datapipe            Run `nowcastlib datapipe -h` for further help
 
 optional arguments:
   -h, --help            show this help message and exit

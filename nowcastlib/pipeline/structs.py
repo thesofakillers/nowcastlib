@@ -1,7 +1,14 @@
 """
-Module containing custom structures used throughout the pipeline submodule.
-Classes listed here should be viewed as dictionaries, with class variables
-being treated analogous to dictionary keys.
+Module containing custom structures used throughout the pipeline
+submodule to aid with configuration.
+
+A `Union` type annotation indicates that the variable
+can be of any of the types listed in the `Union` type.
+Variables whose type is `Union` with `NoneType` are optional.
+
+Tuples are used instead of lists so to allow for hashing
+of the struct instances. These should be treated as lists
+when using .json files for specifying configuration.
 """
 from typing import Union, Tuple, Optional, Dict, Callable
 from enum import Enum
@@ -144,7 +151,7 @@ brainstorming_dataset = {
 
 
 class GeneratorFunction(Enum):
-    """Enum capturing the available Generator Functions"""
+    """Enumeration of the available Generator Functions"""
 
     T_SINCE_SUNSET = "t_since_sunset"
     """seconds elapsed since the last sunset"""
@@ -177,11 +184,17 @@ class GeneratorFunction(Enum):
 
 
 class StandardizationMethod(Enum):
-    """The available standardization methods"""
+    """Enumeration of the available standardization methods"""
 
     POWER = "power"
+    """A power transform of the data (Yeo-Johnson)"""
     ROBUST = "robust"
+    """
+    Rescales the data making use of its interquartile range.
+    \nSee https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html
+    """
     LOGNORM = "lognorm"
+    """Takes the logarithm of the data"""
 
 
 @attrs(kw_only=True, frozen=True)
@@ -194,7 +207,7 @@ class StandardizationOptions:
     method: StandardizationMethod = attrib()
     """
     Which of the available methods to use. Specify as the
-    Enum string value when configuring via JSON
+    Enum lowercase string value when configuring via JSON
     """
     diagnostic_plots: bool = attrib(default=True)
     """
@@ -238,7 +251,7 @@ class GeneratedField(BaseField):
     """
     The name of the generator function to use
     for generating the new data. Specify as the
-    Enum string value when configuring via JSON.
+    Enum lowercase string value when configuring via JSON.
     """
     additional_kwargs: Optional[dict] = attrib(default=None)
     """

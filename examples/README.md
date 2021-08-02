@@ -53,3 +53,13 @@ nowcastlib triangulate -c ./cli_triangulate_config.yaml
 ```
 
 to start a triangulation process.
+
+There are also example configuration files for usage with the nowcastlib
+pipeline provided in the format `pipeline_{cli subcommand}.json`. For example,
+from within this `examples/` directory, one may run
+
+```console
+nowcastlib preprocess -c ./pipeline_preprocess.json
+```
+
+to start a data preprocessing run.

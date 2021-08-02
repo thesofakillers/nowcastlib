@@ -1,6 +1,6 @@
 """
 Data processing and Model evaluation pipeline for the Nowcast Library
-.. include:: PIPELINE.md
+.. include:: README.md
 """
 import pathlib
 import pandas as pd
@@ -12,8 +12,9 @@ from . import split
 
 def pipe_dataset(config: structs.DataSet):
     """
-    Runs all configured steps of the Nowcast Library Pipeline
-    on a set of data described by the input DataSet instance
+    Runs all configured data-wrangling steps of the
+    Nowcast Library Pipeline on a set of data described
+    by the input DataSet instance
     """
     # preprocessing
     preprocessed_dfs = process.preprocess.preprocess_dataset(config)

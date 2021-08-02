@@ -32,14 +32,18 @@ Functions for post-processing of data
 &#34;&#34;&#34;
 import sys
 import logging
+import pathlib
 from typing import Optional, List, Tuple
 import numpy as np
 import pandas as pd
 import attr
 import sklearn.preprocessing as sklearn_pproc
 import matplotlib.pyplot as plt
+from nowcastlib.datasets import serialize_as_chunks
 from nowcastlib.pipeline import structs
 from nowcastlib.pipeline import utils
+from nowcastlib.pipeline import sync
+from nowcastlib.pipeline import split
 from nowcastlib.pipeline.process import utils as process_utils
 from . import generate
 
@@ -87,66 +91,6 @@ def generate_field(
     )
     # finally, generate the field with the function we picked earlier
     return func(*[input_df[col] for col in input_df], **additional_args)
-
-
-def postprocess_dataset(
-    config: structs.DataSet,
-    train_dfs: List[pd.core.frame.DataFrame],
-    test_dfs: List[pd.core.frame.DataFrame],
-):
-    &#34;&#34;&#34;
-    Postprocesses a set of data sources given options outlined
-    in the input DataSet config instance.
-    &#34;&#34;&#34;
-    logger.info(&#34;Postprocessing dataset...&#34;)
-    raw_fields: List[structs.RawField] = [
-        field for source in config.data_sources for field in source.fields
-    ]
-    # rename overwrite-protected fields so to avoid acting on the original field
-    fields_to_process = [rename_protected_field(field) for field in raw_fields]
-    # start processing with processes that act the same on test and train dfs
-    for train_df, test_df in zip(train_dfs, test_dfs):
-        for field in fields_to_process:
-            logger.debug(&#34;Processing field %s...&#34;, field.field_name)
-            if field.postprocessing_options is not None:
-                for dataframe in [train_df, test_df]:
-                    dataframe[field.field_name] = process_utils.process_field(
-                        dataframe[field.field_name], field.postprocessing_options, False
-                    )
-        # compute and process new fields if necessary
-        if config.generated_fields is not None:
-            for new_field in config.generated_fields:
-                logger.debug(&#34;Generating field %s...&#34;, new_field.target_name)
-                for dataframe in [train_df, test_df]:
-                    # generate
-                    dataframe[new_field.target_name] = generate_field(
-                        dataframe, new_field
-                    )
-                # standardize
-                if new_field.std_options is not None:
-
-                    logger.debug(&#34;Standardizing field %s...&#34;, new_field.target_name)
-                    (
-                        train_df[new_field.target_name],
-                        test_df[new_field.target_name],
-                    ) = standardize_field(
-                        train_df[new_field.target_name],
-                        test_df[new_field.target_name],
-                        new_field.std_options,
-                    )
-        # standardize processed raw fields _after_ using them for computing gen fields
-        for field in fields_to_process:
-            if field.std_options is not None:
-                logger.debug(&#34;Standardizing field %s...&#34;, field.field_name)
-                (
-                    train_df[field.field_name],
-                    test_df[field.field_name],
-                ) = standardize_field(
-                    train_df[field.field_name],
-                    test_df[field.field_name],
-                    field.std_options,
-                )
-        return train_dfs, test_dfs
 
 
 def handle_diag_plots(
@@ -254,12 +198,140 @@ def rename_protected_field(field: structs.RawField) -&gt; structs.RawField:
         else:
             return field
     else:
-        return field</code></pre>
+        return field
+
+
+def postprocess_splits(
+    config: structs.DataSet,
+    train_dfs: List[pd.core.frame.DataFrame],
+    test_dfs: List[pd.core.frame.DataFrame],
+):
+    &#34;&#34;&#34;
+    Postprocesses a set of train-test splits given options outlined
+    in the input DataSet config instance.
+    &#34;&#34;&#34;
+    logger.info(&#34;Postprocessing dataset...&#34;)
+    raw_fields: List[structs.RawField] = [
+        field for source in config.data_sources for field in source.fields
+    ]
+    # rename overwrite-protected fields so to avoid acting on the original field
+    fields_to_process = [rename_protected_field(field) for field in raw_fields]
+    # start processing with processes that act the same on test and train dfs
+    for train_df, test_df in zip(train_dfs, test_dfs):
+        for field in fields_to_process:
+            logger.debug(&#34;Processing field %s...&#34;, field.field_name)
+            if field.postprocessing_options is not None:
+                for dataframe in [train_df, test_df]:
+                    dataframe[field.field_name] = process_utils.process_field(
+                        dataframe[field.field_name], field.postprocessing_options, False
+                    )
+        # compute and process new fields if necessary
+        if config.generated_fields is not None:
+            for new_field in config.generated_fields:
+                logger.debug(&#34;Generating field %s...&#34;, new_field.target_name)
+                for dataframe in [train_df, test_df]:
+                    # generate
+                    dataframe[new_field.target_name] = generate_field(
+                        dataframe, new_field
+                    )
+                # standardize
+                if new_field.std_options is not None:
+
+                    logger.debug(&#34;Standardizing field %s...&#34;, new_field.target_name)
+                    (
+                        train_df[new_field.target_name],
+                        test_df[new_field.target_name],
+                    ) = standardize_field(
+                        train_df[new_field.target_name],
+                        test_df[new_field.target_name],
+                        new_field.std_options,
+                    )
+        # standardize processed raw fields _after_ using them for computing gen fields
+        for field in fields_to_process:
+            if field.std_options is not None:
+                logger.debug(&#34;Standardizing field %s...&#34;, field.field_name)
+                (
+                    train_df[field.field_name],
+                    test_df[field.field_name],
+                ) = standardize_field(
+                    train_df[field.field_name],
+                    test_df[field.field_name],
+                    field.std_options,
+                )
+        return train_dfs, test_dfs
+
+
+def serialize_splits(config, train_data, test_data, val_train_dfs, val_test_dfs):
+    &#34;&#34;&#34;
+    Creates directory structure and serializes
+    the dataframes as chunks to hdf5 files
+    &#34;&#34;&#34;
+    parent_dir = pathlib.Path(config.parent_path)
+    parent_dir.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
+    main_split = parent_dir / &#34;main_split&#34;
+    main_split.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
+    serialize_as_chunks(train_data, main_split / &#34;train_data.hdf5&#34;)
+    serialize_as_chunks(test_data, main_split / &#34;test_data.hdf5&#34;)
+    cv_split = parent_dir / &#34;cv_split&#34;
+    cv_split.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
+    for i, (train_df, test_df) in enumerate(val_train_dfs, val_test_dfs):
+        serialize_as_chunks(train_df, cv_split / &#34;train_data_{}.hdf5&#34;.format(i))
+        serialize_as_chunks(test_df, cv_split / &#34;val_data_{}.hdf5&#34;.format(i))
+
+
+def postprocess_dataset(
+    config: structs.DataSet,
+    synced_data: Optional[Tuple[pd.core.frame.DataFrame, np.ndarray]] = None,
+):
+    &#34;&#34;&#34;
+    Postprocesses a dataset given options outlined
+    in the input DataSet config instance.
+    &#34;&#34;&#34;
+    assert (
+        config.split_options is not None
+    ), &#34;`config.split_options` must be defined to perform postprocessing&#34;
+    # avoid syncing if synced info (dataframe and block locs) are provided
+    if synced_data is None:
+        chunked_df, chunk_locs = sync.synchronize_dataset(config)
+    else:
+        chunked_df = synced_data[0].copy()
+        chunk_locs = synced_data[1].copy()
+
+    # outer train and test split
+    (train_data, _), (test_data, _) = split.train_test_split_sparse(
+        chunked_df, config.split_options, chunk_locs
+    )
+    # postprocessing
+    [proc_train_data], [proc_test_data] = postprocess_splits(
+        config, [train_data], [test_data]
+    )
+    # inner train and validation split(s)
+    train_dfs, val_dfs = split.rep_holdout_split_sparse(
+        train_data, config.split_options.validation
+    )
+    # postprocessing
+    (
+        proc_val_train_dfs,
+        proc_val_test_dfs,
+    ) = postprocess_splits(config, train_dfs, val_dfs)
+    # serialize
+    if config.split_options.output_options is not None:
+        serialize_splits(
+            config.split_options.output_options,
+            proc_train_data,
+            proc_test_data,
+            proc_val_train_dfs,
+            proc_val_test_dfs,
+        )</code></pre>
 </details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
+<dt><code class="name"><a title="nowcastlib.pipeline.process.postprocess.cli" href="cli.html">nowcastlib.pipeline.process.postprocess.cli</a></code></dt>
+<dd>
+<div class="desc"><p>Command-Line interface functionality for preprocessing</p></div>
+</dd>
 <dt><code class="name"><a title="nowcastlib.pipeline.process.postprocess.generate" href="generate.html">nowcastlib.pipeline.process.postprocess.generate</a></code></dt>
 <dd>
 <div class="desc"><p>functions for generating new fields</p></div>
@@ -332,76 +404,6 @@ def rename_protected_field(field: structs.RawField) -&gt; structs.RawField:
     )
     # finally, generate the field with the function we picked earlier
     return func(*[input_df[col] for col in input_df], **additional_args)</code></pre>
-</details>
-</dd>
-<dt id="nowcastlib.pipeline.process.postprocess.postprocess_dataset"><code class="name flex">
-<span>def <span class="ident">postprocess_dataset</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.DataSet" href="../../structs.html#nowcastlib.pipeline.structs.DataSet">DataSet</a>, train_dfs: List[pandas.core.frame.DataFrame], test_dfs: List[pandas.core.frame.DataFrame])</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Postprocesses a set of data sources given options outlined
-in the input DataSet config instance.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def postprocess_dataset(
-    config: structs.DataSet,
-    train_dfs: List[pd.core.frame.DataFrame],
-    test_dfs: List[pd.core.frame.DataFrame],
-):
-    &#34;&#34;&#34;
-    Postprocesses a set of data sources given options outlined
-    in the input DataSet config instance.
-    &#34;&#34;&#34;
-    logger.info(&#34;Postprocessing dataset...&#34;)
-    raw_fields: List[structs.RawField] = [
-        field for source in config.data_sources for field in source.fields
-    ]
-    # rename overwrite-protected fields so to avoid acting on the original field
-    fields_to_process = [rename_protected_field(field) for field in raw_fields]
-    # start processing with processes that act the same on test and train dfs
-    for train_df, test_df in zip(train_dfs, test_dfs):
-        for field in fields_to_process:
-            logger.debug(&#34;Processing field %s...&#34;, field.field_name)
-            if field.postprocessing_options is not None:
-                for dataframe in [train_df, test_df]:
-                    dataframe[field.field_name] = process_utils.process_field(
-                        dataframe[field.field_name], field.postprocessing_options, False
-                    )
-        # compute and process new fields if necessary
-        if config.generated_fields is not None:
-            for new_field in config.generated_fields:
-                logger.debug(&#34;Generating field %s...&#34;, new_field.target_name)
-                for dataframe in [train_df, test_df]:
-                    # generate
-                    dataframe[new_field.target_name] = generate_field(
-                        dataframe, new_field
-                    )
-                # standardize
-                if new_field.std_options is not None:
-
-                    logger.debug(&#34;Standardizing field %s...&#34;, new_field.target_name)
-                    (
-                        train_df[new_field.target_name],
-                        test_df[new_field.target_name],
-                    ) = standardize_field(
-                        train_df[new_field.target_name],
-                        test_df[new_field.target_name],
-                        new_field.std_options,
-                    )
-        # standardize processed raw fields _after_ using them for computing gen fields
-        for field in fields_to_process:
-            if field.std_options is not None:
-                logger.debug(&#34;Standardizing field %s...&#34;, field.field_name)
-                (
-                    train_df[field.field_name],
-                    test_df[field.field_name],
-                ) = standardize_field(
-                    train_df[field.field_name],
-                    test_df[field.field_name],
-                    field.std_options,
-                )
-        return train_dfs, test_dfs</code></pre>
 </details>
 </dd>
 <dt id="nowcastlib.pipeline.process.postprocess.handle_diag_plots"><code class="name flex">
@@ -543,6 +545,160 @@ are overwrite-able</p></div>
         return field</code></pre>
 </details>
 </dd>
+<dt id="nowcastlib.pipeline.process.postprocess.postprocess_splits"><code class="name flex">
+<span>def <span class="ident">postprocess_splits</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.DataSet" href="../../structs.html#nowcastlib.pipeline.structs.DataSet">DataSet</a>, train_dfs: List[pandas.core.frame.DataFrame], test_dfs: List[pandas.core.frame.DataFrame])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Postprocesses a set of train-test splits given options outlined
+in the input DataSet config instance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def postprocess_splits(
+    config: structs.DataSet,
+    train_dfs: List[pd.core.frame.DataFrame],
+    test_dfs: List[pd.core.frame.DataFrame],
+):
+    &#34;&#34;&#34;
+    Postprocesses a set of train-test splits given options outlined
+    in the input DataSet config instance.
+    &#34;&#34;&#34;
+    logger.info(&#34;Postprocessing dataset...&#34;)
+    raw_fields: List[structs.RawField] = [
+        field for source in config.data_sources for field in source.fields
+    ]
+    # rename overwrite-protected fields so to avoid acting on the original field
+    fields_to_process = [rename_protected_field(field) for field in raw_fields]
+    # start processing with processes that act the same on test and train dfs
+    for train_df, test_df in zip(train_dfs, test_dfs):
+        for field in fields_to_process:
+            logger.debug(&#34;Processing field %s...&#34;, field.field_name)
+            if field.postprocessing_options is not None:
+                for dataframe in [train_df, test_df]:
+                    dataframe[field.field_name] = process_utils.process_field(
+                        dataframe[field.field_name], field.postprocessing_options, False
+                    )
+        # compute and process new fields if necessary
+        if config.generated_fields is not None:
+            for new_field in config.generated_fields:
+                logger.debug(&#34;Generating field %s...&#34;, new_field.target_name)
+                for dataframe in [train_df, test_df]:
+                    # generate
+                    dataframe[new_field.target_name] = generate_field(
+                        dataframe, new_field
+                    )
+                # standardize
+                if new_field.std_options is not None:
+
+                    logger.debug(&#34;Standardizing field %s...&#34;, new_field.target_name)
+                    (
+                        train_df[new_field.target_name],
+                        test_df[new_field.target_name],
+                    ) = standardize_field(
+                        train_df[new_field.target_name],
+                        test_df[new_field.target_name],
+                        new_field.std_options,
+                    )
+        # standardize processed raw fields _after_ using them for computing gen fields
+        for field in fields_to_process:
+            if field.std_options is not None:
+                logger.debug(&#34;Standardizing field %s...&#34;, field.field_name)
+                (
+                    train_df[field.field_name],
+                    test_df[field.field_name],
+                ) = standardize_field(
+                    train_df[field.field_name],
+                    test_df[field.field_name],
+                    field.std_options,
+                )
+        return train_dfs, test_dfs</code></pre>
+</details>
+</dd>
+<dt id="nowcastlib.pipeline.process.postprocess.serialize_splits"><code class="name flex">
+<span>def <span class="ident">serialize_splits</span></span>(<span>config, train_data, test_data, val_train_dfs, val_test_dfs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Creates directory structure and serializes
+the dataframes as chunks to hdf5 files</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def serialize_splits(config, train_data, test_data, val_train_dfs, val_test_dfs):
+    &#34;&#34;&#34;
+    Creates directory structure and serializes
+    the dataframes as chunks to hdf5 files
+    &#34;&#34;&#34;
+    parent_dir = pathlib.Path(config.parent_path)
+    parent_dir.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
+    main_split = parent_dir / &#34;main_split&#34;
+    main_split.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
+    serialize_as_chunks(train_data, main_split / &#34;train_data.hdf5&#34;)
+    serialize_as_chunks(test_data, main_split / &#34;test_data.hdf5&#34;)
+    cv_split = parent_dir / &#34;cv_split&#34;
+    cv_split.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
+    for i, (train_df, test_df) in enumerate(val_train_dfs, val_test_dfs):
+        serialize_as_chunks(train_df, cv_split / &#34;train_data_{}.hdf5&#34;.format(i))
+        serialize_as_chunks(test_df, cv_split / &#34;val_data_{}.hdf5&#34;.format(i))</code></pre>
+</details>
+</dd>
+<dt id="nowcastlib.pipeline.process.postprocess.postprocess_dataset"><code class="name flex">
+<span>def <span class="ident">postprocess_dataset</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.DataSet" href="../../structs.html#nowcastlib.pipeline.structs.DataSet">DataSet</a>, synced_data: Union[Tuple[pandas.core.frame.DataFrame, numpy.ndarray], NoneType] = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Postprocesses a dataset given options outlined
+in the input DataSet config instance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def postprocess_dataset(
+    config: structs.DataSet,
+    synced_data: Optional[Tuple[pd.core.frame.DataFrame, np.ndarray]] = None,
+):
+    &#34;&#34;&#34;
+    Postprocesses a dataset given options outlined
+    in the input DataSet config instance.
+    &#34;&#34;&#34;
+    assert (
+        config.split_options is not None
+    ), &#34;`config.split_options` must be defined to perform postprocessing&#34;
+    # avoid syncing if synced info (dataframe and block locs) are provided
+    if synced_data is None:
+        chunked_df, chunk_locs = sync.synchronize_dataset(config)
+    else:
+        chunked_df = synced_data[0].copy()
+        chunk_locs = synced_data[1].copy()
+
+    # outer train and test split
+    (train_data, _), (test_data, _) = split.train_test_split_sparse(
+        chunked_df, config.split_options, chunk_locs
+    )
+    # postprocessing
+    [proc_train_data], [proc_test_data] = postprocess_splits(
+        config, [train_data], [test_data]
+    )
+    # inner train and validation split(s)
+    train_dfs, val_dfs = split.rep_holdout_split_sparse(
+        train_data, config.split_options.validation
+    )
+    # postprocessing
+    (
+        proc_val_train_dfs,
+        proc_val_test_dfs,
+    ) = postprocess_splits(config, train_dfs, val_dfs)
+    # serialize
+    if config.split_options.output_options is not None:
+        serialize_splits(
+            config.split_options.output_options,
+            proc_train_data,
+            proc_test_data,
+            proc_val_train_dfs,
+            proc_val_test_dfs,
+        )</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -561,16 +717,19 @@ are overwrite-able</p></div>
 </li>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
+<li><code><a title="nowcastlib.pipeline.process.postprocess.cli" href="cli.html">nowcastlib.pipeline.process.postprocess.cli</a></code></li>
 <li><code><a title="nowcastlib.pipeline.process.postprocess.generate" href="generate.html">nowcastlib.pipeline.process.postprocess.generate</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="nowcastlib.pipeline.process.postprocess.generate_field" href="#nowcastlib.pipeline.process.postprocess.generate_field">generate_field</a></code></li>
-<li><code><a title="nowcastlib.pipeline.process.postprocess.postprocess_dataset" href="#nowcastlib.pipeline.process.postprocess.postprocess_dataset">postprocess_dataset</a></code></li>
 <li><code><a title="nowcastlib.pipeline.process.postprocess.handle_diag_plots" href="#nowcastlib.pipeline.process.postprocess.handle_diag_plots">handle_diag_plots</a></code></li>
 <li><code><a title="nowcastlib.pipeline.process.postprocess.standardize_field" href="#nowcastlib.pipeline.process.postprocess.standardize_field">standardize_field</a></code></li>
 <li><code><a title="nowcastlib.pipeline.process.postprocess.rename_protected_field" href="#nowcastlib.pipeline.process.postprocess.rename_protected_field">rename_protected_field</a></code></li>
+<li><code><a title="nowcastlib.pipeline.process.postprocess.postprocess_splits" href="#nowcastlib.pipeline.process.postprocess.postprocess_splits">postprocess_splits</a></code></li>
+<li><code><a title="nowcastlib.pipeline.process.postprocess.serialize_splits" href="#nowcastlib.pipeline.process.postprocess.serialize_splits">serialize_splits</a></code></li>
+<li><code><a title="nowcastlib.pipeline.process.postprocess.postprocess_dataset" href="#nowcastlib.pipeline.process.postprocess.postprocess_dataset">postprocess_dataset</a></code></li>
 </ul>
 </li>
 </ul>

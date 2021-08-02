@@ -32,8 +32,14 @@ project</p>
 <pre><code class="language-console">pip install nowcastlib
 </code></pre>
 <h2 id="usage-and-documentation">Usage and Documentation</h2>
-<p>Nowcast Library consists in a collection of functions organized in submodules
-(API) and a tool accessible via the command line (CLI).</p>
+<p>Nowcast Library (nowcastlib) consists in a collection of functions organized in
+submodules (API) and a tool accessible via the command line (CLI). The latter is
+primarily intended for accessing the Nowcast Library Pipeline, an opinionated
+yet configurable set of processing steps for wrangling data and evaluating
+models in a consistent and rigorous way. More information can be found on the
+nowcastlib pipeline index page
+(<a href="nowcastlib/pipeline/README.md">link to markdown</a> and
+<a href="https://giuliostarace.com/nowcastlib/pipeline">link to hosted docs</a>)</p>
 <p>Please refer to the
 <a href="https://github.com/thesofakillers/nowcastlib/tree/master/examples">examples folder</a>
 on GitHub for usage examples.</p>
@@ -58,14 +64,17 @@ result = ncl.datasets.compute_trig_fields(data_df, [&quot;A&quot;, &quot;C&quot;
 <h3 id="cli">CLI</h3>
 <p>Some of the library's functionality is bundled in configurable subcommands
 accessible via the terminal with the command <code><a title="nowcastlib" href="#nowcastlib">nowcastlib</a></code>:</p>
-<pre><code class="language-console">usage: nowcastlib [-h] [-v] {triangulate,preprocess,sync} ...
+<pre><code class="language-console">usage: nowcastlib [-h] [-v]
+                  {triangulate,preprocess,sync,postprocess,datapipe} ...
 
 positional arguments:
-  {triangulate,preprocess,sync}
+  {triangulate,preprocess,sync,postprocess,datapipe}
                         available commands
     triangulate         Run `nowcastlib triangulate -h` for further help
     preprocess          Run `nowcastlib preprocess -h` for further help
     sync                Run `nowcastlib sync -h` for further help
+    postprocess         Run `nowcastlib postprocess -h` for further help
+    datapipe            Run `nowcastlib datapipe -h` for further help
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -95,33 +104,35 @@ appropriate argument based on <a href="https://semver.org/">semver guidelines</a
 </li>
 <li>
 <p>Update the documentation by running</p>
-</li>
-</ol>
 <p><code>console
 make document</code></p>
-<ol>
-<li>Prepare the package by running</li>
-</ol>
+</li>
+<li>
+<p>Prepare the package by running</p>
 <p><code>console
 poetry build</code></p>
-<ol>
-<li>Ensure you have <a href="https://test.pypi.org/">TestPyPi</a> and PyPi configured as
-your poetry repositories:</li>
-</ol>
+</li>
+<li>
+<p>Ensure you have <a href="https://test.pypi.org/">TestPyPi</a> and PyPi configured as
+your poetry repositories:</p>
 <p><code>console
 poetry config repositories.testpypi &lt;https://test.pypi.org/legacy/&gt;
 poetry config repositories.pypi &lt;https://pypi.org/&gt;</code></p>
-<ol>
-<li>Publish the repository to TestPyPi, to see that everything works as expected:</li>
-</ol>
+</li>
+<li>
+<p>Publish the repository to TestPyPi, to see that everything works as expected:</p>
 <p><code>console
 poetry publish -r testpypi</code></p>
-<ol>
-<li>Stage, commit and push your changes (to master) with git.</li>
-<li>Publish the repository to PyPi:</li>
-</ol>
+</li>
+<li>
+<p>Stage, commit and push your changes (to master) with git.</p>
+</li>
+<li>
+<p>Publish the repository to PyPi:</p>
 <p><code>console
 poetry publish -r pypi</code></p>
+</li>
+</ol>
 <p>Upon successful deployment, the library should be available for install via
 <code>pip</code></p>
 <details class="source">
