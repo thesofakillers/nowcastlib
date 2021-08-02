@@ -7,6 +7,7 @@ import configargparse
 from nowcastlib.pipeline.process.preprocess import cli as preprocess_cli
 from nowcastlib.pipeline.sync import cli as sync_cli
 from nowcastlib.pipeline.process.postprocess import cli as postprocess_cli
+from nowcastlib.pipeline import cli as pipeline_cli
 from . import triangulate
 
 
@@ -28,11 +29,12 @@ def main():
     preprocess_cli.configure_parser(command_parsers)
     sync_cli.configure_parser(command_parsers)
     postprocess_cli.configure_parser(command_parsers)
+    pipeline_cli.configure_parser(command_parsers)
 
     args = parser.parse_args()
 
     if args.verbose:
-        logger = logging.getLogger('nowcastlib')
+        logger = logging.getLogger("nowcastlib")
         logger.setLevel(logging.DEBUG)
         logger.handlers[0].setLevel(logging.DEBUG)
 
@@ -47,3 +49,5 @@ def main():
         sync_cli.run(args)
     elif command == "postprocess":
         postprocess_cli.run(args)
+    elif command == "datapipe":
+        pipeline_cli.run_datapipe(args)
