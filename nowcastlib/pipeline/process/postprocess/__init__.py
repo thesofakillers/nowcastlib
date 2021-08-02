@@ -8,6 +8,7 @@ from typing import Optional, List, Tuple
 import numpy as np
 import pandas as pd
 import attr
+import cattr
 import sklearn.preprocessing as sklearn_pproc
 import matplotlib.pyplot as plt
 from nowcastlib.datasets import serialize_as_chunks
@@ -20,6 +21,8 @@ from . import generate
 
 plt.ion()
 logger = logging.getLogger(__name__)
+
+cattr_cnvrtr = cattr.GenConverter(forbid_extra_keys=True)
 
 
 def generate_field(
@@ -39,6 +42,8 @@ def generate_field(
     pandas.core.series.Series
         the resulting dataseries
     """
+    # convert tuple to list, safely
+    input_fields = [element for element in field_config.input_fields]
     if (
         field_config.gen_func == structs.GeneratorFunction.CUSTOM
         or field_config.func_path is not None
@@ -46,14 +51,14 @@ def generate_field(
         # TODO handle custom case
         raise NotImplementedError("Custom generator functions are not yet supported")
     else:
-        if "index" in field_config.input_fields:
+        if "index" in input_fields:
             input_df = data_df[
-                [field for field in field_config.input_fields if field != "index"]
+                [field for field in input_fields if field != "index"]
             ].assign(index=data_df.index)
             # ensure column order matches input_fields order
-            input_df = input_df[field_config.input_fields]
+            input_df = input_df[input_fields]
         else:
-            input_df = data_df[field_config.input_fields].copy()
+            input_df = data_df[input_fields].copy()
         # use the function_map dictionary to select the right generator function
         func = generate.function_map[field_config.gen_func]
     # prepare additional kwargs appropriately
@@ -72,7 +77,7 @@ def handle_diag_plots(
     Plots different rescalings of the input series,
     asking the user for confirmation
     """
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(12, 12))
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(7, 7))
     pwr_trnsformer = sklearn_pproc.PowerTransformer()
     robust_trnsfrmr = sklearn_pproc.RobustScaler()
     ax1.hist(input_series, bins=200, color="black")
@@ -108,7 +113,9 @@ def handle_diag_plots(
         plt.draw()
         if plt.waitforbuttonpress():
             break
-    return utils.yes_or_no("Are you satisfied with the target sample rate?")
+    return utils.yes_or_no(
+        "Are you satisfied with the selected Standardization Method?"
+    )
 
 
 def standardize_field(
@@ -122,9 +129,7 @@ def standardize_field(
     to the testing set
     """
     if config.diagnostic_plots is True:
-        continue_processing = handle_diag_plots(
-            train_data.to_numpy().reshape(-1, 1), config.method
-        )
+        continue_processing = handle_diag_plots(train_data, config.method)
         if continue_processing is False:
             logger.info(
                 "Closing program prematurely to allow for configuration changes"
@@ -159,12 +164,15 @@ def rename_protected_field(field: structs.RawField) -> structs.RawField:
             correct_name = process_utils.build_field_name(
                 field.preprocessing_options, field.field_name
             )
-            return structs.RawField(
-                field_name=correct_name,
-                **attr.asdict(
-                    field,
-                    filter=lambda attrib, _: attrib.name != "field_name",
-                ),
+            return cattr.structure(
+                {
+                    "field_name": correct_name,
+                    **attr.asdict(
+                        field,
+                        filter=lambda attrib, _: attrib.name != "field_name",
+                    ),
+                },
+                structs.RawField,
             )
         else:
             return field
@@ -193,8 +201,10 @@ def postprocess_splits(
             logger.debug("Processing field %s...", field.field_name)
             if field.postprocessing_options is not None:
                 for dataframe in [train_df, test_df]:
-                    dataframe[field.field_name] = process_utils.process_field(
-                        dataframe[field.field_name], field.postprocessing_options, False
+                    dataframe.loc[:, field.field_name] = process_utils.process_field(
+                        dataframe.loc[:, field.field_name],
+                        field.postprocessing_options,
+                        False,
                     )
         # compute and process new fields if necessary
         if config.generated_fields is not None:
@@ -202,7 +212,7 @@ def postprocess_splits(
                 logger.debug("Generating field %s...", new_field.target_name)
                 for dataframe in [train_df, test_df]:
                     # generate
-                    dataframe[new_field.target_name] = generate_field(
+                    dataframe.loc[:, new_field.target_name] = generate_field(
                         dataframe, new_field
                     )
                 # standardize
@@ -245,9 +255,9 @@ def serialize_splits(config, train_data, test_data, val_train_dfs, val_test_dfs)
     serialize_as_chunks(test_data, main_split / "test_data.hdf5")
     cv_split = parent_dir / "cv_split"
     cv_split.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
-    for i, (train_df, test_df) in enumerate(val_train_dfs, val_test_dfs):
-        serialize_as_chunks(train_df, cv_split / "train_data_{}.hdf5".format(i))
-        serialize_as_chunks(test_df, cv_split / "val_data_{}.hdf5".format(i))
+    for i, (train_df, test_df) in enumerate(zip(val_train_dfs, val_test_dfs)):
+        serialize_as_chunks(train_df, cv_split / "train_data_{}.hdf5".format(i+1))
+        serialize_as_chunks(test_df, cv_split / "val_data_{}.hdf5".format(i+1))
 
 
 def postprocess_dataset(
@@ -287,6 +297,7 @@ def postprocess_dataset(
     ) = postprocess_splits(config, train_dfs, val_dfs)
     # serialize
     if config.split_options.output_options is not None:
+        logger.info("Serializing postprocessing output as hdf5 chunks...")
         serialize_splits(
             config.split_options.output_options,
             proc_train_data,
