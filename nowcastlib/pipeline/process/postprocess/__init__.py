@@ -21,6 +21,8 @@ from . import generate
 
 plt.ion()
 logger = logging.getLogger(__name__)
+# disable SettingWithCopy warning since it was catching False Positives
+pd.set_option("chained_assignment", None)
 
 cattr_cnvrtr = cattr.GenConverter(forbid_extra_keys=True)
 
@@ -190,41 +192,50 @@ def postprocess_splits(
     in the input DataSet config instance.
     """
     logger.info("Postprocessing dataset...")
+    # instantiate processed lists
+    proc_train_dfs = train_dfs.copy()
+    proc_test_dfs = test_dfs.copy()
+    # gather which fields to process into single list
     raw_fields: List[structs.RawField] = [
         field for source in config.data_sources for field in source.fields
     ]
     # rename overwrite-protected fields so to avoid acting on the original field
     fields_to_process = [rename_protected_field(field) for field in raw_fields]
     # start processing with processes that act the same on test and train dfs
-    for train_df, test_df in zip(train_dfs, test_dfs):
+    for i, (train_df, test_df) in enumerate(zip(train_dfs, test_dfs)):
         for field in fields_to_process:
             logger.debug("Processing field %s...", field.field_name)
             if field.postprocessing_options is not None:
-                for dataframe in [train_df, test_df]:
-                    dataframe[field.field_name] = process_utils.process_field(
-                        dataframe[field.field_name],
-                        field.postprocessing_options,
-                        False,
-                    )
+                proc_train_dfs[i][field.field_name] = process_utils.process_field(
+                    train_df[field.field_name],
+                    field.postprocessing_options,
+                    False,
+                )
+                proc_test_dfs[i][field.field_name] = process_utils.process_field(
+                    test_df[field.field_name],
+                    field.postprocessing_options,
+                    False,
+                )
         # compute and process new fields if necessary
         if config.generated_fields is not None:
             for new_field in config.generated_fields:
                 logger.debug("Generating field %s...", new_field.target_name)
-                for dataframe in [train_df, test_df]:
-                    # generate
-                    dataframe[new_field.target_name] = generate_field(
-                        dataframe, new_field
-                    )
+                proc_train_dfs[i][new_field.target_name] = generate_field(
+                    train_df, new_field
+                )
+                proc_test_dfs[i][new_field.target_name] = generate_field(
+                    test_df, new_field
+                )
                 # standardize
                 if new_field.std_options is not None:
 
                     logger.debug("Standardizing field %s...", new_field.target_name)
                     (
-                        train_df[new_field.target_name],
-                        test_df[new_field.target_name],
+                        proc_train_dfs[i][new_field.target_name],
+                        proc_test_dfs[i][new_field.target_name],
                     ) = standardize_field(
-                        train_df[new_field.target_name],
-                        test_df[new_field.target_name],
+                        proc_train_dfs[i][new_field.target_name],
+                        proc_test_dfs[i][new_field.target_name],
                         new_field.std_options,
                     )
         # standardize processed raw fields _after_ using them for computing gen fields
@@ -232,14 +243,14 @@ def postprocess_splits(
             if field.std_options is not None:
                 logger.debug("Standardizing field %s...", field.field_name)
                 (
-                    train_df[field.field_name],
-                    test_df[field.field_name],
+                    proc_train_dfs[i][field.field_name],
+                    proc_test_dfs[i][field.field_name],
                 ) = standardize_field(
-                    train_df[field.field_name],
-                    test_df[field.field_name],
+                    proc_train_dfs[i][field.field_name],
+                    proc_test_dfs[i][field.field_name],
                     field.std_options,
                 )
-        return train_dfs, test_dfs
+    return proc_train_dfs, proc_test_dfs
 
 
 def serialize_splits(config, train_data, test_data, val_train_dfs, val_test_dfs):

@@ -76,6 +76,7 @@ def handle_smoothing(
     pandas.core.series.Series
         the smoothed series
     """
+    data_series = input_series.copy()
     window_size = config.window_size
     shift_size = int((window_size + 1) / 2)
     units = config.units
@@ -85,7 +86,7 @@ def handle_smoothing(
     else:
         window = window_size
     return (
-        input_series.rolling(
+        data_series.rolling(
             window=window,
             closed="both",
         )
