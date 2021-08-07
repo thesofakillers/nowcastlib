@@ -41,7 +41,7 @@ import pandas as pd
 import numpy as np
 
 data_df = pd.DataFrame(
-    [[0, 3, 4, np.NaN], [32, 4, np.NaN, 4], [56, 8, 0, np.NaN]],
+    np.array([[0, 3, 4, np.NaN], [32, 4, np.NaN, 4], [56, 8, 0, np.NaN]]).T,
     columns=["A", "B", "C"],
     index=pd.date_range(start="1/1/2018", periods=4, freq="2min"),
 )
