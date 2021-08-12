@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nowcastlib"
-version = "3.0.12"
+version = "3.0.13"
 description = "🧙🔧 Utils that can be reused and shared across and beyond the ESO Nowcast project"
 authors = [
   "Giulio Starace <giulio.starace@gmail.com>",
@@ -16,7 +16,7 @@ include = ["LICENSE"]
 [tool.poetry.dependencies]
 python = ">=3.7.1,<4.0"
 pandas = "^1.2.4"
-numpy = "^1.20.3"
+numpy = ">=1.19.2,<1.20.0"
 ConfigArgParse = "^1.4.1"
 attrs = "^21.2.0"
 cattrs = "^1.7.1"
