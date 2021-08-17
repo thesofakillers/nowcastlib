@@ -142,14 +142,6 @@ class SmoothOptions:
                 raise ValueError(error_string) from invalid_freq
 
 
-brainstorming_dataset = {
-    "additional_postprocessing": {
-        "new_fields": [{"generator": "time_since_sunset", "placeholder": "TODO"}],
-        "standardize-fields": [{"field_name": "jkadshfla", "std_options": {}}],
-    }
-}
-
-
 class GeneratorFunction(Enum):
     """Enumeration of the available Generator Functions"""
 
