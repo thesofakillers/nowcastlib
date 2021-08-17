@@ -356,6 +356,21 @@ class RawField(BaseField):
     \nIf `None`, no post-processing will be performed.
     """
 
+    @is_date.validator
+    def no_processing(self, _attribute, value):
+        """no processing or standardization to be performed when is_date is true"""
+        if (value is True) and (
+            (self.preprocessing_options is not None)
+            or (self.postprocessing_options is not None)
+            or (self.std_options is not None)
+        ):
+            raise ValueError(
+                "Cannot perform any standardization or (pre/post)processing on a date field."
+                "Please ensure that `std_options`, `preprocessing_options`,"
+                " and `postprocessing_options` are all `None` for the field {}."
+                " Alternatively ensure `is_date` is `False`".format(self.field_name)
+            )
+
 
 @attrs(kw_only=True, frozen=True)
 class SerializationOptions:
