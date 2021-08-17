@@ -76,4 +76,5 @@ def preprocess_dataset(config: structs.DataSet):
     processed_dfs = []
     for ds_config in config.data_sources:
         processed_dfs.append(preprocess_datasource(ds_config))
+    logger.info("Dataset preprocessing complete.")
     return processed_dfs
