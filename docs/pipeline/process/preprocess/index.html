@@ -105,6 +105,7 @@ def preprocess_dataset(config: structs.DataSet):
     processed_dfs = []
     for ds_config in config.data_sources:
         processed_dfs.append(preprocess_datasource(ds_config))
+    logger.info(&#34;Dataset preprocessing complete.&#34;)
     return processed_dfs</code></pre>
 </details>
 </section>
@@ -227,6 +228,7 @@ in the input DataSet instance.</p>
     processed_dfs = []
     for ds_config in config.data_sources:
         processed_dfs.append(preprocess_datasource(ds_config))
+    logger.info(&#34;Dataset preprocessing complete.&#34;)
     return processed_dfs</code></pre>
 </details>
 </dd>

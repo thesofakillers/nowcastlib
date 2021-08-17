@@ -179,14 +179,6 @@ class SmoothOptions:
                 raise ValueError(error_string) from invalid_freq
 
 
-brainstorming_dataset = {
-    &#34;additional_postprocessing&#34;: {
-        &#34;new_fields&#34;: [{&#34;generator&#34;: &#34;time_since_sunset&#34;, &#34;placeholder&#34;: &#34;TODO&#34;}],
-        &#34;standardize-fields&#34;: [{&#34;field_name&#34;: &#34;jkadshfla&#34;, &#34;std_options&#34;: {}}],
-    }
-}
-
-
 class GeneratorFunction(Enum):
     &#34;&#34;&#34;Enumeration of the available Generator Functions&#34;&#34;&#34;
 
@@ -392,6 +384,21 @@ class RawField(BaseField):
     Configuration options for how to post-process the field
     \nIf `None`, no post-processing will be performed.
     &#34;&#34;&#34;
+
+    @is_date.validator
+    def no_processing(self, _attribute, value):
+        &#34;&#34;&#34;no processing or standardization to be performed when is_date is true&#34;&#34;&#34;
+        if (value is True) and (
+            (self.preprocessing_options is not None)
+            or (self.postprocessing_options is not None)
+            or (self.std_options is not None)
+        ):
+            raise ValueError(
+                &#34;Cannot perform any standardization or (pre/post)processing on a date field.&#34;
+                &#34;Please ensure that `std_options`, `preprocessing_options`,&#34;
+                &#34; and `postprocessing_options` are all `None` for the field {}.&#34;
+                &#34; Alternatively ensure `is_date` is `False`&#34;.format(self.field_name)
+            )
 
 
 @attrs(kw_only=True, frozen=True)
@@ -1336,7 +1343,22 @@ of a given DataSource</p>
     &#34;&#34;&#34;
     Configuration options for how to post-process the field
     \nIf `None`, no post-processing will be performed.
-    &#34;&#34;&#34;</code></pre>
+    &#34;&#34;&#34;
+
+    @is_date.validator
+    def no_processing(self, _attribute, value):
+        &#34;&#34;&#34;no processing or standardization to be performed when is_date is true&#34;&#34;&#34;
+        if (value is True) and (
+            (self.preprocessing_options is not None)
+            or (self.postprocessing_options is not None)
+            or (self.std_options is not None)
+        ):
+            raise ValueError(
+                &#34;Cannot perform any standardization or (pre/post)processing on a date field.&#34;
+                &#34;Please ensure that `std_options`, `preprocessing_options`,&#34;
+                &#34; and `postprocessing_options` are all `None` for the field {}.&#34;
+                &#34; Alternatively ensure `is_date` is `False`&#34;.format(self.field_name)
+            )</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1365,6 +1387,34 @@ of a given DataSource</p>
 <dd>
 <div class="desc"><p>Configuration options for how to post-process the field</p>
 <p>If <code>None</code>, no post-processing will be performed.</p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="nowcastlib.pipeline.structs.RawField.no_processing"><code class="name flex">
+<span>def <span class="ident">no_processing</span></span>(<span>self, _attribute, value)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>no processing or standardization to be performed when is_date is true</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@is_date.validator
+def no_processing(self, _attribute, value):
+    &#34;&#34;&#34;no processing or standardization to be performed when is_date is true&#34;&#34;&#34;
+    if (value is True) and (
+        (self.preprocessing_options is not None)
+        or (self.postprocessing_options is not None)
+        or (self.std_options is not None)
+    ):
+        raise ValueError(
+            &#34;Cannot perform any standardization or (pre/post)processing on a date field.&#34;
+            &#34;Please ensure that `std_options`, `preprocessing_options`,&#34;
+            &#34; and `postprocessing_options` are all `None` for the field {}.&#34;
+            &#34; Alternatively ensure `is_date` is `False`&#34;.format(self.field_name)
+        )</code></pre>
+</details>
 </dd>
 </dl>
 <h3>Inherited members</h3>
@@ -1970,6 +2020,7 @@ to process, each originating from a different file.</p></div>
 <li>
 <h4><code><a title="nowcastlib.pipeline.structs.RawField" href="#nowcastlib.pipeline.structs.RawField">RawField</a></code></h4>
 <ul class="">
+<li><code><a title="nowcastlib.pipeline.structs.RawField.no_processing" href="#nowcastlib.pipeline.structs.RawField.no_processing">no_processing</a></code></li>
 <li><code><a title="nowcastlib.pipeline.structs.RawField.field_name" href="#nowcastlib.pipeline.structs.RawField.field_name">field_name</a></code></li>
 <li><code><a title="nowcastlib.pipeline.structs.RawField.is_date" href="#nowcastlib.pipeline.structs.RawField.is_date">is_date</a></code></li>
 <li><code><a title="nowcastlib.pipeline.structs.RawField.date_format" href="#nowcastlib.pipeline.structs.RawField.date_format">date_format</a></code></li>
