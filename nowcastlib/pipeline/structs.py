@@ -480,11 +480,11 @@ class ValidationOptions:
 
     train_extent: float = attrib(default=0.6, validator=[_normed_val])
     """
-    Percentage of the data to allocate to the training set.
+    Percentage of the training data to allocate to training set.
     """
     val_extent: float = attrib(default=0.1, validator=[_normed_val])
     """
-    Percentage of the data to allocate to the validation set.
+    Percentage of the training data to allocate to the validation set.
     """
     iterations: int = attrib(default=5)
     """
