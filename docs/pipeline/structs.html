@@ -410,7 +410,7 @@ class SerializationOptions:
 
     output_format: str = attrib(validator=validators.in_([&#34;csv&#34;, &#34;pickle&#34;, &#34;npy&#34;]))
     &#34;&#34;&#34;
-    One of &#39;csv&#39;, or &#39;pickle&#39; to specify what format
+    One of &#39;csv&#39;, &#39;pickle&#39; or &#39;npy&#39; to specify what format
     to save the DataSource as
     &#34;&#34;&#34;
     output_path: str = attrib()
@@ -1446,7 +1446,7 @@ serializing a given DataSource to disk</p>
 
     output_format: str = attrib(validator=validators.in_([&#34;csv&#34;, &#34;pickle&#34;, &#34;npy&#34;]))
     &#34;&#34;&#34;
-    One of &#39;csv&#39;, or &#39;pickle&#39; to specify what format
+    One of &#39;csv&#39;, &#39;pickle&#39; or &#39;npy&#39; to specify what format
     to save the DataSource as
     &#34;&#34;&#34;
     output_path: str = attrib()
@@ -1459,7 +1459,7 @@ serializing a given DataSource to disk</p>
 <dl>
 <dt id="nowcastlib.pipeline.structs.SerializationOptions.output_format"><code class="name">var <span class="ident">output_format</span> : str</code></dt>
 <dd>
-<div class="desc"><p>One of 'csv', or 'pickle' to specify what format
+<div class="desc"><p>One of 'csv', 'pickle' or 'npy' to specify what format
 to save the DataSource as</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.SerializationOptions.output_path"><code class="name">var <span class="ident">output_path</span> : str</code></dt>

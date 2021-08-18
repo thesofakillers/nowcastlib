@@ -373,7 +373,7 @@ class SerializationOptions:
 
     output_format: str = attrib(validator=validators.in_(["csv", "pickle", "npy"]))
     """
-    One of 'csv', or 'pickle' to specify what format
+    One of 'csv', 'pickle' or 'npy' to specify what format
     to save the DataSource as
     """
     output_path: str = attrib()
