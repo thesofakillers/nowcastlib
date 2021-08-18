@@ -492,7 +492,7 @@ class ValidationOptions:
     """
 
     @iterations.validator
-    def at_least_3(self, attribute, value):
+    def _at_least_3(self, attribute, value):
         """ensures at least 3 iterations are used for validation"""
         if value < 3:
             raise ValueError(
