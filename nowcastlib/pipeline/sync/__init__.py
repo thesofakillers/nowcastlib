@@ -184,4 +184,5 @@ def synchronize_dataset(
     if sync_config.chunks_output is not None:
         logger.debug("Serializing chunk locations...")
         utils.handle_serialization(chunk_locs, sync_config.chunks_output)
+    logger.info("Dataset synchronization complete.")
     return chunked_df, chunk_locs

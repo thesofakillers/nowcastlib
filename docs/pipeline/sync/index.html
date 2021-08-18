@@ -213,6 +213,7 @@ def synchronize_dataset(
     if sync_config.chunks_output is not None:
         logger.debug(&#34;Serializing chunk locations...&#34;)
         utils.handle_serialization(chunk_locs, sync_config.chunks_output)
+    logger.info(&#34;Dataset synchronization complete.&#34;)
     return chunked_df, chunk_locs</code></pre>
 </details>
 </section>
@@ -484,6 +485,7 @@ in the input dataframe. Shape is (-1, 2).</dd>
     if sync_config.chunks_output is not None:
         logger.debug(&#34;Serializing chunk locations...&#34;)
         utils.handle_serialization(chunk_locs, sync_config.chunks_output)
+    logger.info(&#34;Dataset synchronization complete.&#34;)
     return chunked_df, chunk_locs</code></pre>
 </details>
 </dd>
