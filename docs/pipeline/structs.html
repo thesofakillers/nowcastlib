@@ -183,13 +183,25 @@ class GeneratorFunction(Enum):
     &#34;&#34;&#34;Enumeration of the available Generator Functions&#34;&#34;&#34;
 
     T_SINCE_SUNSET = &#34;t_since_sunset&#34;
-    &#34;&#34;&#34;seconds elapsed since the last sunset&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    seconds elapsed since the last sunset
+    Requires `additional_kwargs` of `lat: float`, `lon: float`, `elevation: float`.
+    &#34;&#34;&#34;
     SIN_T_SINCE_SUNSET = &#34;sin_t_since_sunset&#34;
-    &#34;&#34;&#34;sine of seconds elapsed since the last sunset out of 86400&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    sine of seconds elapsed since the last sunset out of 86400.
+    Requires `additional_kwargs` of `lat: float`, `lon: float`, `elevation: float`.
+    &#34;&#34;&#34;
     COS_T_SINCE_SUNSET = &#34;cos_t_since_sunset&#34;
-    &#34;&#34;&#34;cosine of seconds elapsed since the last sunset out of 86400&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    cosine of seconds elapsed since the last sunset out of 86400
+    Requires `additional_kwargs` of `lat: float`, `lon: float`, `elevation: float`.
+    &#34;&#34;&#34;
     SUN_ELEVATION = &#34;sun_elevation&#34;
-    &#34;&#34;&#34;the sun&#39;s current elevation&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    the sun&#39;s current elevation
+    Requires `additional_kwargs` of `lat: float`, `lon: float`, `elevation: float`.
+    &#34;&#34;&#34;
     SIN_SEC = &#34;sin_sec&#34;
     &#34;&#34;&#34;sine of the second number in the current day out of 86400&#34;&#34;&#34;
     COS_SEC = &#34;cos_sec&#34;
@@ -844,13 +856,25 @@ of a given data field, achieved with a moving average operation.</p>
     &#34;&#34;&#34;Enumeration of the available Generator Functions&#34;&#34;&#34;
 
     T_SINCE_SUNSET = &#34;t_since_sunset&#34;
-    &#34;&#34;&#34;seconds elapsed since the last sunset&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    seconds elapsed since the last sunset
+    Requires `additional_kwargs` of `lat: float`, `lon: float`, `elevation: float`.
+    &#34;&#34;&#34;
     SIN_T_SINCE_SUNSET = &#34;sin_t_since_sunset&#34;
-    &#34;&#34;&#34;sine of seconds elapsed since the last sunset out of 86400&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    sine of seconds elapsed since the last sunset out of 86400.
+    Requires `additional_kwargs` of `lat: float`, `lon: float`, `elevation: float`.
+    &#34;&#34;&#34;
     COS_T_SINCE_SUNSET = &#34;cos_t_since_sunset&#34;
-    &#34;&#34;&#34;cosine of seconds elapsed since the last sunset out of 86400&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    cosine of seconds elapsed since the last sunset out of 86400
+    Requires `additional_kwargs` of `lat: float`, `lon: float`, `elevation: float`.
+    &#34;&#34;&#34;
     SUN_ELEVATION = &#34;sun_elevation&#34;
-    &#34;&#34;&#34;the sun&#39;s current elevation&#34;&#34;&#34;
+    &#34;&#34;&#34;
+    the sun&#39;s current elevation
+    Requires `additional_kwargs` of `lat: float`, `lon: float`, `elevation: float`.
+    &#34;&#34;&#34;
     SIN_SEC = &#34;sin_sec&#34;
     &#34;&#34;&#34;sine of the second number in the current day out of 86400&#34;&#34;&#34;
     COS_SEC = &#34;cos_sec&#34;
@@ -880,19 +904,23 @@ of a given data field, achieved with a moving average operation.</p>
 <dl>
 <dt id="nowcastlib.pipeline.structs.GeneratorFunction.T_SINCE_SUNSET"><code class="name">var <span class="ident">T_SINCE_SUNSET</span></code></dt>
 <dd>
-<div class="desc"><p>seconds elapsed since the last sunset</p></div>
+<div class="desc"><p>seconds elapsed since the last sunset
+Requires <code>additional_kwargs</code> of <code>lat: float</code>, <code>lon: float</code>, <code>elevation: float</code>.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.GeneratorFunction.SIN_T_SINCE_SUNSET"><code class="name">var <span class="ident">SIN_T_SINCE_SUNSET</span></code></dt>
 <dd>
-<div class="desc"><p>sine of seconds elapsed since the last sunset out of 86400</p></div>
+<div class="desc"><p>sine of seconds elapsed since the last sunset out of 86400.
+Requires <code>additional_kwargs</code> of <code>lat: float</code>, <code>lon: float</code>, <code>elevation: float</code>.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.GeneratorFunction.COS_T_SINCE_SUNSET"><code class="name">var <span class="ident">COS_T_SINCE_SUNSET</span></code></dt>
 <dd>
-<div class="desc"><p>cosine of seconds elapsed since the last sunset out of 86400</p></div>
+<div class="desc"><p>cosine of seconds elapsed since the last sunset out of 86400
+Requires <code>additional_kwargs</code> of <code>lat: float</code>, <code>lon: float</code>, <code>elevation: float</code>.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.GeneratorFunction.SUN_ELEVATION"><code class="name">var <span class="ident">SUN_ELEVATION</span></code></dt>
 <dd>
-<div class="desc"><p>the sun's current elevation</p></div>
+<div class="desc"><p>the sun's current elevation
+Requires <code>additional_kwargs</code> of <code>lat: float</code>, <code>lon: float</code>, <code>elevation: float</code>.</p></div>
 </dd>
 <dt id="nowcastlib.pipeline.structs.GeneratorFunction.SIN_SEC"><code class="name">var <span class="ident">SIN_SEC</span></code></dt>
 <dd>

@@ -146,13 +146,25 @@ class GeneratorFunction(Enum):
     """Enumeration of the available Generator Functions"""
 
     T_SINCE_SUNSET = "t_since_sunset"
-    """seconds elapsed since the last sunset"""
+    """
+    seconds elapsed since the last sunset
+    Requires `additional_kwargs` of `lat: float`, `lon: float`, `elevation: float`.
+    """
     SIN_T_SINCE_SUNSET = "sin_t_since_sunset"
-    """sine of seconds elapsed since the last sunset out of 86400"""
+    """
+    sine of seconds elapsed since the last sunset out of 86400.
+    Requires `additional_kwargs` of `lat: float`, `lon: float`, `elevation: float`.
+    """
     COS_T_SINCE_SUNSET = "cos_t_since_sunset"
-    """cosine of seconds elapsed since the last sunset out of 86400"""
+    """
+    cosine of seconds elapsed since the last sunset out of 86400
+    Requires `additional_kwargs` of `lat: float`, `lon: float`, `elevation: float`.
+    """
     SUN_ELEVATION = "sun_elevation"
-    """the sun's current elevation"""
+    """
+    the sun's current elevation
+    Requires `additional_kwargs` of `lat: float`, `lon: float`, `elevation: float`.
+    """
     SIN_SEC = "sin_sec"
     """sine of the second number in the current day out of 86400"""
     COS_SEC = "cos_sec"
