@@ -156,7 +156,7 @@ def _t_since_sunset(
         ~np.array(rise_set_mask).astype(bool)
     ].tz_localize(None)
     # find when the most recent sunset was for each timestep in input datetime series
-    sunset_idxs = np.zeros(len(datetime_series))
+    sunset_idxs = np.zeros(len(datetime_series), dtype=int)
     for sunset in sunsets[1:]:
         change = np.where(datetime_series &gt; sunset)[0][0]
         sunset_idxs[change:] += 1
