@@ -2,10 +2,12 @@
 Command-Line interface functionality for preprocessing
 """
 import json
+from typing import Union
 import argparse
 import cattr
 from nowcastlib.pipeline import structs
-import nowcastlib.pipeline.process.postprocess as postprocess
+from nowcastlib.pipeline.utils import disambiguate_intfloatstr
+from nowcastlib.pipeline.process import postprocess
 
 
 def configure_parser(action_object):
@@ -29,5 +31,8 @@ def run(args):
     with open(args.config) as json_file:
         config = json.load(json_file)
     cattr_cnvrtr = cattr.GenConverter(forbid_extra_keys=True)
+    cattr_cnvrtr.register_structure_hook(
+        Union[int, float, str], disambiguate_intfloatstr
+    )
     dataset_config = cattr_cnvrtr.structure(config, structs.DataSet)
     return postprocess.postprocess_dataset(dataset_config)
