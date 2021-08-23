@@ -20,6 +20,21 @@ def pipe_dataset(config: structs.DataSet):
     preprocessed_dfs = process.preprocess.preprocess_dataset(config)
     # syncing
     chunked_df, chunk_locs = sync.synchronize_dataset(config, preprocessed_dfs)
-    # splitting and postprocessing
+    # postprocessing
+    postprocessed_df = process.postprocess.postprocess_dataset(config, chunked_df)
+    # add generated fields if necessary
+    if config.generated_fields is not None:
+        postprocessed_df = features.generate(config, postprocessed_df)
+    # splitting
     if config.split_options is not None:
-        process.postprocess.postprocess_dataset(config, (chunked_df, chunk_locs))
+        outer_split, inner_split = split.split_dataset(
+            config, (postprocessed_df, chunk_locs)
+        )
+        # standardization (requires splits)
+        outer_split, inner_split = standardize.standardize_dataset(
+            config, outer_split, inner_split
+        )
+        # serialization
+        split.serialize_splits(
+            config.split_options.output_options, outer_split, inner_split
+        )
