@@ -181,7 +181,7 @@ def _sun_elevation(datetime_series, lat=-24.6275, lon=-70.4044, elevation=2635):
     # get the astrometric and apparent positions of the sun from this location
     astrometric_pos = location.at(
         skyfield_ts.from_datetimes(
-            datetime_series.dt.tz_localize("UTC").to_pydatetime()
+            datetime_series.dt.tz_localize("UTC").dt.to_pydatetime()
         )
     ).observe(eph["sun"])
     apparent_pos = astrometric_pos.apparent()
