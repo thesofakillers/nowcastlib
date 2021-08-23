@@ -9,6 +9,7 @@ from . import process
 from . import sync
 from . import features
 from . import split
+from . import standardize
 
 
 def pipe_dataset(config: structs.DataSet):

@@ -2,7 +2,60 @@
 from typing import Union
 import pandas as pd
 import numpy as np
+import attr
+import cattr
 from nowcastlib.pipeline import structs
+
+cattr_cnvrtr = cattr.GenConverter(forbid_extra_keys=True)
+
+
+def build_field_name(config: structs.ProcessingOptions, field_name: str):
+    """
+    Builds the appropriate field name depending on whether
+    the user wishes to overwrite the current field or not
+
+    Parameters
+    ----------
+    config : nowcastlib.pipeline.structs.ProcessingOptions
+    field_name : str
+        the name of the current field we are acting on
+
+    Returns
+    -------
+    str
+        the resulting string
+    """
+    if config.overwrite:
+        computed_field_name = field_name
+    else:
+        computed_field_name = "processed_{}".format(field_name)
+    return computed_field_name
+
+
+def rename_protected_field(field: structs.RawField) -> structs.RawField:
+    """
+    Renames overwrite-protected fields so to obtain a list of fields that
+    are overwrite-able
+    """
+    if field.preprocessing_options is not None:
+        if field.preprocessing_options.overwrite is False:
+            correct_name = build_field_name(
+                field.preprocessing_options, field.field_name
+            )
+            return cattr.structure(
+                {
+                    "field_name": correct_name,
+                    **attr.asdict(
+                        field,
+                        filter=lambda attrib, _: attrib.name != "field_name",
+                    ),
+                },
+                structs.RawField,
+            )
+        else:
+            return field
+    else:
+        return field
 
 
 def handle_serialization(
