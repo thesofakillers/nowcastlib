@@ -7,6 +7,7 @@ import pandas as pd
 from . import structs
 from . import process
 from . import sync
+from . import features
 from . import split
 
 
@@ -24,7 +25,7 @@ def pipe_dataset(config: structs.DataSet):
     postprocessed_df = process.postprocess.postprocess_dataset(config, chunked_df)
     # add generated fields if necessary
     if config.generated_fields is not None:
-        postprocessed_df = features.generate(config, postprocessed_df)
+        postprocessed_df = features.generate_fields(config, postprocessed_df)
     # splitting
     if config.split_options is not None:
         outer_split, inner_split = split.split_dataset(
