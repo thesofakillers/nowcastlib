@@ -1,5 +1,5 @@
 """Shared functionality across the Nowcast Library Pipeline submodule"""
-from typing import Union
+from typing import Union, Type, Any
 import pandas as pd
 import numpy as np
 import attr
@@ -56,6 +56,18 @@ def rename_protected_field(field: structs.RawField) -> structs.RawField:
             return field
     else:
         return field
+
+
+def disambiguate_intfloatstr(train_split: Any, _klass: Type) -> Union[int, float, str]:
+    """Disambiguates Union of int, float and str for cattrs"""
+    if isinstance(train_split, int):
+        return int(train_split)
+    elif isinstance(train_split, float):
+        return float(train_split)
+    elif isinstance(train_split, str):
+        return str(train_split)
+    else:
+        raise ValueError("Cannot disambiguate Union[int, flaot, str]")
 
 
 def handle_serialization(

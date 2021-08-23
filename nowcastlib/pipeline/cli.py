@@ -2,11 +2,12 @@
 Command-Line interface functionality for preprocessing
 """
 import json
-from typing import Union, Any, Type
+from typing import Union
 import argparse
 import cattr
 from nowcastlib.pipeline import structs
-import nowcastlib.pipeline as pipeline
+from nowcastlib.pipeline.utils import disambiguate_intfloatstr
+from nowcastlib import pipeline
 
 
 def configure_parser(action_object):
@@ -34,19 +35,7 @@ def run_datapipe(args):
         config = json.load(json_file)
     cattr_cnvrtr = cattr.GenConverter(forbid_extra_keys=True)
     cattr_cnvrtr.register_structure_hook(
-        Union[int, float, str], _disambiguate_intfloatstr
+        Union[int, float, str], disambiguate_intfloatstr
     )
     dataset_config = cattr_cnvrtr.structure(config, structs.DataSet)
     return pipeline.pipe_dataset(dataset_config)
-
-
-def _disambiguate_intfloatstr(train_split: Any, _klass: Type) -> Union[int, float, str]:
-    """Disambiguates Union of int, float and str for cattrs"""
-    if isinstance(train_split, int):
-        return int(train_split)
-    elif isinstance(train_split, float):
-        return float(train_split)
-    elif isinstance(train_split, str):
-        return str(train_split)
-    else:
-        raise ValueError("Cannot disambiguate Union[int, flaot, str]")

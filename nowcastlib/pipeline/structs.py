@@ -142,25 +142,29 @@ class SmoothOptions:
                 raise ValueError(error_string) from invalid_freq
 
 
-brainstorming_dataset = {
-    "additional_postprocessing": {
-        "new_fields": [{"generator": "time_since_sunset", "placeholder": "TODO"}],
-        "standardize-fields": [{"field_name": "jkadshfla", "std_options": {}}],
-    }
-}
-
-
 class GeneratorFunction(Enum):
     """Enumeration of the available Generator Functions"""
 
     T_SINCE_SUNSET = "t_since_sunset"
-    """seconds elapsed since the last sunset"""
+    """
+    seconds elapsed since the last sunset
+    Requires `additional_kwargs` of `lat: float`, `lon: float`, `elevation: float`.
+    """
     SIN_T_SINCE_SUNSET = "sin_t_since_sunset"
-    """sine of seconds elapsed since the last sunset out of 86400"""
+    """
+    sine of seconds elapsed since the last sunset out of 86400.
+    Requires `additional_kwargs` of `lat: float`, `lon: float`, `elevation: float`.
+    """
     COS_T_SINCE_SUNSET = "cos_t_since_sunset"
-    """cosine of seconds elapsed since the last sunset out of 86400"""
+    """
+    cosine of seconds elapsed since the last sunset out of 86400
+    Requires `additional_kwargs` of `lat: float`, `lon: float`, `elevation: float`.
+    """
     SUN_ELEVATION = "sun_elevation"
-    """the sun's current elevation"""
+    """
+    the sun's current elevation
+    Requires `additional_kwargs` of `lat: float`, `lon: float`, `elevation: float`.
+    """
     SIN_SEC = "sin_sec"
     """sine of the second number in the current day out of 86400"""
     COS_SEC = "cos_sec"
@@ -356,6 +360,21 @@ class RawField(BaseField):
     \nIf `None`, no post-processing will be performed.
     """
 
+    @is_date.validator
+    def no_processing(self, _attribute, value):
+        """no processing or standardization to be performed when is_date is true"""
+        if (value is True) and (
+            (self.preprocessing_options is not None)
+            or (self.postprocessing_options is not None)
+            or (self.std_options is not None)
+        ):
+            raise ValueError(
+                "Cannot perform any standardization or (pre/post)processing on a date field."
+                "Please ensure that `std_options`, `preprocessing_options`,"
+                " and `postprocessing_options` are all `None` for the field {}."
+                " Alternatively ensure `is_date` is `False`".format(self.field_name)
+            )
+
 
 @attrs(kw_only=True, frozen=True)
 class SerializationOptions:
@@ -366,7 +385,7 @@ class SerializationOptions:
 
     output_format: str = attrib(validator=validators.in_(["csv", "pickle", "npy"]))
     """
-    One of 'csv', or 'pickle' to specify what format
+    One of 'csv', 'pickle' or 'npy' to specify what format
     to save the DataSource as
     """
     output_path: str = attrib()
@@ -473,11 +492,11 @@ class ValidationOptions:
 
     train_extent: float = attrib(default=0.6, validator=[_normed_val])
     """
-    Percentage of the data to allocate to the training set.
+    Percentage of the training data to allocate to training set.
     """
     val_extent: float = attrib(default=0.1, validator=[_normed_val])
     """
-    Percentage of the data to allocate to the validation set.
+    Percentage of the training data to allocate to the validation set.
     """
     iterations: int = attrib(default=5)
     """
@@ -485,7 +504,7 @@ class ValidationOptions:
     """
 
     @iterations.validator
-    def at_least_3(self, attribute, value):
+    def _at_least_3(self, attribute, value):
         """ensures at least 3 iterations are used for validation"""
         if value < 3:
             raise ValueError(

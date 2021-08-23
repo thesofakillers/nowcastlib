@@ -28,10 +28,22 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;Shared functionality across the Nowcast Library Pipeline submodule&#34;&#34;&#34;
-from typing import Union
+from typing import Union, Type, Any
 import pandas as pd
 import numpy as np
 from nowcastlib.pipeline import structs
+
+
+def disambiguate_intfloatstr(train_split: Any, _klass: Type) -&gt; Union[int, float, str]:
+    &#34;&#34;&#34;Disambiguates Union of int, float and str for cattrs&#34;&#34;&#34;
+    if isinstance(train_split, int):
+        return int(train_split)
+    elif isinstance(train_split, float):
+        return float(train_split)
+    elif isinstance(train_split, str):
+        return str(train_split)
+    else:
+        raise ValueError(&#34;Cannot disambiguate Union[int, flaot, str]&#34;)
 
 
 def handle_serialization(
@@ -74,6 +86,27 @@ def yes_or_no(question):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="nowcastlib.pipeline.utils.disambiguate_intfloatstr"><code class="name flex">
+<span>def <span class="ident">disambiguate_intfloatstr</span></span>(<span>train_split: Any, _klass: Type) ‑> Union[int, float, str]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Disambiguates Union of int, float and str for cattrs</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def disambiguate_intfloatstr(train_split: Any, _klass: Type) -&gt; Union[int, float, str]:
+    &#34;&#34;&#34;Disambiguates Union of int, float and str for cattrs&#34;&#34;&#34;
+    if isinstance(train_split, int):
+        return int(train_split)
+    elif isinstance(train_split, float):
+        return float(train_split)
+    elif isinstance(train_split, str):
+        return str(train_split)
+    else:
+        raise ValueError(&#34;Cannot disambiguate Union[int, flaot, str]&#34;)</code></pre>
+</details>
+</dd>
 <dt id="nowcastlib.pipeline.utils.handle_serialization"><code class="name flex">
 <span>def <span class="ident">handle_serialization</span></span>(<span>data: Union[pandas.core.frame.DataFrame, numpy.ndarray], config: <a title="nowcastlib.pipeline.structs.SerializationOptions" href="structs.html#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>)</span>
 </code></dt>
@@ -145,6 +178,7 @@ accordingly.</p></div>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="nowcastlib.pipeline.utils.disambiguate_intfloatstr" href="#nowcastlib.pipeline.utils.disambiguate_intfloatstr">disambiguate_intfloatstr</a></code></li>
 <li><code><a title="nowcastlib.pipeline.utils.handle_serialization" href="#nowcastlib.pipeline.utils.handle_serialization">handle_serialization</a></code></li>
 <li><code><a title="nowcastlib.pipeline.utils.yes_or_no" href="#nowcastlib.pipeline.utils.yes_or_no">yes_or_no</a></code></li>
 </ul>

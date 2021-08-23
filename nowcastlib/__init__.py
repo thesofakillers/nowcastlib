@@ -2,7 +2,6 @@
 .. include:: ../README.md
 """
 import logging
-from importlib_metadata import version
 import nowcastlib.datasets
 import nowcastlib.gis
 import nowcastlib.signals
@@ -10,7 +9,12 @@ import nowcastlib.utils
 import nowcastlib.dynlag
 import nowcastlib.pipeline
 
-__version__ = version(__package__)
+try:
+    import importlib.metadata as importlib_metadata
+except ModuleNotFoundError:
+    import importlib_metadata
+
+__version__ = importlib_metadata.version(__name__)
 
 __pdoc__ = {
     "cli": False,

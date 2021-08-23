@@ -63,3 +63,9 @@ nowcastlib preprocess -c ./pipeline_preprocess.json
 ```
 
 to start a data preprocessing run.
+
+### Pipeline Tutorial
+
+The notebook [tutorial_pipeline.ipynb](./tutorial_pipeline.ipynb) offers an in
+depth tutorial of the Nowcast Library Pipeline. This is accompanied by a number
+of JSON files in the format `tutorial_pipeline_{}.json`.

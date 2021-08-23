@@ -127,7 +127,7 @@ def _t_since_sunset(
         ~np.array(rise_set_mask).astype(bool)
     ].tz_localize(None)
     # find when the most recent sunset was for each timestep in input datetime series
-    sunset_idxs = np.zeros(len(datetime_series))
+    sunset_idxs = np.zeros(len(datetime_series), dtype=int)
     for sunset in sunsets[1:]:
         change = np.where(datetime_series > sunset)[0][0]
         sunset_idxs[change:] += 1
@@ -181,7 +181,7 @@ def _sun_elevation(datetime_series, lat=-24.6275, lon=-70.4044, elevation=2635):
     # get the astrometric and apparent positions of the sun from this location
     astrometric_pos = location.at(
         skyfield_ts.from_datetimes(
-            datetime_series.dt.tz_localize("UTC").to_pydatetime()
+            datetime_series.dt.tz_localize("UTC").dt.to_pydatetime()
         )
     ).observe(eph["sun"])
     apparent_pos = astrometric_pos.apparent()
