@@ -36,7 +36,7 @@ def preprocess_datasource(config: structs.DataSource):
         comment=config.comment_format,
     )
     data_df.index = pd.to_datetime(data_df.index, format=index_field.date_format)
-    data_df = data_df[~data_df.index.duplicated(keep="last")]
+    data_df = data_df[~data_df.index.duplicated(keep="last")] # pylint: disable=unsubscriptable-object
     data_df.sort_index(inplace=True)
     for field in config.fields:
         logger.debug("Processing field %s of %s...", field.field_name, config.name)
