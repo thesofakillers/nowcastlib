@@ -1,6 +1,7 @@
 """
 Functions for splitting data
 """
+import pathlib
 from typing import Optional, Tuple, List
 import numpy as np
 import pandas as pd
@@ -34,7 +35,7 @@ def serialize_splits(config, train_data, test_data, val_train_dfs, val_test_dfs)
 
 def train_test_split_sparse(
     sparse_df: pd.core.frame.DataFrame,
-    config: structs.SplitOptions,
+    config: structs.config.SplitOptions,
     chunk_locations: Optional[np.ndarray] = None,
 ) -> Tuple[
     Tuple[pd.core.frame.DataFrame, np.ndarray],
@@ -47,7 +48,7 @@ def train_test_split_sparse(
     ---------
     sparse_df : pandas.core.frame.DataFrame
         The DataFrame we wish to split into train and test sets
-    config : structs.SplitOptions
+    config : structs.config.SplitOptions
         config options for determining where to split our datasets
     block_locs : numpy.ndarray, default None
 
@@ -90,7 +91,7 @@ def train_test_split_sparse(
 
 
 def rep_holdout_split_sparse(
-    config: structs.ValidationOptions,
+    config: structs.config.ValidationOptions,
     sparse_df: pd.core.frame.DataFrame,
     chunk_locations: Optional[np.ndarray] = None,
 ) -> Tuple[List[pd.core.frame.DataFrame], List[pd.core.frame.DataFrame]]:
@@ -115,7 +116,7 @@ def rep_holdout_split_sparse(
 
 
 def split_dataset(
-    config: structs.DataSet,
+    config: structs.config.DataSet,
     sparse_data: Optional[Tuple[pd.core.frame.DataFrame, np.ndarray]] = None,
 ) -> Tuple[
     Tuple[
@@ -133,7 +134,7 @@ def split_dataset(
 
     Parameters
     ----------
-    config: structs.DataSet
+    config: structs.config.DataSet
         data set configuration options instance
     sparse_data: tuple of [pandas.core.frame.DataFrame, numpy.ndarray], default `None`
         The sparse dataframe to split and the array of start and end

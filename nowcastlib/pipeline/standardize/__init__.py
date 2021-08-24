@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import sklearn.preprocessing as sklearn_pproc
-from nowcastlib.pipeline import structs
+from nowcastlib.pipeline.structs import config
 from nowcastlib.pipeline import utils
 
 plt.ion()
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def handle_diag_plots(
     input_series: pd.core.series.Series,
-    configured_method: structs.StandardizationMethod,
+    configured_method: config.StandardizationMethod,
 ):
     """
     Plots different rescalings of the input series,
@@ -33,7 +33,7 @@ def handle_diag_plots(
         pwr_trnsformer.fit_transform(input_series.to_numpy().reshape(-1, 1)),
         bins=200,
         color="darkblue"
-        if configured_method == structs.StandardizationMethod.POWER
+        if configured_method == config.StandardizationMethod.POWER
         else "darkgrey",
     )
     ax2.set_title("Power Transform")
@@ -41,7 +41,7 @@ def handle_diag_plots(
         robust_trnsfrmr.fit_transform(input_series.to_numpy().reshape(-1, 1)),
         bins=200,
         color="darkblue"
-        if configured_method == structs.StandardizationMethod.ROBUST
+        if configured_method == config.StandardizationMethod.ROBUST
         else "darkgrey",
     )
     ax3.set_title("Robust Scaling")
@@ -49,7 +49,7 @@ def handle_diag_plots(
         np.log(1 + (input_series - input_series.min())),
         bins=200,
         color="darkblue"
-        if configured_method == structs.StandardizationMethod.LOGNORM
+        if configured_method == config.StandardizationMethod.LOGNORM
         else "darkgrey",
     )
     ax4.set_title("log(1 + (input_series - input_series.min()))")
@@ -65,21 +65,21 @@ def handle_diag_plots(
     )
 
 
-def standardize_dataset(config, outer_split, inner_split):
+def standardize_dataset(options, outer_split, inner_split):
     """
     Standardizes a DataSet, accounting for train/test nuances
     """
     # outer
     (train_df, train_locs), (test_df, test_locs) = outer_split
     [proc_train_data], [proc_test_data] = standardize_splits(
-        config, [train_df], [test_df]
+        options, [train_df], [test_df]
     )
     # inner
     train_dfs, val_dfs = inner_split
     (
         proc_val_train_dfs,
         proc_val_test_dfs,
-    ) = standardize_splits(config, train_dfs, val_dfs)
+    ) = standardize_splits(options, train_dfs, val_dfs)
     # return in corrct format
     return (
         ((proc_train_data, train_locs), (proc_test_data, test_locs)),
@@ -88,7 +88,7 @@ def standardize_dataset(config, outer_split, inner_split):
 
 
 def standardize_splits(
-    config: structs.DataSet,
+    options: config.DataSet,
     train_dfs: List[pd.core.frame.DataFrame],
     test_dfs: List[pd.core.frame.DataFrame],
 ):
@@ -108,16 +108,16 @@ def standardize_splits(
     std_train_dfs = train_dfs.copy()
     std_test_dfs = test_dfs.copy()
     # gather which fields to process into single list
-    raw_fields: List[structs.RawField] = [
-        field for source in config.data_sources for field in source.fields
+    raw_fields: List[config.RawField] = [
+        field for source in options.data_sources for field in source.fields
     ]
     # rename overwrite-protected fields so to avoid acting on the original field
     fields_to_process = [utils.rename_protected_field(field) for field in raw_fields]
     # proceed with standardization iteratively
     for i, _ in enumerate(zip(train_dfs, test_dfs)):
         # standardize new fields if necessary
-        if config.generated_fields is not None:
-            for new_field in config.generated_fields:
+        if options.generated_fields is not None:
+            for new_field in options.generated_fields:
                 if new_field.std_options is not None:
                     logger.debug("Standardizing field %s...", new_field.target_name)
                     (
@@ -146,29 +146,29 @@ def standardize_splits(
 def standardize_field(
     train_data: pd.core.series.Series,
     test_data: pd.core.series.Series,
-    config: structs.StandardizationOptions,
+    options: config.StandardizationOptions,
 ):
     """
     Standardizes a field based on config options,
     taking care not to leak information from the training set
     to the testing set
     """
-    if config.diagnostic_plots is True:
-        continue_processing = handle_diag_plots(train_data, config.method)
+    if options.diagnostic_plots is True:
+        continue_processing = handle_diag_plots(train_data, options.method)
         if continue_processing is False:
             logger.info(
                 "Closing program prematurely to allow for configuration changes"
             )
             sys.exit()
-    if config.method == structs.StandardizationMethod.LOGNORM:
+    if options.method == config.StandardizationMethod.LOGNORM:
         return (
             np.log(1 + (train_data - train_data.min())),
             np.log(1 + (test_data - test_data.min())),
         )
     # handle transformer based methods
-    elif config.method == structs.StandardizationMethod.POWER:
+    elif options.method == config.StandardizationMethod.POWER:
         transformer = sklearn_pproc.PowerTransformer()
-    elif config.method == structs.StandardizationMethod.ROBUST:
+    elif options.method == config.StandardizationMethod.ROBUST:
         transformer = sklearn_pproc.RobustScaler()
     # fit only on training data, to avoid information leakage
     fitted_trnsfrmr = transformer.fit(train_data.to_numpy().reshape(-1, 1))

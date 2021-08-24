@@ -4,19 +4,19 @@ import pandas as pd
 import numpy as np
 import attr
 import cattr
-from nowcastlib.pipeline import structs
+from nowcastlib.pipeline.structs import config
 
 cattr_cnvrtr = cattr.GenConverter(forbid_extra_keys=True)
 
 
-def build_field_name(config: structs.ProcessingOptions, field_name: str):
+def build_field_name(options: config.ProcessingOptions, field_name: str):
     """
     Builds the appropriate field name depending on whether
     the user wishes to overwrite the current field or not
 
     Parameters
     ----------
-    config : nowcastlib.pipeline.structs.ProcessingOptions
+    options : nowcastlib.pipeline.structs.config.ProcessingOptions
     field_name : str
         the name of the current field we are acting on
 
@@ -25,14 +25,14 @@ def build_field_name(config: structs.ProcessingOptions, field_name: str):
     str
         the resulting string
     """
-    if config.overwrite:
+    if options.overwrite:
         computed_field_name = field_name
     else:
         computed_field_name = "processed_{}".format(field_name)
     return computed_field_name
 
 
-def rename_protected_field(field: structs.RawField) -> structs.RawField:
+def rename_protected_field(field: config.RawField) -> config.RawField:
     """
     Renames overwrite-protected fields so to obtain a list of fields that
     are overwrite-able
@@ -50,7 +50,7 @@ def rename_protected_field(field: structs.RawField) -> structs.RawField:
                         filter=lambda attrib, _: attrib.name != "field_name",
                     ),
                 },
-                structs.RawField,
+                config.RawField,
             )
         else:
             return field
@@ -72,20 +72,20 @@ def disambiguate_intfloatstr(train_split: Any, _klass: Type) -> Union[int, float
 
 def handle_serialization(
     data: Union[pd.core.frame.DataFrame, np.ndarray],
-    config: structs.SerializationOptions,
+    options: config.SerializationOptions,
 ):
     """
     Serializes a given dataframe or numpy array
     to disk in the appropriate format
     """
     if isinstance(data, pd.core.frame.DataFrame):
-        if config.output_format == "csv":
-            data.to_csv(config.output_path, float_format="%g")
-        elif config.output_format == "pickle":
-            data.to_pickle(config.output_path)
+        if options.output_format == "csv":
+            data.to_csv(options.output_path, float_format="%g")
+        elif options.output_format == "pickle":
+            data.to_pickle(options.output_path)
     else:
-        if config.output_format == "npy":
-            np.save(config.output_path, data)
+        if options.output_format == "npy":
+            np.save(options.output_path, data)
 
 
 def yes_or_no(question):

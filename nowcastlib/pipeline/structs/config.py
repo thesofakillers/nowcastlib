@@ -1,6 +1,5 @@
 """
-Module containing custom structures used throughout the pipeline
-submodule to aid with configuration.
+Structs to aid with configuration.
 
 A `Union` type annotation indicates that the variable
 can be of any of the types listed in the `Union` type.

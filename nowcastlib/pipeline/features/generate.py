@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from skyfield import api as skyfield_api
 from skyfield import almanac
-from nowcastlib.pipeline import structs
+from nowcastlib.pipeline.structs import config
 
 
 # {{{ sec_day
@@ -191,17 +191,17 @@ def _sun_elevation(datetime_series, lat=-24.6275, lon=-70.4044, elevation=2635):
 
 
 function_map: dict = {
-    structs.GeneratorFunction.SUN_ELEVATION: _sun_elevation,
-    structs.GeneratorFunction.T_SINCE_SUNSET: _t_since_sunset,
-    structs.GeneratorFunction.SIN_T_SINCE_SUNSET: _sin_t_since_sunset,
-    structs.GeneratorFunction.COS_T_SINCE_SUNSET: _cos_t_since_sunset,
-    structs.GeneratorFunction.SIN_SEC: _sin_sec,
-    structs.GeneratorFunction.COS_SEC: _cos_sec,
-    structs.GeneratorFunction.SIN_DAY_YEAR: _sin_day_year,
-    structs.GeneratorFunction.COS_DAY_YEAR: _cos_day_year,
-    structs.GeneratorFunction.SIN_DAY_WEEK: _sin_day_week,
-    structs.GeneratorFunction.COS_DAY_WEEK: _cos_day_week,
-    structs.GeneratorFunction.SIN_MONTH_YEAR: _sin_month_year,
-    structs.GeneratorFunction.COS_MONTH_YEAR: _cos_month_year,
-    structs.GeneratorFunction.IS_WEEKEND: _is_weekend,
+    config.GeneratorFunction.SUN_ELEVATION: _sun_elevation,
+    config.GeneratorFunction.T_SINCE_SUNSET: _t_since_sunset,
+    config.GeneratorFunction.SIN_T_SINCE_SUNSET: _sin_t_since_sunset,
+    config.GeneratorFunction.COS_T_SINCE_SUNSET: _cos_t_since_sunset,
+    config.GeneratorFunction.SIN_SEC: _sin_sec,
+    config.GeneratorFunction.COS_SEC: _cos_sec,
+    config.GeneratorFunction.SIN_DAY_YEAR: _sin_day_year,
+    config.GeneratorFunction.COS_DAY_YEAR: _cos_day_year,
+    config.GeneratorFunction.SIN_DAY_WEEK: _sin_day_week,
+    config.GeneratorFunction.COS_DAY_WEEK: _cos_day_week,
+    config.GeneratorFunction.SIN_MONTH_YEAR: _sin_month_year,
+    config.GeneratorFunction.COS_MONTH_YEAR: _cos_month_year,
+    config.GeneratorFunction.IS_WEEKEND: _is_weekend,
 }

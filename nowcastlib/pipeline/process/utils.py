@@ -4,13 +4,13 @@ Shared functionality across pre and postprocessing
 import logging
 from typing import Union
 import pandas as pd
-from nowcastlib.pipeline import structs
+from nowcastlib.pipeline.structs import config
 
 
 logger = logging.getLogger(__name__)
 
 
-def drop_outliers(input_series: pd.core.series.Series, config: structs.OutlierOptions):
+def drop_outliers(input_series: pd.core.series.Series, options: config.OutlierOptions):
     """
     drops 'outliers' from a given pandas input series
     given inclusive thresholds specified in the input
@@ -19,7 +19,7 @@ def drop_outliers(input_series: pd.core.series.Series, config: structs.OutlierOp
     Parameters
     ----------
     input_series: pandas.core.series.Series
-    config : nowcastlib.pipeline.structs.OutlierOptions
+    options : nowcastlib.pipeline.structs.config.OutlierOptions
 
     Returns
     -------
@@ -27,19 +27,19 @@ def drop_outliers(input_series: pd.core.series.Series, config: structs.OutlierOp
         the filtered series
     """
 
-    if config.quantile_based:
+    if options.quantile_based:
         return input_series[
-            (input_series.quantile(config.lower) <= input_series)
-            & (input_series <= input_series.quantile(config.upper))
+            (input_series.quantile(options.lower) <= input_series)
+            & (input_series <= input_series.quantile(options.upper))
         ]
     else:
         return input_series[
-            (config.lower <= input_series) & (input_series <= config.upper)
+            (options.lower <= input_series) & (input_series <= options.upper)
         ]
 
 
 def handle_periodic(
-    input_series: pd.core.series.Series, config: structs.PeriodicOptions
+    input_series: pd.core.series.Series, options: config.PeriodicOptions
 ):
     """
     Normalizes a periodic series such that its values lies in
@@ -49,18 +49,18 @@ def handle_periodic(
     Parameters
     ----------
     input_series: pandas.core.series.Series
-    config : nowcastlib.pipeline.structs.PeriodicOptions
+    options : nowcastlib.pipeline.structs.config.PeriodicOptions
 
     Returns
     -------
     pandas.core.series.Series
         the normalized series
     """
-    return input_series % config.period_length
+    return input_series % options.period_length
 
 
 def handle_smoothing(
-    input_series: pd.core.series.Series, config: structs.SmoothOptions
+    input_series: pd.core.series.Series, options: config.SmoothOptions
 ):
     """
     Applies a moving average calculation to an input time series
@@ -69,7 +69,7 @@ def handle_smoothing(
     Parameters
     ----------
     input_series: pandas.core.series.Series
-    config : nowcastlib.pipeline.structs.SmoothOptions
+    options : nowcastlib.pipeline.structs.config.SmoothOptions
 
     Returns
     -------
@@ -77,9 +77,9 @@ def handle_smoothing(
         the smoothed series
     """
     data_series = input_series.copy()
-    window_size = config.window_size
+    window_size = options.window_size
     shift_size = int((window_size + 1) / 2)
-    units = config.units
+    units = options.units
     window: Union[str, int]
     if units is not None:
         window = str(window_size) + units
@@ -97,7 +97,7 @@ def handle_smoothing(
 
 def process_field(
     input_series: pd.core.series.Series,
-    options: structs.ProcessingOptions,
+    options: config.ProcessingOptions,
     preproc_flag: bool = True,
 ):
     """
@@ -107,7 +107,7 @@ def process_field(
     ----------
     input_series : pandas.core.series.Series
         The data of the field to process
-    options : nowcastlib.pipeline.structs.ProcessingOptions
+    options : nowcastlib.pipeline.structs.config.ProcessingOptions
         Configuration options for specifying how to process
     preproc_flag : bool, default `True`
         Whether this is for preprocessing. If `False`,

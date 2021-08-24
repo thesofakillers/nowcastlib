@@ -1,7 +1,7 @@
 """module containing functionality related to feature engineering and selection"""
 import logging
 import pandas as pd
-from nowcastlib.pipeline import structs
+from nowcastlib.pipeline.structs import config
 from . import generate
 
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def generate_field(
     data_df: pd.core.frame.DataFrame,
-    field_config: structs.GeneratedField,
+    field_config: config.GeneratedField,
 ):
     """
     generates a new field by applying the relevant generator function
@@ -19,7 +19,7 @@ def generate_field(
     ----------
     data_df : pandas.core.frame.DataFrame
         the dataframe holding the data we can access
-    field_config : nowcastlib.pipeline.structs.GeneratedField
+    field_config : nowcastlib.pipeline.structs.config.GeneratedField
     Returns
     -------
     pandas.core.series.Series
@@ -28,7 +28,7 @@ def generate_field(
     # convert tuple to list, safely
     input_fields = [element for element in field_config.input_fields]
     if (
-        field_config.gen_func == structs.GeneratorFunction.CUSTOM
+        field_config.gen_func == config.GeneratorFunction.CUSTOM
         or field_config.func_path is not None
     ):
         # TODO handle custom case
@@ -52,7 +52,7 @@ def generate_field(
     return func(*[input_df[col] for col in input_df], **additional_args)
 
 
-def generate_fields(config: structs.DataSet, data_df: pd.core.frame.DataFrame):
+def generate_fields(config: config.DataSet, data_df: pd.core.frame.DataFrame):
     """
     Augments an input dataframe with additional fields
     generated from the existing fields and auxiliary data

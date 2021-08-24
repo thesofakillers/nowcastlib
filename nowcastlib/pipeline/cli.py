@@ -5,7 +5,7 @@ import json
 from typing import Union
 import argparse
 import cattr
-from nowcastlib.pipeline import structs
+from nowcastlib.pipeline.structs import config
 from nowcastlib.pipeline.utils import disambiguate_intfloatstr
 from nowcastlib import pipeline
 
@@ -32,10 +32,10 @@ def configure_parser(action_object):
 def run_datapipe(args):
     """runs appropriate function based on provided cli args"""
     with open(args.config) as json_file:
-        config = json.load(json_file)
+        options = json.load(json_file)
     cattr_cnvrtr = cattr.GenConverter(forbid_extra_keys=True)
     cattr_cnvrtr.register_structure_hook(
         Union[int, float, str], disambiguate_intfloatstr
     )
-    dataset_config = cattr_cnvrtr.structure(config, structs.DataSet)
+    dataset_config = cattr_cnvrtr.structure(options, config.DataSet)
     return pipeline.pipe_dataset(dataset_config)

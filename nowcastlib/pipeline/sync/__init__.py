@@ -7,7 +7,7 @@ from typing import Optional, List
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from nowcastlib.pipeline import structs
+from nowcastlib.pipeline.structs import config
 from nowcastlib.pipeline.process import preprocess
 from nowcastlib.pipeline import utils
 from nowcastlib import datasets
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def handle_diag_plots(
-    config: structs.SyncOptions, dataframes: List[pd.core.frame.DataFrame]
+    options: config.SyncOptions, dataframes: List[pd.core.frame.DataFrame]
 ):
     """
     Produces plots that can aid the user in noticing mistakes
@@ -26,7 +26,7 @@ def handle_diag_plots(
 
     Parameters
     ----------
-    config : nowcastlib.pipeline.structs.SyncOptions
+    options : nowcastlib.pipeline.structs.config.SyncOptions
     dataframes : list[pandas.core.frame.DataFrame]
         The set of dataframes one wishes to synchronize.
 
@@ -50,7 +50,7 @@ def handle_diag_plots(
             histtype="step",
             linewidth=1.5,
         )
-    ax1.axvline(config.sample_spacing, color="black", label="Selected Sample Spacing")
+    ax1.axvline(options.sample_spacing, color="black", label="Selected Sample Spacing")
     ax1.set_xlabel("Sample Spacing [s]")
     ax1.set_ylabel("Prevalence")
     ax1.set_title(
@@ -70,7 +70,7 @@ def handle_diag_plots(
 
 def handle_chunking(
     data_df: pd.core.frame.DataFrame,
-    config: structs.ChunkOptions,
+    options: config.ChunkOptions,
     column_names: Optional[List[str]] = None,
 ):
     """
@@ -81,7 +81,7 @@ def handle_chunking(
     ----------
     data_df: pandas.core.frame.DataFrame
         the sparse dataframe to perform chunking on
-    config : nowcastlib.pipeline.structs.ChunkOptions
+    options : nowcastlib.pipeline.structs.config.ChunkOptions
         chunking configuration options
     column_names : list[str], default None
         the names of the columns to check for overlaps.
@@ -100,10 +100,10 @@ def handle_chunking(
     """
     # find overlapping data, ignoring small gaps
     sample_spacing_secs = data_df.index.freq.delta.seconds
-    max_spacing_steps = np.floor((config.max_gap_size / sample_spacing_secs)).astype(
+    max_spacing_steps = np.floor((options.max_gap_size / sample_spacing_secs)).astype(
         int
     )
-    min_chunk_length = int(config.min_chunk_size / sample_spacing_secs)
+    min_chunk_length = int(options.min_chunk_size / sample_spacing_secs)
     final_mask, chunk_locs = datasets.compute_dataframe_mask(
         data_df, max_spacing_steps, min_chunk_length, 0, column_names
     )
@@ -115,7 +115,7 @@ def handle_chunking(
 
 
 def synchronize_dataset(
-    config: structs.DataSet, dataset: Optional[List[pd.core.frame.DataFrame]] = None
+    options: config.DataSet, dataset: Optional[List[pd.core.frame.DataFrame]] = None
 ):
     """
     Synchronizes a set of data sources given options outlined
@@ -124,7 +124,7 @@ def synchronize_dataset(
 
     Parameters
     ----------
-    config : nowcastlib.pipeline.structs.DataSet
+    options : nowcastlib.pipeline.structs.config.DataSet
     dataset : list[pandas.core.frame.DataFrame], default None
         The set of dataframes one wishes to synchronize.
         If `None`, the preprocessing output produced by the
@@ -141,13 +141,13 @@ def synchronize_dataset(
         integer indices of the contiguous chunks of data
         in the input dataframe. Shape is (-1, 2).
     """
-    sync_config = config.sync_options
+    sync_config = options.sync_options
     assert (
         sync_config is not None
-    ), "`config.sync_options` must be defined to perform synchronization"
+    ), "`options.sync_options` must be defined to perform synchronization"
     # avoid preprocessing if datasets are passed directly
     if dataset is None:
-        data_dfs = preprocess.preprocess_dataset(config)
+        data_dfs = preprocess.preprocess_dataset(options)
     else:
         data_dfs = dataset
     logger.info("Synchronizing dataset...")

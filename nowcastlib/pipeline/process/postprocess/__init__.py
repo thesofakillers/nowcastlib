@@ -5,7 +5,7 @@ import logging
 from typing import Optional, List
 import numpy as np
 import pandas as pd
-from nowcastlib.pipeline import structs
+from nowcastlib.pipeline.structs import config
 from nowcastlib.pipeline import utils
 from nowcastlib.pipeline import sync
 from nowcastlib.pipeline.process import utils as process_utils
@@ -16,7 +16,7 @@ pd.set_option("chained_assignment", None)
 
 
 def postprocess_dataset(
-    config: structs.DataSet, data_df: Optional[pd.core.frame.DataFrame]
+    options: config.DataSet, data_df: Optional[pd.core.frame.DataFrame]
 ):
     """
     Postprocesses a dataset given options outlined
@@ -25,14 +25,14 @@ def postprocess_dataset(
     logger.info("Postprocessing dataset...")
     # need to get data_df from syncing process if not provided
     if data_df is None:
-        chunked_df, _ = sync.synchronize_dataset(config)
+        chunked_df, _ = sync.synchronize_dataset(options)
     else:
         chunked_df = data_df.copy()
     # instantiate our processed result
     proc_df = chunked_df.copy()
     # gather which fields to process into single list
-    raw_fields: List[structs.RawField] = [
-        field for source in config.data_sources for field in source.fields
+    raw_fields: List[config.RawField] = [
+        field for source in options.data_sources for field in source.fields
     ]
     # rename overwrite-protected fields so to avoid acting on the original field
     fields_to_process = [utils.rename_protected_field(field) for field in raw_fields]
