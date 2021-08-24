@@ -2,13 +2,13 @@
 Module for standardization functionality
 """
 import sys
-from typing import List
+from typing import List, Tuple
 import logging
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import sklearn.preprocessing as sklearn_pproc
-from nowcastlib.pipeline.structs import config
+from nowcastlib.pipeline import structs
 from nowcastlib.pipeline import utils
 
 plt.ion()
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 def handle_diag_plots(
     input_series: pd.core.series.Series,
-    configured_method: config.StandardizationMethod,
+    configured_method: structs.config.StandardizationMethod,
 ):
     """
     Plots different rescalings of the input series,
@@ -33,7 +33,7 @@ def handle_diag_plots(
         pwr_trnsformer.fit_transform(input_series.to_numpy().reshape(-1, 1)),
         bins=200,
         color="darkblue"
-        if configured_method == config.StandardizationMethod.POWER
+        if configured_method == structs.config.StandardizationMethod.POWER
         else "darkgrey",
     )
     ax2.set_title("Power Transform")
@@ -41,7 +41,7 @@ def handle_diag_plots(
         robust_trnsfrmr.fit_transform(input_series.to_numpy().reshape(-1, 1)),
         bins=200,
         color="darkblue"
-        if configured_method == config.StandardizationMethod.ROBUST
+        if configured_method == structs.config.StandardizationMethod.ROBUST
         else "darkgrey",
     )
     ax3.set_title("Robust Scaling")
@@ -49,7 +49,7 @@ def handle_diag_plots(
         np.log(1 + (input_series - input_series.min())),
         bins=200,
         color="darkblue"
-        if configured_method == config.StandardizationMethod.LOGNORM
+        if configured_method == structs.config.StandardizationMethod.LOGNORM
         else "darkgrey",
     )
     ax4.set_title("log(1 + (input_series - input_series.min()))")
@@ -65,33 +65,43 @@ def handle_diag_plots(
     )
 
 
-def standardize_dataset(options, outer_split, inner_split):
+def standardize_dataset(
+    options: structs.config.DataSet,
+    outer_split: structs.TrainTestSplit,
+    inner_split: structs.IteratedSplit,
+) -> structs.SplitDataSet:
     """
     Standardizes a DataSet, accounting for train/test nuances
     """
-    # outer
+    # destructure outer split, so we have access to locs
     (train_df, train_locs), (test_df, test_locs) = outer_split
+    # and standardize
     [proc_train_data], [proc_test_data] = standardize_splits(
         options, [train_df], [test_df]
     )
-    # inner
-    train_dfs, val_dfs = inner_split
+    # destructure inner split, so we have access to locs
+    inner_train_data, inner_val_data = inner_split
+    train_dfs, inner_train_locs = [[*x] for x in zip(*inner_train_data)]
+    val_dfs, inner_val_locs = [[*x] for x in zip(*inner_val_data)]
     (
         proc_val_train_dfs,
         proc_val_test_dfs,
     ) = standardize_splits(options, train_dfs, val_dfs)
-    # return in corrct format
+    # return in correct format
     return (
         ((proc_train_data, train_locs), (proc_test_data, test_locs)),
-        (proc_val_train_dfs, proc_val_test_dfs),
+        (
+            list(zip(proc_val_train_dfs, inner_train_locs)),
+            list(zip(proc_val_test_dfs, inner_val_locs)),
+        ),
     )
 
 
 def standardize_splits(
-    options: config.DataSet,
+    options: structs.config.DataSet,
     train_dfs: List[pd.core.frame.DataFrame],
     test_dfs: List[pd.core.frame.DataFrame],
-):
+) -> Tuple[List[pd.core.frame.DataFrame], List[pd.core.frame.DataFrame]]:
     """
     Standardizes a set of train-test splits given options outlined
     in the input DataSet config instance.
@@ -108,7 +118,7 @@ def standardize_splits(
     std_train_dfs = train_dfs.copy()
     std_test_dfs = test_dfs.copy()
     # gather which fields to process into single list
-    raw_fields: List[config.RawField] = [
+    raw_fields: List[structs.config.RawField] = [
         field for source in options.data_sources for field in source.fields
     ]
     # rename overwrite-protected fields so to avoid acting on the original field
@@ -146,7 +156,7 @@ def standardize_splits(
 def standardize_field(
     train_data: pd.core.series.Series,
     test_data: pd.core.series.Series,
-    options: config.StandardizationOptions,
+    options: structs.config.StandardizationOptions,
 ):
     """
     Standardizes a field based on config options,
@@ -160,15 +170,15 @@ def standardize_field(
                 "Closing program prematurely to allow for configuration changes"
             )
             sys.exit()
-    if options.method == config.StandardizationMethod.LOGNORM:
+    if options.method == structs.config.StandardizationMethod.LOGNORM:
         return (
             np.log(1 + (train_data - train_data.min())),
             np.log(1 + (test_data - test_data.min())),
         )
     # handle transformer based methods
-    elif options.method == config.StandardizationMethod.POWER:
+    elif options.method == structs.config.StandardizationMethod.POWER:
         transformer = sklearn_pproc.PowerTransformer()
-    elif options.method == config.StandardizationMethod.ROBUST:
+    elif options.method == structs.config.StandardizationMethod.ROBUST:
         transformer = sklearn_pproc.RobustScaler()
     # fit only on training data, to avoid information leakage
     fitted_trnsfrmr = transformer.fit(train_data.to_numpy().reshape(-1, 1))
