@@ -63,4 +63,5 @@ def generate_fields(options: config.DataSet, data_df: pd.core.frame.DataFrame):
         for new_field in options.generated_fields:
             logger.debug("Generating field %s...", new_field.target_name)
             proc_df[new_field.target_name] = generate_field(data_df, new_field)
+        logger.info("Field Generation complete.")
     return proc_df
