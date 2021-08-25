@@ -4,9 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
-<title>nowcastlib.pipeline.structs API documentation</title>
-<meta name="description" content="Module containing custom structures used throughout the pipeline
-submodule to aid with configuration …" />
+<title>nowcastlib.pipeline.structs.config API documentation</title>
+<meta name="description" content="Structs to aid with configuration …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -20,11 +19,10 @@ submodule to aid with configuration …" />
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>nowcastlib.pipeline.structs</code></h1>
+<h1 class="title">Module <code>nowcastlib.pipeline.structs.config</code></h1>
 </header>
 <section id="section-intro">
-<p>Module containing custom structures used throughout the pipeline
-submodule to aid with configuration.</p>
+<p>Structs to aid with configuration.</p>
 <p>A <code>Union</code> type annotation indicates that the variable
 can be of any of the types listed in the <code>Union</code> type.
 Variables whose type is <code>Union</code> with <code>NoneType</code> are optional.</p>
@@ -36,8 +34,7 @@ when using .json files for specifying configuration.</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
-Module containing custom structures used throughout the pipeline
-submodule to aid with configuration.
+Structs to aid with configuration.
 
 A `Union` type annotation indicates that the variable
 can be of any of the types listed in the `Union` type.
@@ -619,6 +616,10 @@ class DataSet:
     Configurations options for synchronizing the `data_sources`.
     \nIf `None`, no synchronization will be performed
     &#34;&#34;&#34;
+    postprocessing_output: Optional[SerializationOptions] = attrib(default=None)
+    &#34;&#34;&#34;
+    Configuration options for serializing postprocessing results
+    &#34;&#34;&#34;
     split_options: Optional[SplitOptions] = attrib(default=None)
     &#34;&#34;&#34;
     Configurations options for handling data splitting.
@@ -640,7 +641,7 @@ class DataSet:
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="nowcastlib.pipeline.structs.ConversionOptions"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.ConversionOptions"><code class="flex name class">
 <span>class <span class="ident">ConversionOptions</span></span>
 <span>(</span><span>*, key: str)</span>
 </code></dt>
@@ -675,7 +676,7 @@ conversion of a given data field</p>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.ConversionOptions.key"><code class="name">var <span class="ident">key</span> : str</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.ConversionOptions.key"><code class="name">var <span class="ident">key</span> : str</code></dt>
 <dd>
 <div class="desc"><p>One of 'mph2ms', 'deg2rad' or 'rad2deg' to specify what unit
 conversion to perform</p></div>
@@ -683,7 +684,7 @@ conversion to perform</p></div>
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.ConversionOptions.conv_func"><code class="name flex">
+<dt id="nowcastlib.pipeline.structs.config.ConversionOptions.conv_func"><code class="name flex">
 <span>def <span class="ident">conv_func</span></span>(<span>self, input_series)</span>
 </code></dt>
 <dd>
@@ -699,7 +700,7 @@ conversion to perform</p></div>
 </dd>
 </dl>
 </dd>
-<dt id="nowcastlib.pipeline.structs.PeriodicOptions"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.PeriodicOptions"><code class="flex name class">
 <span>class <span class="ident">PeriodicOptions</span></span>
 <span>(</span><span>*, period_length: int)</span>
 </code></dt>
@@ -724,13 +725,13 @@ given data field</p>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.PeriodicOptions.period_length"><code class="name">var <span class="ident">period_length</span> : int</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.PeriodicOptions.period_length"><code class="name">var <span class="ident">period_length</span> : int</code></dt>
 <dd>
 <div class="desc"><p>The sample number at which the signal starts repeating</p></div>
 </dd>
 </dl>
 </dd>
-<dt id="nowcastlib.pipeline.structs.OutlierOptions"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.OutlierOptions"><code class="flex name class">
 <span>class <span class="ident">OutlierOptions</span></span>
 <span>(</span><span>*, lower: float = 0, upper: float = 1, quantile_based: bool = True)</span>
 </code></dt>
@@ -769,22 +770,22 @@ of a given data field</p>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.OutlierOptions.lower"><code class="name">var <span class="ident">lower</span> : float</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.OutlierOptions.lower"><code class="name">var <span class="ident">lower</span> : float</code></dt>
 <dd>
 <div class="desc"><p>Lower inclusive (percentile) threshold, eliminating numbers lower than it</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.OutlierOptions.upper"><code class="name">var <span class="ident">upper</span> : float</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.OutlierOptions.upper"><code class="name">var <span class="ident">upper</span> : float</code></dt>
 <dd>
 <div class="desc"><p>Upper inclusive (percentile) threshold, eliminating numbers greater than it</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.OutlierOptions.quantile_based"><code class="name">var <span class="ident">quantile_based</span> : bool</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.OutlierOptions.quantile_based"><code class="name">var <span class="ident">quantile_based</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>Whether the lower and higher attributes are referring to quantiles.
 If <code>False</code>, <code>lower</code> and <code>higher</code> are treated as absolute thresholds.</p></div>
 </dd>
 </dl>
 </dd>
-<dt id="nowcastlib.pipeline.structs.SmoothOptions"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.SmoothOptions"><code class="flex name class">
 <span>class <span class="ident">SmoothOptions</span></span>
 <span>(</span><span>*, window_size: int, units: Union[str, NoneType] = None)</span>
 </code></dt>
@@ -830,11 +831,11 @@ of a given data field, achieved with a moving average operation.</p>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.SmoothOptions.window_size"><code class="name">var <span class="ident">window_size</span> : int</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.SmoothOptions.window_size"><code class="name">var <span class="ident">window_size</span> : int</code></dt>
 <dd>
 <div class="desc"><p>How large the window should be for a moving average operation</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.SmoothOptions.units"><code class="name">var <span class="ident">units</span> : Union[str, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.SmoothOptions.units"><code class="name">var <span class="ident">units</span> : Union[str, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>What units <code>window_size</code> is given in. Should be compatible with
 <a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases">pandas offset aliases</a>.</p>
@@ -842,7 +843,7 @@ of a given data field, achieved with a moving average operation.</p>
 </dd>
 </dl>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratorFunction"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.GeneratorFunction"><code class="flex name class">
 <span>class <span class="ident">GeneratorFunction</span></span>
 <span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
 </code></dt>
@@ -902,69 +903,69 @@ of a given data field, achieved with a moving average operation.</p>
 </ul>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.GeneratorFunction.T_SINCE_SUNSET"><code class="name">var <span class="ident">T_SINCE_SUNSET</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratorFunction.T_SINCE_SUNSET"><code class="name">var <span class="ident">T_SINCE_SUNSET</span></code></dt>
 <dd>
 <div class="desc"><p>seconds elapsed since the last sunset
 Requires <code>additional_kwargs</code> of <code>lat: float</code>, <code>lon: float</code>, <code>elevation: float</code>.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratorFunction.SIN_T_SINCE_SUNSET"><code class="name">var <span class="ident">SIN_T_SINCE_SUNSET</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratorFunction.SIN_T_SINCE_SUNSET"><code class="name">var <span class="ident">SIN_T_SINCE_SUNSET</span></code></dt>
 <dd>
 <div class="desc"><p>sine of seconds elapsed since the last sunset out of 86400.
 Requires <code>additional_kwargs</code> of <code>lat: float</code>, <code>lon: float</code>, <code>elevation: float</code>.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratorFunction.COS_T_SINCE_SUNSET"><code class="name">var <span class="ident">COS_T_SINCE_SUNSET</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratorFunction.COS_T_SINCE_SUNSET"><code class="name">var <span class="ident">COS_T_SINCE_SUNSET</span></code></dt>
 <dd>
 <div class="desc"><p>cosine of seconds elapsed since the last sunset out of 86400
 Requires <code>additional_kwargs</code> of <code>lat: float</code>, <code>lon: float</code>, <code>elevation: float</code>.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratorFunction.SUN_ELEVATION"><code class="name">var <span class="ident">SUN_ELEVATION</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratorFunction.SUN_ELEVATION"><code class="name">var <span class="ident">SUN_ELEVATION</span></code></dt>
 <dd>
 <div class="desc"><p>the sun's current elevation
 Requires <code>additional_kwargs</code> of <code>lat: float</code>, <code>lon: float</code>, <code>elevation: float</code>.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratorFunction.SIN_SEC"><code class="name">var <span class="ident">SIN_SEC</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratorFunction.SIN_SEC"><code class="name">var <span class="ident">SIN_SEC</span></code></dt>
 <dd>
 <div class="desc"><p>sine of the second number in the current day out of 86400</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratorFunction.COS_SEC"><code class="name">var <span class="ident">COS_SEC</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratorFunction.COS_SEC"><code class="name">var <span class="ident">COS_SEC</span></code></dt>
 <dd>
 <div class="desc"><p>cosine of the second number in the current day out of 86400</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratorFunction.SIN_DAY_YEAR"><code class="name">var <span class="ident">SIN_DAY_YEAR</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratorFunction.SIN_DAY_YEAR"><code class="name">var <span class="ident">SIN_DAY_YEAR</span></code></dt>
 <dd>
 <div class="desc"><p>sine of the day number out of 365 in the current year</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratorFunction.COS_DAY_YEAR"><code class="name">var <span class="ident">COS_DAY_YEAR</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratorFunction.COS_DAY_YEAR"><code class="name">var <span class="ident">COS_DAY_YEAR</span></code></dt>
 <dd>
 <div class="desc"><p>cosine of the day number out of 365 in the current year</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratorFunction.SIN_DAY_WEEK"><code class="name">var <span class="ident">SIN_DAY_WEEK</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratorFunction.SIN_DAY_WEEK"><code class="name">var <span class="ident">SIN_DAY_WEEK</span></code></dt>
 <dd>
 <div class="desc"><p>sine of the day number out of 7 in the current week</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratorFunction.COS_DAY_WEEK"><code class="name">var <span class="ident">COS_DAY_WEEK</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratorFunction.COS_DAY_WEEK"><code class="name">var <span class="ident">COS_DAY_WEEK</span></code></dt>
 <dd>
 <div class="desc"><p>cosine of the day number out of 7 in the current week</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratorFunction.SIN_MONTH_YEAR"><code class="name">var <span class="ident">SIN_MONTH_YEAR</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratorFunction.SIN_MONTH_YEAR"><code class="name">var <span class="ident">SIN_MONTH_YEAR</span></code></dt>
 <dd>
 <div class="desc"><p>sine of the month number out of 12 in the current year</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratorFunction.COS_MONTH_YEAR"><code class="name">var <span class="ident">COS_MONTH_YEAR</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratorFunction.COS_MONTH_YEAR"><code class="name">var <span class="ident">COS_MONTH_YEAR</span></code></dt>
 <dd>
 <div class="desc"><p>cosine of the month number out of 12 in the current year</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratorFunction.IS_WEEKEND"><code class="name">var <span class="ident">IS_WEEKEND</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratorFunction.IS_WEEKEND"><code class="name">var <span class="ident">IS_WEEKEND</span></code></dt>
 <dd>
 <div class="desc"><p>whether the current day is a friday, saturday or sunday</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratorFunction.CUSTOM"><code class="name">var <span class="ident">CUSTOM</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratorFunction.CUSTOM"><code class="name">var <span class="ident">CUSTOM</span></code></dt>
 <dd>
 <div class="desc"><p>indicates the user will provide their own function</p></div>
 </dd>
 </dl>
 </dd>
-<dt id="nowcastlib.pipeline.structs.StandardizationMethod"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.StandardizationMethod"><code class="flex name class">
 <span>class <span class="ident">StandardizationMethod</span></span>
 <span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
 </code></dt>
@@ -993,24 +994,24 @@ Requires <code>additional_kwargs</code> of <code>lat: float</code>, <code>lon: f
 </ul>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.StandardizationMethod.POWER"><code class="name">var <span class="ident">POWER</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.StandardizationMethod.POWER"><code class="name">var <span class="ident">POWER</span></code></dt>
 <dd>
 <div class="desc"><p>A power transform of the data (Yeo-Johnson)</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.StandardizationMethod.ROBUST"><code class="name">var <span class="ident">ROBUST</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.StandardizationMethod.ROBUST"><code class="name">var <span class="ident">ROBUST</span></code></dt>
 <dd>
 <div class="desc"><p>Rescales the data making use of its interquartile range.</p>
 <p>See <a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html">https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html</a></p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.StandardizationMethod.LOGNORM"><code class="name">var <span class="ident">LOGNORM</span></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.StandardizationMethod.LOGNORM"><code class="name">var <span class="ident">LOGNORM</span></code></dt>
 <dd>
 <div class="desc"><p>Takes the logarithm of the data</p></div>
 </dd>
 </dl>
 </dd>
-<dt id="nowcastlib.pipeline.structs.StandardizationOptions"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.StandardizationOptions"><code class="flex name class">
 <span>class <span class="ident">StandardizationOptions</span></span>
-<span>(</span><span>*, method: <a title="nowcastlib.pipeline.structs.StandardizationMethod" href="#nowcastlib.pipeline.structs.StandardizationMethod">StandardizationMethod</a>, diagnostic_plots: bool = True)</span>
+<span>(</span><span>*, method: <a title="nowcastlib.pipeline.structs.config.StandardizationMethod" href="#nowcastlib.pipeline.structs.config.StandardizationMethod">StandardizationMethod</a>, diagnostic_plots: bool = True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Struct containing configuration options
@@ -1039,21 +1040,21 @@ for standardizing a given field.</p>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.StandardizationOptions.method"><code class="name">var <span class="ident">method</span> : <a title="nowcastlib.pipeline.structs.StandardizationMethod" href="#nowcastlib.pipeline.structs.StandardizationMethod">StandardizationMethod</a></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.StandardizationOptions.method"><code class="name">var <span class="ident">method</span> : <a title="nowcastlib.pipeline.structs.config.StandardizationMethod" href="#nowcastlib.pipeline.structs.config.StandardizationMethod">StandardizationMethod</a></code></dt>
 <dd>
 <div class="desc"><p>Which of the available methods to use. Specify as the
 Enum lowercase string value when configuring via JSON</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.StandardizationOptions.diagnostic_plots"><code class="name">var <span class="ident">diagnostic_plots</span> : bool</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.StandardizationOptions.diagnostic_plots"><code class="name">var <span class="ident">diagnostic_plots</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>Whether or not to show diagnostic plots, intended to help
 the user in configuration evaluation and decision making.</p></div>
 </dd>
 </dl>
 </dd>
-<dt id="nowcastlib.pipeline.structs.BaseField"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.BaseField"><code class="flex name class">
 <span>class <span class="ident">BaseField</span></span>
-<span>(</span><span>*, std_options: Union[<a title="nowcastlib.pipeline.structs.StandardizationOptions" href="#nowcastlib.pipeline.structs.StandardizationOptions">StandardizationOptions</a>, NoneType] = None)</span>
+<span>(</span><span>*, std_options: Union[<a title="nowcastlib.pipeline.structs.config.StandardizationOptions" href="#nowcastlib.pipeline.structs.config.StandardizationOptions">StandardizationOptions</a>, NoneType] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Struct containing configuration options
@@ -1077,21 +1078,21 @@ shared by both Raw and Generated fields.</p>
 </details>
 <h3>Subclasses</h3>
 <ul class="hlist">
-<li><a title="nowcastlib.pipeline.structs.GeneratedField" href="#nowcastlib.pipeline.structs.GeneratedField">GeneratedField</a></li>
-<li><a title="nowcastlib.pipeline.structs.RawField" href="#nowcastlib.pipeline.structs.RawField">RawField</a></li>
+<li><a title="nowcastlib.pipeline.structs.config.GeneratedField" href="#nowcastlib.pipeline.structs.config.GeneratedField">GeneratedField</a></li>
+<li><a title="nowcastlib.pipeline.structs.config.RawField" href="#nowcastlib.pipeline.structs.config.RawField">RawField</a></li>
 </ul>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.BaseField.std_options"><code class="name">var <span class="ident">std_options</span> : Union[<a title="nowcastlib.pipeline.structs.StandardizationOptions" href="#nowcastlib.pipeline.structs.StandardizationOptions">StandardizationOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.BaseField.std_options"><code class="name">var <span class="ident">std_options</span> : Union[<a title="nowcastlib.pipeline.structs.config.StandardizationOptions" href="#nowcastlib.pipeline.structs.config.StandardizationOptions">StandardizationOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for standardizing
 (scaling or normalizing) the field</p></div>
 </dd>
 </dl>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratedField"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.GeneratedField"><code class="flex name class">
 <span>class <span class="ident">GeneratedField</span></span>
-<span>(</span><span>*, std_options: Union[<a title="nowcastlib.pipeline.structs.StandardizationOptions" href="#nowcastlib.pipeline.structs.StandardizationOptions">StandardizationOptions</a>, NoneType] = None, target_name: str, input_fields: Tuple[str], gen_func: <a title="nowcastlib.pipeline.structs.GeneratorFunction" href="#nowcastlib.pipeline.structs.GeneratorFunction">GeneratorFunction</a>, additional_kwargs: Union[dict, NoneType] = None, func_path: Union[str, NoneType] = None)</span>
+<span>(</span><span>*, std_options: Union[<a title="nowcastlib.pipeline.structs.config.StandardizationOptions" href="#nowcastlib.pipeline.structs.config.StandardizationOptions">StandardizationOptions</a>, NoneType] = None, target_name: str, input_fields: Tuple[str], gen_func: <a title="nowcastlib.pipeline.structs.config.GeneratorFunction" href="#nowcastlib.pipeline.structs.config.GeneratorFunction">GeneratorFunction</a>, additional_kwargs: Union[dict, NoneType] = None, func_path: Union[str, NoneType] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Struct containing configuration for specifying
@@ -1149,32 +1150,32 @@ how the pipeline should generate a new field of data</p>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li><a title="nowcastlib.pipeline.structs.BaseField" href="#nowcastlib.pipeline.structs.BaseField">BaseField</a></li>
+<li><a title="nowcastlib.pipeline.structs.config.BaseField" href="#nowcastlib.pipeline.structs.config.BaseField">BaseField</a></li>
 </ul>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.GeneratedField.target_name"><code class="name">var <span class="ident">target_name</span> : str</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratedField.target_name"><code class="name">var <span class="ident">target_name</span> : str</code></dt>
 <dd>
 <div class="desc"><p>What the new field should be named.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratedField.input_fields"><code class="name">var <span class="ident">input_fields</span> : Tuple[str]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratedField.input_fields"><code class="name">var <span class="ident">input_fields</span> : Tuple[str]</code></dt>
 <dd>
 <div class="desc"><p>The names of the input fields to pass to the
 generator function as *args.
 "index", to specify the index</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratedField.gen_func"><code class="name">var <span class="ident">gen_func</span> : <a title="nowcastlib.pipeline.structs.GeneratorFunction" href="#nowcastlib.pipeline.structs.GeneratorFunction">GeneratorFunction</a></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratedField.gen_func"><code class="name">var <span class="ident">gen_func</span> : <a title="nowcastlib.pipeline.structs.config.GeneratorFunction" href="#nowcastlib.pipeline.structs.config.GeneratorFunction">GeneratorFunction</a></code></dt>
 <dd>
 <div class="desc"><p>The name of the generator function to use
 for generating the new data. Specify as the
 Enum lowercase string value when configuring via JSON.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratedField.additional_kwargs"><code class="name">var <span class="ident">additional_kwargs</span> : Union[dict, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratedField.additional_kwargs"><code class="name">var <span class="ident">additional_kwargs</span> : Union[dict, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>a dictionary containing additional keyword arguments to
 to be passed to the function if necessary.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.GeneratedField.func_path"><code class="name">var <span class="ident">func_path</span> : Union[str, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.GeneratedField.func_path"><code class="name">var <span class="ident">func_path</span> : Union[str, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>The path to the file implementing a custom
 generator function. To be specified if <code>gen_func</code> is <code>custom</code></p></div>
@@ -1182,7 +1183,7 @@ generator function. To be specified if <code>gen_func</code> is <code>custom</co
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.GeneratedField.only_if_custom"><code class="name flex">
+<dt id="nowcastlib.pipeline.structs.config.GeneratedField.only_if_custom"><code class="name flex">
 <span>def <span class="ident">only_if_custom</span></span>(<span>self, attribute, value)</span>
 </code></dt>
 <dd>
@@ -1208,16 +1209,16 @@ def only_if_custom(self, attribute, value):
 </dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
-<li><code><b><a title="nowcastlib.pipeline.structs.BaseField" href="#nowcastlib.pipeline.structs.BaseField">BaseField</a></b></code>:
+<li><code><b><a title="nowcastlib.pipeline.structs.config.BaseField" href="#nowcastlib.pipeline.structs.config.BaseField">BaseField</a></b></code>:
 <ul class="hlist">
-<li><code><a title="nowcastlib.pipeline.structs.BaseField.std_options" href="#nowcastlib.pipeline.structs.BaseField.std_options">std_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.BaseField.std_options" href="#nowcastlib.pipeline.structs.config.BaseField.std_options">std_options</a></code></li>
 </ul>
 </li>
 </ul>
 </dd>
-<dt id="nowcastlib.pipeline.structs.ProcessingOptions"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.ProcessingOptions"><code class="flex name class">
 <span>class <span class="ident">ProcessingOptions</span></span>
-<span>(</span><span>*, overwrite: bool = False, outlier_options: Union[<a title="nowcastlib.pipeline.structs.OutlierOptions" href="#nowcastlib.pipeline.structs.OutlierOptions">OutlierOptions</a>, NoneType] = None, periodic_options: Union[<a title="nowcastlib.pipeline.structs.PeriodicOptions" href="#nowcastlib.pipeline.structs.PeriodicOptions">PeriodicOptions</a>, NoneType] = None, conversion_options: Union[<a title="nowcastlib.pipeline.structs.ConversionOptions" href="#nowcastlib.pipeline.structs.ConversionOptions">ConversionOptions</a>, NoneType] = None, smooth_options: Union[<a title="nowcastlib.pipeline.structs.SmoothOptions" href="#nowcastlib.pipeline.structs.SmoothOptions">SmoothOptions</a>, NoneType] = None)</span>
+<span>(</span><span>*, overwrite: bool = False, outlier_options: Union[<a title="nowcastlib.pipeline.structs.config.OutlierOptions" href="#nowcastlib.pipeline.structs.config.OutlierOptions">OutlierOptions</a>, NoneType] = None, periodic_options: Union[<a title="nowcastlib.pipeline.structs.config.PeriodicOptions" href="#nowcastlib.pipeline.structs.config.PeriodicOptions">PeriodicOptions</a>, NoneType] = None, conversion_options: Union[<a title="nowcastlib.pipeline.structs.config.ConversionOptions" href="#nowcastlib.pipeline.structs.config.ConversionOptions">ConversionOptions</a>, NoneType] = None, smooth_options: Union[<a title="nowcastlib.pipeline.structs.config.SmoothOptions" href="#nowcastlib.pipeline.structs.config.SmoothOptions">SmoothOptions</a>, NoneType] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Struct containing configuration attributes for processing
@@ -1281,31 +1282,31 @@ a given field of a given data source</p>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.ProcessingOptions.overwrite"><code class="name">var <span class="ident">overwrite</span> : bool</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.ProcessingOptions.overwrite"><code class="name">var <span class="ident">overwrite</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>If <code>True</code>, overwrites the input field in the input dataframe.
 Otherwise appends a new field to the dataframe.
 Does not do anything when postprocessing.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.ProcessingOptions.outlier_options"><code class="name">var <span class="ident">outlier_options</span> : Union[<a title="nowcastlib.pipeline.structs.OutlierOptions" href="#nowcastlib.pipeline.structs.OutlierOptions">OutlierOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.ProcessingOptions.outlier_options"><code class="name">var <span class="ident">outlier_options</span> : Union[<a title="nowcastlib.pipeline.structs.config.OutlierOptions" href="#nowcastlib.pipeline.structs.config.OutlierOptions">OutlierOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for specifying which outliers to drop.
 Is performed before any unit conversion.</p>
 <p>If <code>None</code>, no outlier removal is performed.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.ProcessingOptions.periodic_options"><code class="name">var <span class="ident">periodic_options</span> : Union[<a title="nowcastlib.pipeline.structs.PeriodicOptions" href="#nowcastlib.pipeline.structs.PeriodicOptions">PeriodicOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.ProcessingOptions.periodic_options"><code class="name">var <span class="ident">periodic_options</span> : Union[<a title="nowcastlib.pipeline.structs.config.PeriodicOptions" href="#nowcastlib.pipeline.structs.config.PeriodicOptions">PeriodicOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for treating data that is periodic in nature,
 such as normalizing the desired range of values.
 Is performed before any unit conversion.</p>
 <p>If <code>None</code>, no processing in this regard is performed.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.ProcessingOptions.conversion_options"><code class="name">var <span class="ident">conversion_options</span> : Union[<a title="nowcastlib.pipeline.structs.ConversionOptions" href="#nowcastlib.pipeline.structs.ConversionOptions">ConversionOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.ProcessingOptions.conversion_options"><code class="name">var <span class="ident">conversion_options</span> : Union[<a title="nowcastlib.pipeline.structs.config.ConversionOptions" href="#nowcastlib.pipeline.structs.config.ConversionOptions">ConversionOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for converting a field from one unit to another</p>
 <p>If <code>None</code>, no conversion is performed.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.ProcessingOptions.smooth_options"><code class="name">var <span class="ident">smooth_options</span> : Union[<a title="nowcastlib.pipeline.structs.SmoothOptions" href="#nowcastlib.pipeline.structs.SmoothOptions">SmoothOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.ProcessingOptions.smooth_options"><code class="name">var <span class="ident">smooth_options</span> : Union[<a title="nowcastlib.pipeline.structs.config.SmoothOptions" href="#nowcastlib.pipeline.structs.config.SmoothOptions">SmoothOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for smoothing the field.
 Is performed at the end of all other processing.</p>
@@ -1314,7 +1315,7 @@ Is performed at the end of all other processing.</p>
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.ProcessingOptions.prevent_overwrite"><code class="name flex">
+<dt id="nowcastlib.pipeline.structs.config.ProcessingOptions.prevent_overwrite"><code class="name flex">
 <span>def <span class="ident">prevent_overwrite</span></span>(<span>self, attribute, value)</span>
 </code></dt>
 <dd>
@@ -1338,9 +1339,9 @@ def prevent_overwrite(self, attribute, value):
 </dd>
 </dl>
 </dd>
-<dt id="nowcastlib.pipeline.structs.RawField"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.RawField"><code class="flex name class">
 <span>class <span class="ident">RawField</span></span>
-<span>(</span><span>*, std_options: Union[<a title="nowcastlib.pipeline.structs.StandardizationOptions" href="#nowcastlib.pipeline.structs.StandardizationOptions">StandardizationOptions</a>, NoneType] = None, field_name: str, is_date: bool = False, date_format: str = '%Y-%m-%dT%H:%M:%S', preprocessing_options: Union[<a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, NoneType] = None, postprocessing_options: Union[<a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, NoneType] = None)</span>
+<span>(</span><span>*, std_options: Union[<a title="nowcastlib.pipeline.structs.config.StandardizationOptions" href="#nowcastlib.pipeline.structs.config.StandardizationOptions">StandardizationOptions</a>, NoneType] = None, field_name: str, is_date: bool = False, date_format: str = '%Y-%m-%dT%H:%M:%S', preprocessing_options: Union[<a title="nowcastlib.pipeline.structs.config.ProcessingOptions" href="#nowcastlib.pipeline.structs.config.ProcessingOptions">ProcessingOptions</a>, NoneType] = None, postprocessing_options: Union[<a title="nowcastlib.pipeline.structs.config.ProcessingOptions" href="#nowcastlib.pipeline.structs.config.ProcessingOptions">ProcessingOptions</a>, NoneType] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Struct containing configuration attributes for a raw field
@@ -1390,28 +1391,28 @@ of a given DataSource</p>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li><a title="nowcastlib.pipeline.structs.BaseField" href="#nowcastlib.pipeline.structs.BaseField">BaseField</a></li>
+<li><a title="nowcastlib.pipeline.structs.config.BaseField" href="#nowcastlib.pipeline.structs.config.BaseField">BaseField</a></li>
 </ul>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.RawField.field_name"><code class="name">var <span class="ident">field_name</span> : str</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.RawField.field_name"><code class="name">var <span class="ident">field_name</span> : str</code></dt>
 <dd>
 <div class="desc"><p>The name of the field as specified in the input file</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.RawField.is_date"><code class="name">var <span class="ident">is_date</span> : bool</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.RawField.is_date"><code class="name">var <span class="ident">is_date</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>Whether the field is a date and therefore is the index of the DataSource</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.RawField.date_format"><code class="name">var <span class="ident">date_format</span> : str</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.RawField.date_format"><code class="name">var <span class="ident">date_format</span> : str</code></dt>
 <dd>
 <div class="desc"><p>What format the date is presented in if the field is a date</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.RawField.preprocessing_options"><code class="name">var <span class="ident">preprocessing_options</span> : Union[<a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.RawField.preprocessing_options"><code class="name">var <span class="ident">preprocessing_options</span> : Union[<a title="nowcastlib.pipeline.structs.config.ProcessingOptions" href="#nowcastlib.pipeline.structs.config.ProcessingOptions">ProcessingOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for how to pre-process the field</p>
 <p>If <code>None</code>, no preprocessing will be performed.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.RawField.postprocessing_options"><code class="name">var <span class="ident">postprocessing_options</span> : Union[<a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.RawField.postprocessing_options"><code class="name">var <span class="ident">postprocessing_options</span> : Union[<a title="nowcastlib.pipeline.structs.config.ProcessingOptions" href="#nowcastlib.pipeline.structs.config.ProcessingOptions">ProcessingOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for how to post-process the field</p>
 <p>If <code>None</code>, no post-processing will be performed.</p></div>
@@ -1419,7 +1420,7 @@ of a given DataSource</p>
 </dl>
 <h3>Methods</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.RawField.no_processing"><code class="name flex">
+<dt id="nowcastlib.pipeline.structs.config.RawField.no_processing"><code class="name flex">
 <span>def <span class="ident">no_processing</span></span>(<span>self, _attribute, value)</span>
 </code></dt>
 <dd>
@@ -1447,14 +1448,14 @@ def no_processing(self, _attribute, value):
 </dl>
 <h3>Inherited members</h3>
 <ul class="hlist">
-<li><code><b><a title="nowcastlib.pipeline.structs.BaseField" href="#nowcastlib.pipeline.structs.BaseField">BaseField</a></b></code>:
+<li><code><b><a title="nowcastlib.pipeline.structs.config.BaseField" href="#nowcastlib.pipeline.structs.config.BaseField">BaseField</a></b></code>:
 <ul class="hlist">
-<li><code><a title="nowcastlib.pipeline.structs.BaseField.std_options" href="#nowcastlib.pipeline.structs.BaseField.std_options">std_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.BaseField.std_options" href="#nowcastlib.pipeline.structs.config.BaseField.std_options">std_options</a></code></li>
 </ul>
 </li>
 </ul>
 </dd>
-<dt id="nowcastlib.pipeline.structs.SerializationOptions"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.SerializationOptions"><code class="flex name class">
 <span>class <span class="ident">SerializationOptions</span></span>
 <span>(</span><span>*, output_format: str, output_path: str)</span>
 </code></dt>
@@ -1485,21 +1486,21 @@ serializing a given DataSource to disk</p>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.SerializationOptions.output_format"><code class="name">var <span class="ident">output_format</span> : str</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.SerializationOptions.output_format"><code class="name">var <span class="ident">output_format</span> : str</code></dt>
 <dd>
 <div class="desc"><p>One of 'csv', 'pickle' or 'npy' to specify what format
 to save the DataSource as</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.SerializationOptions.output_path"><code class="name">var <span class="ident">output_path</span> : str</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.SerializationOptions.output_path"><code class="name">var <span class="ident">output_path</span> : str</code></dt>
 <dd>
 <div class="desc"><p>The desired path to the output file, including the name.
 Folders containing the output file should exist before running.</p></div>
 </dd>
 </dl>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DataSource"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.DataSource"><code class="flex name class">
 <span>class <span class="ident">DataSource</span></span>
-<span>(</span><span>*, name: str, path: str, fields: Tuple[<a title="nowcastlib.pipeline.structs.RawField" href="#nowcastlib.pipeline.structs.RawField">RawField</a>, ...], comment_format: str = '#', preprocessing_output: Union[<a title="nowcastlib.pipeline.structs.SerializationOptions" href="#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>, NoneType] = None)</span>
+<span>(</span><span>*, name: str, path: str, fields: Tuple[<a title="nowcastlib.pipeline.structs.config.RawField" href="#nowcastlib.pipeline.structs.config.RawField">RawField</a>, ...], comment_format: str = '#', preprocessing_output: Union[<a title="nowcastlib.pipeline.structs.config.SerializationOptions" href="#nowcastlib.pipeline.structs.config.SerializationOptions">SerializationOptions</a>, NoneType] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Struct containing configuration attributes for processing
@@ -1541,30 +1542,30 @@ an individual Data Source</p>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.DataSource.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.DataSource.name"><code class="name">var <span class="ident">name</span> : str</code></dt>
 <dd>
 <div class="desc"><p>The name of the DataSource. Somewhat arbitrary but useful for legibility</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DataSource.path"><code class="name">var <span class="ident">path</span> : str</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.DataSource.path"><code class="name">var <span class="ident">path</span> : str</code></dt>
 <dd>
 <div class="desc"><p>The path to the csv file from which to read the data</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DataSource.fields"><code class="name">var <span class="ident">fields</span> : Tuple[<a title="nowcastlib.pipeline.structs.RawField" href="#nowcastlib.pipeline.structs.RawField">RawField</a>, ...]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.DataSource.fields"><code class="name">var <span class="ident">fields</span> : Tuple[<a title="nowcastlib.pipeline.structs.config.RawField" href="#nowcastlib.pipeline.structs.config.RawField">RawField</a>, ...]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for each field the user is interested in</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DataSource.comment_format"><code class="name">var <span class="ident">comment_format</span> : str</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.DataSource.comment_format"><code class="name">var <span class="ident">comment_format</span> : str</code></dt>
 <dd>
 <div class="desc"><p>Prefix used in csv file to signal comments, that will be dropped when reading</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DataSource.preprocessing_output"><code class="name">var <span class="ident">preprocessing_output</span> : Union[<a title="nowcastlib.pipeline.structs.SerializationOptions" href="#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.DataSource.preprocessing_output"><code class="name">var <span class="ident">preprocessing_output</span> : Union[<a title="nowcastlib.pipeline.structs.config.SerializationOptions" href="#nowcastlib.pipeline.structs.config.SerializationOptions">SerializationOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for saving the preprocessing results to disk.</p>
 <p>If <code>None</code>, no serialization of the preprocessing results will be performed.</p></div>
 </dd>
 </dl>
 </dd>
-<dt id="nowcastlib.pipeline.structs.ChunkOptions"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.ChunkOptions"><code class="flex name class">
 <span>class <span class="ident">ChunkOptions</span></span>
 <span>(</span><span>*, max_gap_size: int, min_chunk_size: int)</span>
 </code></dt>
@@ -1594,20 +1595,20 @@ a partially synchronized DataSet</p>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.ChunkOptions.max_gap_size"><code class="name">var <span class="ident">max_gap_size</span> : int</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.ChunkOptions.max_gap_size"><code class="name">var <span class="ident">max_gap_size</span> : int</code></dt>
 <dd>
 <div class="desc"><p>The maximum amount of time in seconds for a gap to be ignored</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.ChunkOptions.min_chunk_size"><code class="name">var <span class="ident">min_chunk_size</span> : int</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.ChunkOptions.min_chunk_size"><code class="name">var <span class="ident">min_chunk_size</span> : int</code></dt>
 <dd>
 <div class="desc"><p>The minimum length in seconds for contiguous block of data
 to be considered.</p></div>
 </dd>
 </dl>
 </dd>
-<dt id="nowcastlib.pipeline.structs.SyncOptions"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.SyncOptions"><code class="flex name class">
 <span>class <span class="ident">SyncOptions</span></span>
-<span>(</span><span>*, sample_spacing: int, chunk_options: <a title="nowcastlib.pipeline.structs.ChunkOptions" href="#nowcastlib.pipeline.structs.ChunkOptions">ChunkOptions</a>, data_output: Union[<a title="nowcastlib.pipeline.structs.SerializationOptions" href="#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>, NoneType] = None, chunks_output: Union[<a title="nowcastlib.pipeline.structs.SerializationOptions" href="#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>, NoneType] = None, diagnostic_plots: bool = True)</span>
+<span>(</span><span>*, sample_spacing: int, chunk_options: <a title="nowcastlib.pipeline.structs.config.ChunkOptions" href="#nowcastlib.pipeline.structs.config.ChunkOptions">ChunkOptions</a>, data_output: Union[<a title="nowcastlib.pipeline.structs.config.SerializationOptions" href="#nowcastlib.pipeline.structs.config.SerializationOptions">SerializationOptions</a>, NoneType] = None, chunks_output: Union[<a title="nowcastlib.pipeline.structs.config.SerializationOptions" href="#nowcastlib.pipeline.structs.config.SerializationOptions">SerializationOptions</a>, NoneType] = None, diagnostic_plots: bool = True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Struct containing configuration attributes for synchronizing
@@ -1655,36 +1656,36 @@ a DataSet</p>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.SyncOptions.sample_spacing"><code class="name">var <span class="ident">sample_spacing</span> : int</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.SyncOptions.sample_spacing"><code class="name">var <span class="ident">sample_spacing</span> : int</code></dt>
 <dd>
 <div class="desc"><p>The desired amount of time in seconds between each sample.</p>
 <p>If <code>None</code>, no re-sampling will be performed.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.SyncOptions.chunk_options"><code class="name">var <span class="ident">chunk_options</span> : <a title="nowcastlib.pipeline.structs.ChunkOptions" href="#nowcastlib.pipeline.structs.ChunkOptions">ChunkOptions</a></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.SyncOptions.chunk_options"><code class="name">var <span class="ident">chunk_options</span> : <a title="nowcastlib.pipeline.structs.config.ChunkOptions" href="#nowcastlib.pipeline.structs.config.ChunkOptions">ChunkOptions</a></code></dt>
 <dd>
 <div class="desc"><p>Configuration options necessary for handling chunking operations.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.SyncOptions.data_output"><code class="name">var <span class="ident">data_output</span> : Union[<a title="nowcastlib.pipeline.structs.SerializationOptions" href="#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.SyncOptions.data_output"><code class="name">var <span class="ident">data_output</span> : Union[<a title="nowcastlib.pipeline.structs.config.SerializationOptions" href="#nowcastlib.pipeline.structs.config.SerializationOptions">SerializationOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for saving the resulting
 synchronized dataframe to disk.</p>
 <p>If <code>None</code>, no serialization of the preprocessing results will be performed.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.SyncOptions.chunks_output"><code class="name">var <span class="ident">chunks_output</span> : Union[<a title="nowcastlib.pipeline.structs.SerializationOptions" href="#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.SyncOptions.chunks_output"><code class="name">var <span class="ident">chunks_output</span> : Union[<a title="nowcastlib.pipeline.structs.config.SerializationOptions" href="#nowcastlib.pipeline.structs.config.SerializationOptions">SerializationOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for saving the detected
 chunk locations to disk. Only 'npy' output_format
 is accepted.</p>
 <p>If <code>None</code>, no serialization of the preprocessing results will be performed.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.SyncOptions.diagnostic_plots"><code class="name">var <span class="ident">diagnostic_plots</span> : bool</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.SyncOptions.diagnostic_plots"><code class="name">var <span class="ident">diagnostic_plots</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>Whether or not to show diagnostic plots, intended to help
 the user in configuration evaluation and decision making.</p></div>
 </dd>
 </dl>
 </dd>
-<dt id="nowcastlib.pipeline.structs.ValidationOptions"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.ValidationOptions"><code class="flex name class">
 <span>class <span class="ident">ValidationOptions</span></span>
 <span>(</span><span>*, train_extent: float = 0.6, val_extent: float = 0.1, iterations: int = 5)</span>
 </code></dt>
@@ -1728,21 +1729,21 @@ configuring model validation</p>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.ValidationOptions.train_extent"><code class="name">var <span class="ident">train_extent</span> : float</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.ValidationOptions.train_extent"><code class="name">var <span class="ident">train_extent</span> : float</code></dt>
 <dd>
 <div class="desc"><p>Percentage of the training data to allocate to training set.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.ValidationOptions.val_extent"><code class="name">var <span class="ident">val_extent</span> : float</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.ValidationOptions.val_extent"><code class="name">var <span class="ident">val_extent</span> : float</code></dt>
 <dd>
 <div class="desc"><p>Percentage of the training data to allocate to the validation set.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.ValidationOptions.iterations"><code class="name">var <span class="ident">iterations</span> : int</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.ValidationOptions.iterations"><code class="name">var <span class="ident">iterations</span> : int</code></dt>
 <dd>
 <div class="desc"><p>How many splits to make. Must be at least 3.</p></div>
 </dd>
 </dl>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DirSerializationOptions"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.DirSerializationOptions"><code class="flex name class">
 <span>class <span class="ident">DirSerializationOptions</span></span>
 <span>(</span><span>*, parent_path: str, overwrite: bool = False, create_parents: bool = False)</span>
 </code></dt>
@@ -1780,28 +1781,28 @@ to specific directories, used for organizing splits</p>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.DirSerializationOptions.parent_path"><code class="name">var <span class="ident">parent_path</span> : str</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.DirSerializationOptions.parent_path"><code class="name">var <span class="ident">parent_path</span> : str</code></dt>
 <dd>
 <div class="desc"><p>The path to the directory where to serialize the resulting splits.
 Within the directory, 2 subdirectories will be created: <code>main_split/</code>
 and <code>cv_split</code>, respectively storing the main split and the cross
 validation split.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DirSerializationOptions.overwrite"><code class="name">var <span class="ident">overwrite</span> : bool</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.DirSerializationOptions.overwrite"><code class="name">var <span class="ident">overwrite</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>Whether to overwrite existing directories and files if they exist
 already. Default <code>False</code></p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DirSerializationOptions.create_parents"><code class="name">var <span class="ident">create_parents</span> : bool</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.DirSerializationOptions.create_parents"><code class="name">var <span class="ident">create_parents</span> : bool</code></dt>
 <dd>
 <div class="desc"><p>Whether parent directories of <code>parent_path</code> should be created
 if they do not exist</p></div>
 </dd>
 </dl>
 </dd>
-<dt id="nowcastlib.pipeline.structs.SplitOptions"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.SplitOptions"><code class="flex name class">
 <span>class <span class="ident">SplitOptions</span></span>
-<span>(</span><span>*, train_split: Union[int, float, str], validation: <a title="nowcastlib.pipeline.structs.ValidationOptions" href="#nowcastlib.pipeline.structs.ValidationOptions">ValidationOptions</a>, output_options: Union[<a title="nowcastlib.pipeline.structs.DirSerializationOptions" href="#nowcastlib.pipeline.structs.DirSerializationOptions">DirSerializationOptions</a>, NoneType] = None)</span>
+<span>(</span><span>*, train_split: Union[int, float, str], validation: <a title="nowcastlib.pipeline.structs.config.ValidationOptions" href="#nowcastlib.pipeline.structs.config.ValidationOptions">ValidationOptions</a>, output_options: Union[<a title="nowcastlib.pipeline.structs.config.DirSerializationOptions" href="#nowcastlib.pipeline.structs.config.DirSerializationOptions">DirSerializationOptions</a>, NoneType] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Struct containing configuration attributes for
@@ -1835,16 +1836,16 @@ model evaluation</p>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.SplitOptions.train_split"><code class="name">var <span class="ident">train_split</span> : Union[int, float, str]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.SplitOptions.train_split"><code class="name">var <span class="ident">train_split</span> : Union[int, float, str]</code></dt>
 <dd>
 <div class="desc"><p>The index, percentage or date to use as the final
 point in the training set. The closest non-nan row will be used.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.SplitOptions.validation"><code class="name">var <span class="ident">validation</span> : <a title="nowcastlib.pipeline.structs.ValidationOptions" href="#nowcastlib.pipeline.structs.ValidationOptions">ValidationOptions</a></code></dt>
+<dt id="nowcastlib.pipeline.structs.config.SplitOptions.validation"><code class="name">var <span class="ident">validation</span> : <a title="nowcastlib.pipeline.structs.config.ValidationOptions" href="#nowcastlib.pipeline.structs.config.ValidationOptions">ValidationOptions</a></code></dt>
 <dd>
 <div class="desc"><p>Configuration options for further splits of the data for validation.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.SplitOptions.output_options"><code class="name">var <span class="ident">output_options</span> : Union[<a title="nowcastlib.pipeline.structs.DirSerializationOptions" href="#nowcastlib.pipeline.structs.DirSerializationOptions">DirSerializationOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.SplitOptions.output_options"><code class="name">var <span class="ident">output_options</span> : Union[<a title="nowcastlib.pipeline.structs.config.DirSerializationOptions" href="#nowcastlib.pipeline.structs.config.DirSerializationOptions">DirSerializationOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for serializing the resulting splits
 in organized directories.</p>
@@ -1852,9 +1853,9 @@ in organized directories.</p>
 </dd>
 </dl>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DataSet"><code class="flex name class">
+<dt id="nowcastlib.pipeline.structs.config.DataSet"><code class="flex name class">
 <span>class <span class="ident">DataSet</span></span>
-<span>(</span><span>*, data_sources: Tuple[<a title="nowcastlib.pipeline.structs.DataSource" href="#nowcastlib.pipeline.structs.DataSource">DataSource</a>, ...], sync_options: Union[<a title="nowcastlib.pipeline.structs.SyncOptions" href="#nowcastlib.pipeline.structs.SyncOptions">SyncOptions</a>, NoneType] = None, split_options: Union[<a title="nowcastlib.pipeline.structs.SplitOptions" href="#nowcastlib.pipeline.structs.SplitOptions">SplitOptions</a>, NoneType] = None, generated_fields: Union[Tuple[<a title="nowcastlib.pipeline.structs.GeneratedField" href="#nowcastlib.pipeline.structs.GeneratedField">GeneratedField</a>], NoneType] = None)</span>
+<span>(</span><span>*, data_sources: Tuple[<a title="nowcastlib.pipeline.structs.config.DataSource" href="#nowcastlib.pipeline.structs.config.DataSource">DataSource</a>, ...], sync_options: Union[<a title="nowcastlib.pipeline.structs.config.SyncOptions" href="#nowcastlib.pipeline.structs.config.SyncOptions">SyncOptions</a>, NoneType] = None, postprocessing_output: Union[<a title="nowcastlib.pipeline.structs.config.SerializationOptions" href="#nowcastlib.pipeline.structs.config.SerializationOptions">SerializationOptions</a>, NoneType] = None, split_options: Union[<a title="nowcastlib.pipeline.structs.config.SplitOptions" href="#nowcastlib.pipeline.structs.config.SplitOptions">SplitOptions</a>, NoneType] = None, generated_fields: Union[Tuple[<a title="nowcastlib.pipeline.structs.config.GeneratedField" href="#nowcastlib.pipeline.structs.config.GeneratedField">GeneratedField</a>], NoneType] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Struct containing configuration attributes for processing
@@ -1880,6 +1881,10 @@ a set of Data Sources</p>
     Configurations options for synchronizing the `data_sources`.
     \nIf `None`, no synchronization will be performed
     &#34;&#34;&#34;
+    postprocessing_output: Optional[SerializationOptions] = attrib(default=None)
+    &#34;&#34;&#34;
+    Configuration options for serializing postprocessing results
+    &#34;&#34;&#34;
     split_options: Optional[SplitOptions] = attrib(default=None)
     &#34;&#34;&#34;
     Configurations options for handling data splitting.
@@ -1893,22 +1898,26 @@ a set of Data Sources</p>
 </details>
 <h3>Class variables</h3>
 <dl>
-<dt id="nowcastlib.pipeline.structs.DataSet.data_sources"><code class="name">var <span class="ident">data_sources</span> : Tuple[<a title="nowcastlib.pipeline.structs.DataSource" href="#nowcastlib.pipeline.structs.DataSource">DataSource</a>, ...]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.DataSet.data_sources"><code class="name">var <span class="ident">data_sources</span> : Tuple[<a title="nowcastlib.pipeline.structs.config.DataSource" href="#nowcastlib.pipeline.structs.config.DataSource">DataSource</a>, ...]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for each of the sources of data we wish
 to process, each originating from a different file.</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DataSet.sync_options"><code class="name">var <span class="ident">sync_options</span> : Union[<a title="nowcastlib.pipeline.structs.SyncOptions" href="#nowcastlib.pipeline.structs.SyncOptions">SyncOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.DataSet.sync_options"><code class="name">var <span class="ident">sync_options</span> : Union[<a title="nowcastlib.pipeline.structs.config.SyncOptions" href="#nowcastlib.pipeline.structs.config.SyncOptions">SyncOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configurations options for synchronizing the <code>data_sources</code>.</p>
 <p>If <code>None</code>, no synchronization will be performed</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DataSet.split_options"><code class="name">var <span class="ident">split_options</span> : Union[<a title="nowcastlib.pipeline.structs.SplitOptions" href="#nowcastlib.pipeline.structs.SplitOptions">SplitOptions</a>, NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.DataSet.postprocessing_output"><code class="name">var <span class="ident">postprocessing_output</span> : Union[<a title="nowcastlib.pipeline.structs.config.SerializationOptions" href="#nowcastlib.pipeline.structs.config.SerializationOptions">SerializationOptions</a>, NoneType]</code></dt>
+<dd>
+<div class="desc"><p>Configuration options for serializing postprocessing results</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.config.DataSet.split_options"><code class="name">var <span class="ident">split_options</span> : Union[<a title="nowcastlib.pipeline.structs.config.SplitOptions" href="#nowcastlib.pipeline.structs.config.SplitOptions">SplitOptions</a>, NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configurations options for handling data splitting.</p>
 <p>If <code>None</code>, no splitting will be performed</p></div>
 </dd>
-<dt id="nowcastlib.pipeline.structs.DataSet.generated_fields"><code class="name">var <span class="ident">generated_fields</span> : Union[Tuple[<a title="nowcastlib.pipeline.structs.GeneratedField" href="#nowcastlib.pipeline.structs.GeneratedField">GeneratedField</a>], NoneType]</code></dt>
+<dt id="nowcastlib.pipeline.structs.config.DataSet.generated_fields"><code class="name">var <span class="ident">generated_fields</span> : Union[Tuple[<a title="nowcastlib.pipeline.structs.config.GeneratedField" href="#nowcastlib.pipeline.structs.config.GeneratedField">GeneratedField</a>], NoneType]</code></dt>
 <dd>
 <div class="desc"><p>Configuration options for adding new fields to the data.</p>
 <p>If <code>None</code>, no new fields will be computed.</p></div>
@@ -1926,177 +1935,178 @@ to process, each originating from a different file.</p></div>
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="nowcastlib.pipeline" href="index.html">nowcastlib.pipeline</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs" href="index.html">nowcastlib.pipeline.structs</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.ConversionOptions" href="#nowcastlib.pipeline.structs.ConversionOptions">ConversionOptions</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.ConversionOptions" href="#nowcastlib.pipeline.structs.config.ConversionOptions">ConversionOptions</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.ConversionOptions.conv_func" href="#nowcastlib.pipeline.structs.ConversionOptions.conv_func">conv_func</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.ConversionOptions.key" href="#nowcastlib.pipeline.structs.ConversionOptions.key">key</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.ConversionOptions.conv_func" href="#nowcastlib.pipeline.structs.config.ConversionOptions.conv_func">conv_func</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.ConversionOptions.key" href="#nowcastlib.pipeline.structs.config.ConversionOptions.key">key</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.PeriodicOptions" href="#nowcastlib.pipeline.structs.PeriodicOptions">PeriodicOptions</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.PeriodicOptions" href="#nowcastlib.pipeline.structs.config.PeriodicOptions">PeriodicOptions</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.PeriodicOptions.period_length" href="#nowcastlib.pipeline.structs.PeriodicOptions.period_length">period_length</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.PeriodicOptions.period_length" href="#nowcastlib.pipeline.structs.config.PeriodicOptions.period_length">period_length</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.OutlierOptions" href="#nowcastlib.pipeline.structs.OutlierOptions">OutlierOptions</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.OutlierOptions" href="#nowcastlib.pipeline.structs.config.OutlierOptions">OutlierOptions</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.OutlierOptions.lower" href="#nowcastlib.pipeline.structs.OutlierOptions.lower">lower</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.OutlierOptions.upper" href="#nowcastlib.pipeline.structs.OutlierOptions.upper">upper</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.OutlierOptions.quantile_based" href="#nowcastlib.pipeline.structs.OutlierOptions.quantile_based">quantile_based</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.OutlierOptions.lower" href="#nowcastlib.pipeline.structs.config.OutlierOptions.lower">lower</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.OutlierOptions.upper" href="#nowcastlib.pipeline.structs.config.OutlierOptions.upper">upper</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.OutlierOptions.quantile_based" href="#nowcastlib.pipeline.structs.config.OutlierOptions.quantile_based">quantile_based</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.SmoothOptions" href="#nowcastlib.pipeline.structs.SmoothOptions">SmoothOptions</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.SmoothOptions" href="#nowcastlib.pipeline.structs.config.SmoothOptions">SmoothOptions</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.SmoothOptions.window_size" href="#nowcastlib.pipeline.structs.SmoothOptions.window_size">window_size</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.SmoothOptions.units" href="#nowcastlib.pipeline.structs.SmoothOptions.units">units</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.SmoothOptions.window_size" href="#nowcastlib.pipeline.structs.config.SmoothOptions.window_size">window_size</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.SmoothOptions.units" href="#nowcastlib.pipeline.structs.config.SmoothOptions.units">units</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.GeneratorFunction" href="#nowcastlib.pipeline.structs.GeneratorFunction">GeneratorFunction</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.GeneratorFunction" href="#nowcastlib.pipeline.structs.config.GeneratorFunction">GeneratorFunction</a></code></h4>
 <ul class="two-column">
-<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.T_SINCE_SUNSET" href="#nowcastlib.pipeline.structs.GeneratorFunction.T_SINCE_SUNSET">T_SINCE_SUNSET</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.SIN_T_SINCE_SUNSET" href="#nowcastlib.pipeline.structs.GeneratorFunction.SIN_T_SINCE_SUNSET">SIN_T_SINCE_SUNSET</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.COS_T_SINCE_SUNSET" href="#nowcastlib.pipeline.structs.GeneratorFunction.COS_T_SINCE_SUNSET">COS_T_SINCE_SUNSET</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.SUN_ELEVATION" href="#nowcastlib.pipeline.structs.GeneratorFunction.SUN_ELEVATION">SUN_ELEVATION</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.SIN_SEC" href="#nowcastlib.pipeline.structs.GeneratorFunction.SIN_SEC">SIN_SEC</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.COS_SEC" href="#nowcastlib.pipeline.structs.GeneratorFunction.COS_SEC">COS_SEC</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.SIN_DAY_YEAR" href="#nowcastlib.pipeline.structs.GeneratorFunction.SIN_DAY_YEAR">SIN_DAY_YEAR</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.COS_DAY_YEAR" href="#nowcastlib.pipeline.structs.GeneratorFunction.COS_DAY_YEAR">COS_DAY_YEAR</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.SIN_DAY_WEEK" href="#nowcastlib.pipeline.structs.GeneratorFunction.SIN_DAY_WEEK">SIN_DAY_WEEK</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.COS_DAY_WEEK" href="#nowcastlib.pipeline.structs.GeneratorFunction.COS_DAY_WEEK">COS_DAY_WEEK</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.SIN_MONTH_YEAR" href="#nowcastlib.pipeline.structs.GeneratorFunction.SIN_MONTH_YEAR">SIN_MONTH_YEAR</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.COS_MONTH_YEAR" href="#nowcastlib.pipeline.structs.GeneratorFunction.COS_MONTH_YEAR">COS_MONTH_YEAR</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.IS_WEEKEND" href="#nowcastlib.pipeline.structs.GeneratorFunction.IS_WEEKEND">IS_WEEKEND</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratorFunction.CUSTOM" href="#nowcastlib.pipeline.structs.GeneratorFunction.CUSTOM">CUSTOM</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratorFunction.T_SINCE_SUNSET" href="#nowcastlib.pipeline.structs.config.GeneratorFunction.T_SINCE_SUNSET">T_SINCE_SUNSET</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratorFunction.SIN_T_SINCE_SUNSET" href="#nowcastlib.pipeline.structs.config.GeneratorFunction.SIN_T_SINCE_SUNSET">SIN_T_SINCE_SUNSET</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratorFunction.COS_T_SINCE_SUNSET" href="#nowcastlib.pipeline.structs.config.GeneratorFunction.COS_T_SINCE_SUNSET">COS_T_SINCE_SUNSET</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratorFunction.SUN_ELEVATION" href="#nowcastlib.pipeline.structs.config.GeneratorFunction.SUN_ELEVATION">SUN_ELEVATION</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratorFunction.SIN_SEC" href="#nowcastlib.pipeline.structs.config.GeneratorFunction.SIN_SEC">SIN_SEC</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratorFunction.COS_SEC" href="#nowcastlib.pipeline.structs.config.GeneratorFunction.COS_SEC">COS_SEC</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratorFunction.SIN_DAY_YEAR" href="#nowcastlib.pipeline.structs.config.GeneratorFunction.SIN_DAY_YEAR">SIN_DAY_YEAR</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratorFunction.COS_DAY_YEAR" href="#nowcastlib.pipeline.structs.config.GeneratorFunction.COS_DAY_YEAR">COS_DAY_YEAR</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratorFunction.SIN_DAY_WEEK" href="#nowcastlib.pipeline.structs.config.GeneratorFunction.SIN_DAY_WEEK">SIN_DAY_WEEK</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratorFunction.COS_DAY_WEEK" href="#nowcastlib.pipeline.structs.config.GeneratorFunction.COS_DAY_WEEK">COS_DAY_WEEK</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratorFunction.SIN_MONTH_YEAR" href="#nowcastlib.pipeline.structs.config.GeneratorFunction.SIN_MONTH_YEAR">SIN_MONTH_YEAR</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratorFunction.COS_MONTH_YEAR" href="#nowcastlib.pipeline.structs.config.GeneratorFunction.COS_MONTH_YEAR">COS_MONTH_YEAR</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratorFunction.IS_WEEKEND" href="#nowcastlib.pipeline.structs.config.GeneratorFunction.IS_WEEKEND">IS_WEEKEND</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratorFunction.CUSTOM" href="#nowcastlib.pipeline.structs.config.GeneratorFunction.CUSTOM">CUSTOM</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.StandardizationMethod" href="#nowcastlib.pipeline.structs.StandardizationMethod">StandardizationMethod</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.StandardizationMethod" href="#nowcastlib.pipeline.structs.config.StandardizationMethod">StandardizationMethod</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.StandardizationMethod.POWER" href="#nowcastlib.pipeline.structs.StandardizationMethod.POWER">POWER</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.StandardizationMethod.ROBUST" href="#nowcastlib.pipeline.structs.StandardizationMethod.ROBUST">ROBUST</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.StandardizationMethod.LOGNORM" href="#nowcastlib.pipeline.structs.StandardizationMethod.LOGNORM">LOGNORM</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.StandardizationMethod.POWER" href="#nowcastlib.pipeline.structs.config.StandardizationMethod.POWER">POWER</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.StandardizationMethod.ROBUST" href="#nowcastlib.pipeline.structs.config.StandardizationMethod.ROBUST">ROBUST</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.StandardizationMethod.LOGNORM" href="#nowcastlib.pipeline.structs.config.StandardizationMethod.LOGNORM">LOGNORM</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.StandardizationOptions" href="#nowcastlib.pipeline.structs.StandardizationOptions">StandardizationOptions</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.StandardizationOptions" href="#nowcastlib.pipeline.structs.config.StandardizationOptions">StandardizationOptions</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.StandardizationOptions.method" href="#nowcastlib.pipeline.structs.StandardizationOptions.method">method</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.StandardizationOptions.diagnostic_plots" href="#nowcastlib.pipeline.structs.StandardizationOptions.diagnostic_plots">diagnostic_plots</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.StandardizationOptions.method" href="#nowcastlib.pipeline.structs.config.StandardizationOptions.method">method</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.StandardizationOptions.diagnostic_plots" href="#nowcastlib.pipeline.structs.config.StandardizationOptions.diagnostic_plots">diagnostic_plots</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.BaseField" href="#nowcastlib.pipeline.structs.BaseField">BaseField</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.BaseField" href="#nowcastlib.pipeline.structs.config.BaseField">BaseField</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.BaseField.std_options" href="#nowcastlib.pipeline.structs.BaseField.std_options">std_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.BaseField.std_options" href="#nowcastlib.pipeline.structs.config.BaseField.std_options">std_options</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.GeneratedField" href="#nowcastlib.pipeline.structs.GeneratedField">GeneratedField</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.GeneratedField" href="#nowcastlib.pipeline.structs.config.GeneratedField">GeneratedField</a></code></h4>
 <ul class="two-column">
-<li><code><a title="nowcastlib.pipeline.structs.GeneratedField.only_if_custom" href="#nowcastlib.pipeline.structs.GeneratedField.only_if_custom">only_if_custom</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratedField.target_name" href="#nowcastlib.pipeline.structs.GeneratedField.target_name">target_name</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratedField.input_fields" href="#nowcastlib.pipeline.structs.GeneratedField.input_fields">input_fields</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratedField.gen_func" href="#nowcastlib.pipeline.structs.GeneratedField.gen_func">gen_func</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratedField.additional_kwargs" href="#nowcastlib.pipeline.structs.GeneratedField.additional_kwargs">additional_kwargs</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.GeneratedField.func_path" href="#nowcastlib.pipeline.structs.GeneratedField.func_path">func_path</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratedField.only_if_custom" href="#nowcastlib.pipeline.structs.config.GeneratedField.only_if_custom">only_if_custom</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratedField.target_name" href="#nowcastlib.pipeline.structs.config.GeneratedField.target_name">target_name</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratedField.input_fields" href="#nowcastlib.pipeline.structs.config.GeneratedField.input_fields">input_fields</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratedField.gen_func" href="#nowcastlib.pipeline.structs.config.GeneratedField.gen_func">gen_func</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratedField.additional_kwargs" href="#nowcastlib.pipeline.structs.config.GeneratedField.additional_kwargs">additional_kwargs</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.GeneratedField.func_path" href="#nowcastlib.pipeline.structs.config.GeneratedField.func_path">func_path</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.ProcessingOptions" href="#nowcastlib.pipeline.structs.ProcessingOptions">ProcessingOptions</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.ProcessingOptions" href="#nowcastlib.pipeline.structs.config.ProcessingOptions">ProcessingOptions</a></code></h4>
 <ul class="two-column">
-<li><code><a title="nowcastlib.pipeline.structs.ProcessingOptions.prevent_overwrite" href="#nowcastlib.pipeline.structs.ProcessingOptions.prevent_overwrite">prevent_overwrite</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.ProcessingOptions.overwrite" href="#nowcastlib.pipeline.structs.ProcessingOptions.overwrite">overwrite</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.ProcessingOptions.outlier_options" href="#nowcastlib.pipeline.structs.ProcessingOptions.outlier_options">outlier_options</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.ProcessingOptions.periodic_options" href="#nowcastlib.pipeline.structs.ProcessingOptions.periodic_options">periodic_options</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.ProcessingOptions.conversion_options" href="#nowcastlib.pipeline.structs.ProcessingOptions.conversion_options">conversion_options</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.ProcessingOptions.smooth_options" href="#nowcastlib.pipeline.structs.ProcessingOptions.smooth_options">smooth_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.ProcessingOptions.prevent_overwrite" href="#nowcastlib.pipeline.structs.config.ProcessingOptions.prevent_overwrite">prevent_overwrite</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.ProcessingOptions.overwrite" href="#nowcastlib.pipeline.structs.config.ProcessingOptions.overwrite">overwrite</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.ProcessingOptions.outlier_options" href="#nowcastlib.pipeline.structs.config.ProcessingOptions.outlier_options">outlier_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.ProcessingOptions.periodic_options" href="#nowcastlib.pipeline.structs.config.ProcessingOptions.periodic_options">periodic_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.ProcessingOptions.conversion_options" href="#nowcastlib.pipeline.structs.config.ProcessingOptions.conversion_options">conversion_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.ProcessingOptions.smooth_options" href="#nowcastlib.pipeline.structs.config.ProcessingOptions.smooth_options">smooth_options</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.RawField" href="#nowcastlib.pipeline.structs.RawField">RawField</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.RawField" href="#nowcastlib.pipeline.structs.config.RawField">RawField</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.RawField.no_processing" href="#nowcastlib.pipeline.structs.RawField.no_processing">no_processing</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.RawField.field_name" href="#nowcastlib.pipeline.structs.RawField.field_name">field_name</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.RawField.is_date" href="#nowcastlib.pipeline.structs.RawField.is_date">is_date</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.RawField.date_format" href="#nowcastlib.pipeline.structs.RawField.date_format">date_format</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.RawField.preprocessing_options" href="#nowcastlib.pipeline.structs.RawField.preprocessing_options">preprocessing_options</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.RawField.postprocessing_options" href="#nowcastlib.pipeline.structs.RawField.postprocessing_options">postprocessing_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.RawField.no_processing" href="#nowcastlib.pipeline.structs.config.RawField.no_processing">no_processing</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.RawField.field_name" href="#nowcastlib.pipeline.structs.config.RawField.field_name">field_name</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.RawField.is_date" href="#nowcastlib.pipeline.structs.config.RawField.is_date">is_date</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.RawField.date_format" href="#nowcastlib.pipeline.structs.config.RawField.date_format">date_format</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.RawField.preprocessing_options" href="#nowcastlib.pipeline.structs.config.RawField.preprocessing_options">preprocessing_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.RawField.postprocessing_options" href="#nowcastlib.pipeline.structs.config.RawField.postprocessing_options">postprocessing_options</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.SerializationOptions" href="#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.SerializationOptions" href="#nowcastlib.pipeline.structs.config.SerializationOptions">SerializationOptions</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.SerializationOptions.output_format" href="#nowcastlib.pipeline.structs.SerializationOptions.output_format">output_format</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.SerializationOptions.output_path" href="#nowcastlib.pipeline.structs.SerializationOptions.output_path">output_path</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.SerializationOptions.output_format" href="#nowcastlib.pipeline.structs.config.SerializationOptions.output_format">output_format</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.SerializationOptions.output_path" href="#nowcastlib.pipeline.structs.config.SerializationOptions.output_path">output_path</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.DataSource" href="#nowcastlib.pipeline.structs.DataSource">DataSource</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.DataSource" href="#nowcastlib.pipeline.structs.config.DataSource">DataSource</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.DataSource.name" href="#nowcastlib.pipeline.structs.DataSource.name">name</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.DataSource.path" href="#nowcastlib.pipeline.structs.DataSource.path">path</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.DataSource.fields" href="#nowcastlib.pipeline.structs.DataSource.fields">fields</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.DataSource.comment_format" href="#nowcastlib.pipeline.structs.DataSource.comment_format">comment_format</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.DataSource.preprocessing_output" href="#nowcastlib.pipeline.structs.DataSource.preprocessing_output">preprocessing_output</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.DataSource.name" href="#nowcastlib.pipeline.structs.config.DataSource.name">name</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.DataSource.path" href="#nowcastlib.pipeline.structs.config.DataSource.path">path</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.DataSource.fields" href="#nowcastlib.pipeline.structs.config.DataSource.fields">fields</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.DataSource.comment_format" href="#nowcastlib.pipeline.structs.config.DataSource.comment_format">comment_format</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.DataSource.preprocessing_output" href="#nowcastlib.pipeline.structs.config.DataSource.preprocessing_output">preprocessing_output</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.ChunkOptions" href="#nowcastlib.pipeline.structs.ChunkOptions">ChunkOptions</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.ChunkOptions" href="#nowcastlib.pipeline.structs.config.ChunkOptions">ChunkOptions</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.ChunkOptions.max_gap_size" href="#nowcastlib.pipeline.structs.ChunkOptions.max_gap_size">max_gap_size</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.ChunkOptions.min_chunk_size" href="#nowcastlib.pipeline.structs.ChunkOptions.min_chunk_size">min_chunk_size</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.ChunkOptions.max_gap_size" href="#nowcastlib.pipeline.structs.config.ChunkOptions.max_gap_size">max_gap_size</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.ChunkOptions.min_chunk_size" href="#nowcastlib.pipeline.structs.config.ChunkOptions.min_chunk_size">min_chunk_size</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.SyncOptions" href="#nowcastlib.pipeline.structs.SyncOptions">SyncOptions</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.SyncOptions" href="#nowcastlib.pipeline.structs.config.SyncOptions">SyncOptions</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.SyncOptions.sample_spacing" href="#nowcastlib.pipeline.structs.SyncOptions.sample_spacing">sample_spacing</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.SyncOptions.chunk_options" href="#nowcastlib.pipeline.structs.SyncOptions.chunk_options">chunk_options</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.SyncOptions.data_output" href="#nowcastlib.pipeline.structs.SyncOptions.data_output">data_output</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.SyncOptions.chunks_output" href="#nowcastlib.pipeline.structs.SyncOptions.chunks_output">chunks_output</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.SyncOptions.diagnostic_plots" href="#nowcastlib.pipeline.structs.SyncOptions.diagnostic_plots">diagnostic_plots</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.SyncOptions.sample_spacing" href="#nowcastlib.pipeline.structs.config.SyncOptions.sample_spacing">sample_spacing</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.SyncOptions.chunk_options" href="#nowcastlib.pipeline.structs.config.SyncOptions.chunk_options">chunk_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.SyncOptions.data_output" href="#nowcastlib.pipeline.structs.config.SyncOptions.data_output">data_output</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.SyncOptions.chunks_output" href="#nowcastlib.pipeline.structs.config.SyncOptions.chunks_output">chunks_output</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.SyncOptions.diagnostic_plots" href="#nowcastlib.pipeline.structs.config.SyncOptions.diagnostic_plots">diagnostic_plots</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.ValidationOptions" href="#nowcastlib.pipeline.structs.ValidationOptions">ValidationOptions</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.ValidationOptions" href="#nowcastlib.pipeline.structs.config.ValidationOptions">ValidationOptions</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.ValidationOptions.train_extent" href="#nowcastlib.pipeline.structs.ValidationOptions.train_extent">train_extent</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.ValidationOptions.val_extent" href="#nowcastlib.pipeline.structs.ValidationOptions.val_extent">val_extent</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.ValidationOptions.iterations" href="#nowcastlib.pipeline.structs.ValidationOptions.iterations">iterations</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.ValidationOptions.train_extent" href="#nowcastlib.pipeline.structs.config.ValidationOptions.train_extent">train_extent</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.ValidationOptions.val_extent" href="#nowcastlib.pipeline.structs.config.ValidationOptions.val_extent">val_extent</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.ValidationOptions.iterations" href="#nowcastlib.pipeline.structs.config.ValidationOptions.iterations">iterations</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.DirSerializationOptions" href="#nowcastlib.pipeline.structs.DirSerializationOptions">DirSerializationOptions</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.DirSerializationOptions" href="#nowcastlib.pipeline.structs.config.DirSerializationOptions">DirSerializationOptions</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.DirSerializationOptions.parent_path" href="#nowcastlib.pipeline.structs.DirSerializationOptions.parent_path">parent_path</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.DirSerializationOptions.overwrite" href="#nowcastlib.pipeline.structs.DirSerializationOptions.overwrite">overwrite</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.DirSerializationOptions.create_parents" href="#nowcastlib.pipeline.structs.DirSerializationOptions.create_parents">create_parents</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.DirSerializationOptions.parent_path" href="#nowcastlib.pipeline.structs.config.DirSerializationOptions.parent_path">parent_path</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.DirSerializationOptions.overwrite" href="#nowcastlib.pipeline.structs.config.DirSerializationOptions.overwrite">overwrite</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.DirSerializationOptions.create_parents" href="#nowcastlib.pipeline.structs.config.DirSerializationOptions.create_parents">create_parents</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.SplitOptions" href="#nowcastlib.pipeline.structs.SplitOptions">SplitOptions</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.SplitOptions" href="#nowcastlib.pipeline.structs.config.SplitOptions">SplitOptions</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.SplitOptions.train_split" href="#nowcastlib.pipeline.structs.SplitOptions.train_split">train_split</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.SplitOptions.validation" href="#nowcastlib.pipeline.structs.SplitOptions.validation">validation</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.SplitOptions.output_options" href="#nowcastlib.pipeline.structs.SplitOptions.output_options">output_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.SplitOptions.train_split" href="#nowcastlib.pipeline.structs.config.SplitOptions.train_split">train_split</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.SplitOptions.validation" href="#nowcastlib.pipeline.structs.config.SplitOptions.validation">validation</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.SplitOptions.output_options" href="#nowcastlib.pipeline.structs.config.SplitOptions.output_options">output_options</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="nowcastlib.pipeline.structs.DataSet" href="#nowcastlib.pipeline.structs.DataSet">DataSet</a></code></h4>
+<h4><code><a title="nowcastlib.pipeline.structs.config.DataSet" href="#nowcastlib.pipeline.structs.config.DataSet">DataSet</a></code></h4>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.structs.DataSet.data_sources" href="#nowcastlib.pipeline.structs.DataSet.data_sources">data_sources</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.DataSet.sync_options" href="#nowcastlib.pipeline.structs.DataSet.sync_options">sync_options</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.DataSet.split_options" href="#nowcastlib.pipeline.structs.DataSet.split_options">split_options</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs.DataSet.generated_fields" href="#nowcastlib.pipeline.structs.DataSet.generated_fields">generated_fields</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.DataSet.data_sources" href="#nowcastlib.pipeline.structs.config.DataSet.data_sources">data_sources</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.DataSet.sync_options" href="#nowcastlib.pipeline.structs.config.DataSet.sync_options">sync_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.DataSet.postprocessing_output" href="#nowcastlib.pipeline.structs.config.DataSet.postprocessing_output">postprocessing_output</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.DataSet.split_options" href="#nowcastlib.pipeline.structs.config.DataSet.split_options">split_options</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.config.DataSet.generated_fields" href="#nowcastlib.pipeline.structs.config.DataSet.generated_fields">generated_fields</a></code></li>
 </ul>
 </li>
 </ul>

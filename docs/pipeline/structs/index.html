@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
-<title>nowcastlib.pipeline.process.preprocess.cli API documentation</title>
-<meta name="description" content="Command-Line interface functionality for preprocessing" />
+<title>nowcastlib.pipeline.structs API documentation</title>
+<meta name="description" content="Module containing custom structures used throughout the pipeline
+submodule." />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -19,100 +20,66 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>nowcastlib.pipeline.process.preprocess.cli</code></h1>
+<h1 class="title">Module <code>nowcastlib.pipeline.structs</code></h1>
 </header>
 <section id="section-intro">
-<p>Command-Line interface functionality for preprocessing</p>
+<p>Module containing custom structures used throughout the pipeline
+submodule.</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;
-Command-Line interface functionality for preprocessing
+Module containing custom structures used throughout the pipeline
+submodule.
 &#34;&#34;&#34;
-import json
-import argparse
-import cattr
-from nowcastlib.pipeline.structs import config
-from nowcastlib.pipeline.process import preprocess
+from typing import Tuple, TypeVar, List, Optional
+import pandas as pd
+import numpy as np
+from . import config
 
 
-def configure_parser(action_object):
-    &#34;&#34;&#34;Configures the subparser for our preprocess command&#34;&#34;&#34;
-    pparser = action_object.add_parser(
-        &#34;preprocess&#34;,
-        description=&#34;Preprocess datasets&#34;,
-        help=&#34;Run `nowcastlib preprocess -h` for further help&#34;,
-        formatter_class=argparse.HelpFormatter,
-    )
-    pparser.add(
-        &#34;-c&#34;,
-        &#34;--config&#34;,
-        required=True,
-        help=&#34;path to JSON file following the DataSet format. See docs for available fields&#34;,
-    )
+SparseData = Tuple[pd.core.frame.DataFrame, np.ndarray]
 
+TrainTestSplit = Tuple[SparseData, SparseData]
+&#34;&#34;&#34;The dataframe and block locations of the train and test sets&#34;&#34;&#34;
 
-def run(args):
-    &#34;&#34;&#34;runs appropriate function based on provided cli args&#34;&#34;&#34;
-    with open(args.config) as json_file:
-        options = json.load(json_file)
-    cattr_cnvrtr = cattr.GenConverter(forbid_extra_keys=True)
-    dataset_config = cattr_cnvrtr.structure(options, config.DataSet)
-    return preprocess.preprocess_dataset(dataset_config)</code></pre>
+IteratedSplit = Tuple[List[SparseData], List[SparseData]]
+&#34;&#34;&#34;List of train data and list of validation data&#34;&#34;&#34;
+
+SplitDataSet = Tuple[TrainTestSplit, IteratedSplit]
+&#34;&#34;&#34;
+The result of splitting a dataset for evaluation and validation:
+&#34;&#34;&#34;</code></pre>
 </details>
 </section>
 <section>
-</section>
-<section>
-</section>
-<section>
-<h2 class="section-title" id="header-functions">Functions</h2>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
 <dl>
-<dt id="nowcastlib.pipeline.process.preprocess.cli.configure_parser"><code class="name flex">
-<span>def <span class="ident">configure_parser</span></span>(<span>action_object)</span>
-</code></dt>
+<dt><code class="name"><a title="nowcastlib.pipeline.structs.config" href="config.html">nowcastlib.pipeline.structs.config</a></code></dt>
 <dd>
-<div class="desc"><p>Configures the subparser for our preprocess command</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def configure_parser(action_object):
-    &#34;&#34;&#34;Configures the subparser for our preprocess command&#34;&#34;&#34;
-    pparser = action_object.add_parser(
-        &#34;preprocess&#34;,
-        description=&#34;Preprocess datasets&#34;,
-        help=&#34;Run `nowcastlib preprocess -h` for further help&#34;,
-        formatter_class=argparse.HelpFormatter,
-    )
-    pparser.add(
-        &#34;-c&#34;,
-        &#34;--config&#34;,
-        required=True,
-        help=&#34;path to JSON file following the DataSet format. See docs for available fields&#34;,
-    )</code></pre>
-</details>
-</dd>
-<dt id="nowcastlib.pipeline.process.preprocess.cli.run"><code class="name flex">
-<span>def <span class="ident">run</span></span>(<span>args)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>runs appropriate function based on provided cli args</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def run(args):
-    &#34;&#34;&#34;runs appropriate function based on provided cli args&#34;&#34;&#34;
-    with open(args.config) as json_file:
-        options = json.load(json_file)
-    cattr_cnvrtr = cattr.GenConverter(forbid_extra_keys=True)
-    dataset_config = cattr_cnvrtr.structure(options, config.DataSet)
-    return preprocess.preprocess_dataset(dataset_config)</code></pre>
-</details>
+<div class="desc"><p>Structs to aid with configuration …</p></div>
 </dd>
 </dl>
+</section>
+<section>
+<h2 class="section-title" id="header-variables">Global variables</h2>
+<dl>
+<dt id="nowcastlib.pipeline.structs.TrainTestSplit"><code class="name">var <span class="ident">TrainTestSplit</span></code></dt>
+<dd>
+<div class="desc"><p>The dataframe and block locations of the train and test sets</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.IteratedSplit"><code class="name">var <span class="ident">IteratedSplit</span></code></dt>
+<dd>
+<div class="desc"><p>List of train data and list of validation data</p></div>
+</dd>
+<dt id="nowcastlib.pipeline.structs.SplitDataSet"><code class="name">var <span class="ident">SplitDataSet</span></code></dt>
+<dd>
+<div class="desc"><p>The result of splitting a dataset for evaluation and validation:</p></div>
+</dd>
+</dl>
+</section>
+<section>
 </section>
 <section>
 </section>
@@ -125,13 +92,19 @@ def run(args):
 <ul id="index">
 <li><h3>Super-module</h3>
 <ul>
-<li><code><a title="nowcastlib.pipeline.process.preprocess" href="index.html">nowcastlib.pipeline.process.preprocess</a></code></li>
+<li><code><a title="nowcastlib.pipeline" href="../index.html">nowcastlib.pipeline</a></code></li>
 </ul>
 </li>
-<li><h3><a href="#header-functions">Functions</a></h3>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="nowcastlib.pipeline.structs.config" href="config.html">nowcastlib.pipeline.structs.config</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-variables">Global variables</a></h3>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.process.preprocess.cli.configure_parser" href="#nowcastlib.pipeline.process.preprocess.cli.configure_parser">configure_parser</a></code></li>
-<li><code><a title="nowcastlib.pipeline.process.preprocess.cli.run" href="#nowcastlib.pipeline.process.preprocess.cli.run">run</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.TrainTestSplit" href="#nowcastlib.pipeline.structs.TrainTestSplit">TrainTestSplit</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.IteratedSplit" href="#nowcastlib.pipeline.structs.IteratedSplit">IteratedSplit</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs.SplitDataSet" href="#nowcastlib.pipeline.structs.SplitDataSet">SplitDataSet</a></code></li>
 </ul>
 </li>
 </ul>

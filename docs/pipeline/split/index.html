@@ -30,22 +30,60 @@
 <pre><code class="python">&#34;&#34;&#34;
 Functions for splitting data
 &#34;&#34;&#34;
-from typing import Optional, Tuple
+import logging
+import pathlib
+from typing import Optional, Tuple, List
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import TimeSeriesSplit
 from nowcastlib.pipeline import structs
-import nowcastlib.datasets as datasets
+from nowcastlib.pipeline import sync
+from nowcastlib import datasets
+
+
+logger = logging.getLogger(__name__)
+
+
+def serialize_splits(
+    config,
+    outer_split_data: structs.TrainTestSplit,
+    inner_split_data: structs.IteratedSplit,
+):
+    &#34;&#34;&#34;
+    Creates directory structure and serializes
+    the dataframes as chunks to hdf5 files
+    &#34;&#34;&#34;
+    logger.info(&#34;Serializing splits...&#34;)
+    parent_dir = pathlib.Path(config.parent_path)
+    parent_dir.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
+    # outer split
+    main_split = parent_dir / &#34;main_split&#34;
+    main_split.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
+    # destructuring
+    train_data, test_data = outer_split_data
+    datasets.serialize_as_chunks(main_split / &#34;train_data.hdf5&#34;, *train_data)
+    datasets.serialize_as_chunks(main_split / &#34;test_data.hdf5&#34;, *test_data)
+    # inner splits
+    cv_split = parent_dir / &#34;cv_split&#34;
+    cv_split.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
+    # destructuring
+    val_train_data, val_test_data = inner_split_data
+    for i, (train_tuple, test_tuple) in enumerate(zip(val_train_data, val_test_data)):
+        # TODO pass chunk locations so we can do *train_tuple instead of train_tuple[0]
+        datasets.serialize_as_chunks(
+            cv_split / &#34;train_data_{}.hdf5&#34;.format(i + 1), train_tuple[0]
+        )
+        datasets.serialize_as_chunks(
+            cv_split / &#34;val_data_{}.hdf5&#34;.format(i + 1), test_tuple[0]
+        )
+    logger.info(&#34;Split serialization complete.&#34;)
 
 
 def train_test_split_sparse(
     sparse_df: pd.core.frame.DataFrame,
-    config: structs.SplitOptions,
+    config: structs.config.SplitOptions,
     chunk_locations: Optional[np.ndarray] = None,
-) -&gt; Tuple[
-    Tuple[pd.core.frame.DataFrame, np.ndarray],
-    Tuple[pd.core.frame.DataFrame, np.ndarray],
-]:
+) -&gt; structs.TrainTestSplit:
     &#34;&#34;&#34;
     Splits a sparse dataframe in train and test sets
 
@@ -53,7 +91,7 @@ def train_test_split_sparse(
     ---------
     sparse_df : pandas.core.frame.DataFrame
         The DataFrame we wish to split into train and test sets
-    config : structs.SplitOptions
+    config : structs.config.SplitOptions
         config options for determining where to split our datasets
     block_locs : numpy.ndarray, default None
 
@@ -96,10 +134,10 @@ def train_test_split_sparse(
 
 
 def rep_holdout_split_sparse(
+    config: structs.config.ValidationOptions,
     sparse_df: pd.core.frame.DataFrame,
-    config: structs.ValidationOptions,
     chunk_locations: Optional[np.ndarray] = None,
-):
+) -&gt; structs.IteratedSplit:
     &#34;&#34;&#34;
     Splits a sparse dataframe in k train and validation sets
     for repeated holdout. Split is approximate due to sparse
@@ -111,24 +149,133 @@ def rep_holdout_split_sparse(
         max_train_size=int(config.train_extent * n_samples),
         test_size=int(config.val_extent * n_samples),
     )
-    train_dfs = []
-    val_dfs = []
+    train_data: List[structs.SparseData] = []
+    val_data: List[structs.SparseData] = []
     for train_idxs, val_idxs in tscv.split(sparse_df):
-        train_dfs.append(sparse_df.iloc[train_idxs])
-        val_dfs.append(sparse_df.iloc[val_idxs])
-    return train_dfs, val_dfs
-    # TODO update and return chunk_locations</code></pre>
+        train_data.append((sparse_df.iloc[train_idxs], np.empty((1, 2))))
+        val_data.append((sparse_df.iloc[val_idxs], np.empty((1, 2))))
+    return train_data, val_data
+    # TODO update and return chunk_locations, instead of np.empty()
+
+
+def split_dataset(
+    config: structs.config.DataSet,
+    sparse_data: Optional[structs.SparseData] = None,
+) -&gt; structs.SplitDataSet:
+    &#34;&#34;&#34;
+    Splits dataset into train and test sets. Then splits train set into
+    train and validation sets for cross validation.
+
+    Parameters
+    ----------
+    config: structs.config.DataSet
+        data set configuration options instance
+    sparse_data: tuple of [pandas.core.frame.DataFrame, numpy.ndarray], default `None`
+        The sparse dataframe to split and the array of start and end
+        indices of the contiguous chunks of data in the dataframe.
+        \nIf `None`, DataSet synchronization will be performed to obtain
+        the sparse dataframe.
+
+    Returns
+    -------
+    outer_split : structs.TrainTestSplit
+        Tuple of length 2 containing the outer split data.
+        \nThe first element is a tuple with the training data (df and chunk locations),
+        \nthe second element is a tuple with the testing data (df and chunk locations)
+    inner_split : structs.IteratedSplit
+        Tuple of length 2 containing the inner split data.
+        \nThe first element is a list of tuples with the training data
+        (df and chunk locations),
+        \nthe second element is a list of tuples with the validation data
+        (df and chunk locations)
+        \nThe lists will have as many elements as the number of CV folds.
+
+    &#34;&#34;&#34;
+    assert (
+        config.split_options is not None
+    ), &#34;`config.split_options` must be defined to perform splitting&#34;
+    # will perform dataset synchronization if sparse_data is not provided
+    if sparse_data is None:
+        chunked_df, chunk_locs = sync.synchronize_dataset(config)
+    else:
+        chunked_df = sparse_data[0].copy()
+        chunk_locs = sparse_data[1].copy()
+    logger.info(&#34;Splitting dataset...&#34;)
+    logger.debug(&#34;Performing outer split...&#34;)
+    # outer train and test split
+    outer_train_data, outer_test_data = train_test_split_sparse(
+        chunked_df, config.split_options, chunk_locs
+    )
+    logger.debug(&#34;Performing inner split...&#34;)
+    # inner train and validation split(s)
+    inner_train_data, inner_val_data = rep_holdout_split_sparse(
+        config.split_options.validation, *outer_train_data
+    )
+    logger.info(&#34;Dataset splitting complete...&#34;)
+    return (outer_train_data, outer_test_data), (inner_train_data, inner_val_data)</code></pre>
 </details>
 </section>
 <section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="nowcastlib.pipeline.split.cli" href="cli.html">nowcastlib.pipeline.split.cli</a></code></dt>
+<dd>
+<div class="desc"><p>Command-Line interface functionality for splitting and related processes</p></div>
+</dd>
+</dl>
 </section>
 <section>
 </section>
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="nowcastlib.pipeline.split.serialize_splits"><code class="name flex">
+<span>def <span class="ident">serialize_splits</span></span>(<span>config, outer_split_data: Tuple[Tuple[pandas.core.frame.DataFrame, numpy.ndarray], Tuple[pandas.core.frame.DataFrame, numpy.ndarray]], inner_split_data: Tuple[List[Tuple[pandas.core.frame.DataFrame, numpy.ndarray]], List[Tuple[pandas.core.frame.DataFrame, numpy.ndarray]]])</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Creates directory structure and serializes
+the dataframes as chunks to hdf5 files</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def serialize_splits(
+    config,
+    outer_split_data: structs.TrainTestSplit,
+    inner_split_data: structs.IteratedSplit,
+):
+    &#34;&#34;&#34;
+    Creates directory structure and serializes
+    the dataframes as chunks to hdf5 files
+    &#34;&#34;&#34;
+    logger.info(&#34;Serializing splits...&#34;)
+    parent_dir = pathlib.Path(config.parent_path)
+    parent_dir.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
+    # outer split
+    main_split = parent_dir / &#34;main_split&#34;
+    main_split.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
+    # destructuring
+    train_data, test_data = outer_split_data
+    datasets.serialize_as_chunks(main_split / &#34;train_data.hdf5&#34;, *train_data)
+    datasets.serialize_as_chunks(main_split / &#34;test_data.hdf5&#34;, *test_data)
+    # inner splits
+    cv_split = parent_dir / &#34;cv_split&#34;
+    cv_split.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
+    # destructuring
+    val_train_data, val_test_data = inner_split_data
+    for i, (train_tuple, test_tuple) in enumerate(zip(val_train_data, val_test_data)):
+        # TODO pass chunk locations so we can do *train_tuple instead of train_tuple[0]
+        datasets.serialize_as_chunks(
+            cv_split / &#34;train_data_{}.hdf5&#34;.format(i + 1), train_tuple[0]
+        )
+        datasets.serialize_as_chunks(
+            cv_split / &#34;val_data_{}.hdf5&#34;.format(i + 1), test_tuple[0]
+        )
+    logger.info(&#34;Split serialization complete.&#34;)</code></pre>
+</details>
+</dd>
 <dt id="nowcastlib.pipeline.split.train_test_split_sparse"><code class="name flex">
-<span>def <span class="ident">train_test_split_sparse</span></span>(<span>sparse_df: pandas.core.frame.DataFrame, config: <a title="nowcastlib.pipeline.structs.SplitOptions" href="../structs.html#nowcastlib.pipeline.structs.SplitOptions">SplitOptions</a>, chunk_locations: Union[numpy.ndarray, NoneType] = None) ‑> Tuple[Tuple[pandas.core.frame.DataFrame, numpy.ndarray], Tuple[pandas.core.frame.DataFrame, numpy.ndarray]]</span>
+<span>def <span class="ident">train_test_split_sparse</span></span>(<span>sparse_df: pandas.core.frame.DataFrame, config: <a title="nowcastlib.pipeline.structs.config.SplitOptions" href="../structs/config.html#nowcastlib.pipeline.structs.config.SplitOptions">SplitOptions</a>, chunk_locations: Union[numpy.ndarray, NoneType] = None) ‑> Tuple[Tuple[pandas.core.frame.DataFrame, numpy.ndarray], Tuple[pandas.core.frame.DataFrame, numpy.ndarray]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Splits a sparse dataframe in train and test sets</p>
@@ -136,7 +283,7 @@ def rep_holdout_split_sparse(
 <dl>
 <dt><strong><code>sparse_df</code></strong> :&ensp;<code>pandas.core.frame.DataFrame</code></dt>
 <dd>The DataFrame we wish to split into train and test sets</dd>
-<dt><strong><code>config</code></strong> :&ensp;<code>structs.SplitOptions</code></dt>
+<dt><strong><code>config</code></strong> :&ensp;<code>structs.config.SplitOptions</code></dt>
 <dd>config options for determining where to split our datasets</dd>
 <dt><strong><code>block_locs</code></strong> :&ensp;<code>numpy.ndarray</code>, default <code>None</code></dt>
 <dd>&nbsp;</dd>
@@ -158,12 +305,9 @@ is the updated accompanying <code>block_locs</code>.</dd>
 </summary>
 <pre><code class="python">def train_test_split_sparse(
     sparse_df: pd.core.frame.DataFrame,
-    config: structs.SplitOptions,
+    config: structs.config.SplitOptions,
     chunk_locations: Optional[np.ndarray] = None,
-) -&gt; Tuple[
-    Tuple[pd.core.frame.DataFrame, np.ndarray],
-    Tuple[pd.core.frame.DataFrame, np.ndarray],
-]:
+) -&gt; structs.TrainTestSplit:
     &#34;&#34;&#34;
     Splits a sparse dataframe in train and test sets
 
@@ -171,7 +315,7 @@ is the updated accompanying <code>block_locs</code>.</dd>
     ---------
     sparse_df : pandas.core.frame.DataFrame
         The DataFrame we wish to split into train and test sets
-    config : structs.SplitOptions
+    config : structs.config.SplitOptions
         config options for determining where to split our datasets
     block_locs : numpy.ndarray, default None
 
@@ -214,7 +358,7 @@ is the updated accompanying <code>block_locs</code>.</dd>
 </details>
 </dd>
 <dt id="nowcastlib.pipeline.split.rep_holdout_split_sparse"><code class="name flex">
-<span>def <span class="ident">rep_holdout_split_sparse</span></span>(<span>sparse_df: pandas.core.frame.DataFrame, config: <a title="nowcastlib.pipeline.structs.ValidationOptions" href="../structs.html#nowcastlib.pipeline.structs.ValidationOptions">ValidationOptions</a>, chunk_locations: Union[numpy.ndarray, NoneType] = None)</span>
+<span>def <span class="ident">rep_holdout_split_sparse</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.config.ValidationOptions" href="../structs/config.html#nowcastlib.pipeline.structs.config.ValidationOptions">ValidationOptions</a>, sparse_df: pandas.core.frame.DataFrame, chunk_locations: Union[numpy.ndarray, NoneType] = None) ‑> Tuple[List[Tuple[pandas.core.frame.DataFrame, numpy.ndarray]], List[Tuple[pandas.core.frame.DataFrame, numpy.ndarray]]]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Splits a sparse dataframe in k train and validation sets
@@ -225,10 +369,10 @@ for repeated holdout. Split is approximate due to sparse
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def rep_holdout_split_sparse(
+    config: structs.config.ValidationOptions,
     sparse_df: pd.core.frame.DataFrame,
-    config: structs.ValidationOptions,
     chunk_locations: Optional[np.ndarray] = None,
-):
+) -&gt; structs.IteratedSplit:
     &#34;&#34;&#34;
     Splits a sparse dataframe in k train and validation sets
     for repeated holdout. Split is approximate due to sparse
@@ -240,12 +384,103 @@ for repeated holdout. Split is approximate due to sparse
         max_train_size=int(config.train_extent * n_samples),
         test_size=int(config.val_extent * n_samples),
     )
-    train_dfs = []
-    val_dfs = []
+    train_data: List[structs.SparseData] = []
+    val_data: List[structs.SparseData] = []
     for train_idxs, val_idxs in tscv.split(sparse_df):
-        train_dfs.append(sparse_df.iloc[train_idxs])
-        val_dfs.append(sparse_df.iloc[val_idxs])
-    return train_dfs, val_dfs</code></pre>
+        train_data.append((sparse_df.iloc[train_idxs], np.empty((1, 2))))
+        val_data.append((sparse_df.iloc[val_idxs], np.empty((1, 2))))
+    return train_data, val_data</code></pre>
+</details>
+</dd>
+<dt id="nowcastlib.pipeline.split.split_dataset"><code class="name flex">
+<span>def <span class="ident">split_dataset</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.config.DataSet" href="../structs/config.html#nowcastlib.pipeline.structs.config.DataSet">DataSet</a>, sparse_data: Union[Tuple[pandas.core.frame.DataFrame, numpy.ndarray], NoneType] = None) ‑> Tuple[Tuple[Tuple[pandas.core.frame.DataFrame, numpy.ndarray], Tuple[pandas.core.frame.DataFrame, numpy.ndarray]], Tuple[List[Tuple[pandas.core.frame.DataFrame, numpy.ndarray]], List[Tuple[pandas.core.frame.DataFrame, numpy.ndarray]]]]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Splits dataset into train and test sets. Then splits train set into
+train and validation sets for cross validation.</p>
+<pre><code>Parameters
+----------
+config: structs.config.DataSet
+    data set configuration options instance
+sparse_data: tuple of [pandas.core.frame.DataFrame, numpy.ndarray], default &lt;code&gt;None&lt;/code&gt;
+    The sparse dataframe to split and the array of start and end
+    indices of the contiguous chunks of data in the dataframe.
+</code></pre>
+<p>If <code>None</code>, DataSet synchronization will be performed to obtain
+the sparse dataframe.</p>
+<pre><code>Returns
+-------
+outer_split : structs.TrainTestSplit
+    Tuple of length 2 containing the outer split data.
+</code></pre>
+<p>The first element is a tuple with the training data (df and chunk locations),</p>
+<p>the second element is a tuple with the testing data (df and chunk locations)
+inner_split : structs.IteratedSplit
+Tuple of length 2 containing the inner split data.</p>
+<p>The first element is a list of tuples with the training data
+(df and chunk locations),</p>
+<p>the second element is a list of tuples with the validation data
+(df and chunk locations)</p>
+<p>The lists will have as many elements as the number of CV folds.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def split_dataset(
+    config: structs.config.DataSet,
+    sparse_data: Optional[structs.SparseData] = None,
+) -&gt; structs.SplitDataSet:
+    &#34;&#34;&#34;
+    Splits dataset into train and test sets. Then splits train set into
+    train and validation sets for cross validation.
+
+    Parameters
+    ----------
+    config: structs.config.DataSet
+        data set configuration options instance
+    sparse_data: tuple of [pandas.core.frame.DataFrame, numpy.ndarray], default `None`
+        The sparse dataframe to split and the array of start and end
+        indices of the contiguous chunks of data in the dataframe.
+        \nIf `None`, DataSet synchronization will be performed to obtain
+        the sparse dataframe.
+
+    Returns
+    -------
+    outer_split : structs.TrainTestSplit
+        Tuple of length 2 containing the outer split data.
+        \nThe first element is a tuple with the training data (df and chunk locations),
+        \nthe second element is a tuple with the testing data (df and chunk locations)
+    inner_split : structs.IteratedSplit
+        Tuple of length 2 containing the inner split data.
+        \nThe first element is a list of tuples with the training data
+        (df and chunk locations),
+        \nthe second element is a list of tuples with the validation data
+        (df and chunk locations)
+        \nThe lists will have as many elements as the number of CV folds.
+
+    &#34;&#34;&#34;
+    assert (
+        config.split_options is not None
+    ), &#34;`config.split_options` must be defined to perform splitting&#34;
+    # will perform dataset synchronization if sparse_data is not provided
+    if sparse_data is None:
+        chunked_df, chunk_locs = sync.synchronize_dataset(config)
+    else:
+        chunked_df = sparse_data[0].copy()
+        chunk_locs = sparse_data[1].copy()
+    logger.info(&#34;Splitting dataset...&#34;)
+    logger.debug(&#34;Performing outer split...&#34;)
+    # outer train and test split
+    outer_train_data, outer_test_data = train_test_split_sparse(
+        chunked_df, config.split_options, chunk_locs
+    )
+    logger.debug(&#34;Performing inner split...&#34;)
+    # inner train and validation split(s)
+    inner_train_data, inner_val_data = rep_holdout_split_sparse(
+        config.split_options.validation, *outer_train_data
+    )
+    logger.info(&#34;Dataset splitting complete...&#34;)
+    return (outer_train_data, outer_test_data), (inner_train_data, inner_val_data)</code></pre>
 </details>
 </dd>
 </dl>
@@ -264,10 +499,17 @@ for repeated holdout. Split is approximate due to sparse
 <li><code><a title="nowcastlib.pipeline" href="../index.html">nowcastlib.pipeline</a></code></li>
 </ul>
 </li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="nowcastlib.pipeline.split.cli" href="cli.html">nowcastlib.pipeline.split.cli</a></code></li>
+</ul>
+</li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="nowcastlib.pipeline.split.serialize_splits" href="#nowcastlib.pipeline.split.serialize_splits">serialize_splits</a></code></li>
 <li><code><a title="nowcastlib.pipeline.split.train_test_split_sparse" href="#nowcastlib.pipeline.split.train_test_split_sparse">train_test_split_sparse</a></code></li>
 <li><code><a title="nowcastlib.pipeline.split.rep_holdout_split_sparse" href="#nowcastlib.pipeline.split.rep_holdout_split_sparse">rep_holdout_split_sparse</a></code></li>
+<li><code><a title="nowcastlib.pipeline.split.split_dataset" href="#nowcastlib.pipeline.split.split_dataset">split_dataset</a></code></li>
 </ul>
 </li>
 </ul>

@@ -31,7 +31,60 @@
 from typing import Union, Type, Any
 import pandas as pd
 import numpy as np
-from nowcastlib.pipeline import structs
+import attr
+import cattr
+from nowcastlib.pipeline.structs import config
+
+cattr_cnvrtr = cattr.GenConverter(forbid_extra_keys=True)
+
+
+def build_field_name(options: config.ProcessingOptions, field_name: str):
+    &#34;&#34;&#34;
+    Builds the appropriate field name depending on whether
+    the user wishes to overwrite the current field or not
+
+    Parameters
+    ----------
+    options : nowcastlib.pipeline.structs.config.ProcessingOptions
+    field_name : str
+        the name of the current field we are acting on
+
+    Returns
+    -------
+    str
+        the resulting string
+    &#34;&#34;&#34;
+    if options.overwrite:
+        computed_field_name = field_name
+    else:
+        computed_field_name = &#34;processed_{}&#34;.format(field_name)
+    return computed_field_name
+
+
+def rename_protected_field(field: config.RawField) -&gt; config.RawField:
+    &#34;&#34;&#34;
+    Renames overwrite-protected fields so to obtain a list of fields that
+    are overwrite-able
+    &#34;&#34;&#34;
+    if field.preprocessing_options is not None:
+        if field.preprocessing_options.overwrite is False:
+            correct_name = build_field_name(
+                field.preprocessing_options, field.field_name
+            )
+            return cattr.structure(
+                {
+                    &#34;field_name&#34;: correct_name,
+                    **attr.asdict(
+                        field,
+                        filter=lambda attrib, _: attrib.name != &#34;field_name&#34;,
+                    ),
+                },
+                config.RawField,
+            )
+        else:
+            return field
+    else:
+        return field
 
 
 def disambiguate_intfloatstr(train_split: Any, _klass: Type) -&gt; Union[int, float, str]:
@@ -48,20 +101,20 @@ def disambiguate_intfloatstr(train_split: Any, _klass: Type) -&gt; Union[int, fl
 
 def handle_serialization(
     data: Union[pd.core.frame.DataFrame, np.ndarray],
-    config: structs.SerializationOptions,
+    options: config.SerializationOptions,
 ):
     &#34;&#34;&#34;
     Serializes a given dataframe or numpy array
     to disk in the appropriate format
     &#34;&#34;&#34;
     if isinstance(data, pd.core.frame.DataFrame):
-        if config.output_format == &#34;csv&#34;:
-            data.to_csv(config.output_path, float_format=&#34;%g&#34;)
-        elif config.output_format == &#34;pickle&#34;:
-            data.to_pickle(config.output_path)
+        if options.output_format == &#34;csv&#34;:
+            data.to_csv(options.output_path, float_format=&#34;%g&#34;)
+        elif options.output_format == &#34;pickle&#34;:
+            data.to_pickle(options.output_path)
     else:
-        if config.output_format == &#34;npy&#34;:
-            np.save(config.output_path, data)
+        if options.output_format == &#34;npy&#34;:
+            np.save(options.output_path, data)
 
 
 def yes_or_no(question):
@@ -86,6 +139,87 @@ def yes_or_no(question):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="nowcastlib.pipeline.utils.build_field_name"><code class="name flex">
+<span>def <span class="ident">build_field_name</span></span>(<span>options: <a title="nowcastlib.pipeline.structs.config.ProcessingOptions" href="structs/config.html#nowcastlib.pipeline.structs.config.ProcessingOptions">ProcessingOptions</a>, field_name: str)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Builds the appropriate field name depending on whether
+the user wishes to overwrite the current field or not</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>options</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.config.ProcessingOptions" href="structs/config.html#nowcastlib.pipeline.structs.config.ProcessingOptions">ProcessingOptions</a></code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>field_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>the name of the current field we are acting on</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>the resulting string</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def build_field_name(options: config.ProcessingOptions, field_name: str):
+    &#34;&#34;&#34;
+    Builds the appropriate field name depending on whether
+    the user wishes to overwrite the current field or not
+
+    Parameters
+    ----------
+    options : nowcastlib.pipeline.structs.config.ProcessingOptions
+    field_name : str
+        the name of the current field we are acting on
+
+    Returns
+    -------
+    str
+        the resulting string
+    &#34;&#34;&#34;
+    if options.overwrite:
+        computed_field_name = field_name
+    else:
+        computed_field_name = &#34;processed_{}&#34;.format(field_name)
+    return computed_field_name</code></pre>
+</details>
+</dd>
+<dt id="nowcastlib.pipeline.utils.rename_protected_field"><code class="name flex">
+<span>def <span class="ident">rename_protected_field</span></span>(<span>field: <a title="nowcastlib.pipeline.structs.config.RawField" href="structs/config.html#nowcastlib.pipeline.structs.config.RawField">RawField</a>) ‑> <a title="nowcastlib.pipeline.structs.config.RawField" href="structs/config.html#nowcastlib.pipeline.structs.config.RawField">RawField</a></span>
+</code></dt>
+<dd>
+<div class="desc"><p>Renames overwrite-protected fields so to obtain a list of fields that
+are overwrite-able</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rename_protected_field(field: config.RawField) -&gt; config.RawField:
+    &#34;&#34;&#34;
+    Renames overwrite-protected fields so to obtain a list of fields that
+    are overwrite-able
+    &#34;&#34;&#34;
+    if field.preprocessing_options is not None:
+        if field.preprocessing_options.overwrite is False:
+            correct_name = build_field_name(
+                field.preprocessing_options, field.field_name
+            )
+            return cattr.structure(
+                {
+                    &#34;field_name&#34;: correct_name,
+                    **attr.asdict(
+                        field,
+                        filter=lambda attrib, _: attrib.name != &#34;field_name&#34;,
+                    ),
+                },
+                config.RawField,
+            )
+        else:
+            return field
+    else:
+        return field</code></pre>
+</details>
+</dd>
 <dt id="nowcastlib.pipeline.utils.disambiguate_intfloatstr"><code class="name flex">
 <span>def <span class="ident">disambiguate_intfloatstr</span></span>(<span>train_split: Any, _klass: Type) ‑> Union[int, float, str]</span>
 </code></dt>
@@ -108,7 +242,7 @@ def yes_or_no(question):
 </details>
 </dd>
 <dt id="nowcastlib.pipeline.utils.handle_serialization"><code class="name flex">
-<span>def <span class="ident">handle_serialization</span></span>(<span>data: Union[pandas.core.frame.DataFrame, numpy.ndarray], config: <a title="nowcastlib.pipeline.structs.SerializationOptions" href="structs.html#nowcastlib.pipeline.structs.SerializationOptions">SerializationOptions</a>)</span>
+<span>def <span class="ident">handle_serialization</span></span>(<span>data: Union[pandas.core.frame.DataFrame, numpy.ndarray], options: <a title="nowcastlib.pipeline.structs.config.SerializationOptions" href="structs/config.html#nowcastlib.pipeline.structs.config.SerializationOptions">SerializationOptions</a>)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Serializes a given dataframe or numpy array
@@ -119,20 +253,20 @@ to disk in the appropriate format</p></div>
 </summary>
 <pre><code class="python">def handle_serialization(
     data: Union[pd.core.frame.DataFrame, np.ndarray],
-    config: structs.SerializationOptions,
+    options: config.SerializationOptions,
 ):
     &#34;&#34;&#34;
     Serializes a given dataframe or numpy array
     to disk in the appropriate format
     &#34;&#34;&#34;
     if isinstance(data, pd.core.frame.DataFrame):
-        if config.output_format == &#34;csv&#34;:
-            data.to_csv(config.output_path, float_format=&#34;%g&#34;)
-        elif config.output_format == &#34;pickle&#34;:
-            data.to_pickle(config.output_path)
+        if options.output_format == &#34;csv&#34;:
+            data.to_csv(options.output_path, float_format=&#34;%g&#34;)
+        elif options.output_format == &#34;pickle&#34;:
+            data.to_pickle(options.output_path)
     else:
-        if config.output_format == &#34;npy&#34;:
-            np.save(config.output_path, data)</code></pre>
+        if options.output_format == &#34;npy&#34;:
+            np.save(options.output_path, data)</code></pre>
 </details>
 </dd>
 <dt id="nowcastlib.pipeline.utils.yes_or_no"><code class="name flex">
@@ -178,6 +312,8 @@ accordingly.</p></div>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="nowcastlib.pipeline.utils.build_field_name" href="#nowcastlib.pipeline.utils.build_field_name">build_field_name</a></code></li>
+<li><code><a title="nowcastlib.pipeline.utils.rename_protected_field" href="#nowcastlib.pipeline.utils.rename_protected_field">rename_protected_field</a></code></li>
 <li><code><a title="nowcastlib.pipeline.utils.disambiguate_intfloatstr" href="#nowcastlib.pipeline.utils.disambiguate_intfloatstr">disambiguate_intfloatstr</a></code></li>
 <li><code><a title="nowcastlib.pipeline.utils.handle_serialization" href="#nowcastlib.pipeline.utils.handle_serialization">handle_serialization</a></code></li>
 <li><code><a title="nowcastlib.pipeline.utils.yes_or_no" href="#nowcastlib.pipeline.utils.yes_or_no">yes_or_no</a></code></li>

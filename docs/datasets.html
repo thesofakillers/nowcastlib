@@ -381,20 +381,23 @@ def make_chunks(input_df, chunk_locations=None):
     return blocks
 
 
-def serialize_as_chunks(chunked_df, path):
+def serialize_as_chunks(path, chunked_df, chunk_locations=None):
     &#34;&#34;&#34;
     Serializes a sparse dataframe as contiguous
     chunks into an hdf5 file
 
     Parameters
     ----------
-    chunked_df : pandas.core.frame.DataFrame
-        the dataframe we wish to serialize as chunks
     path : pathlib.PosixPath
         the path to which we wish to save our hdf5 file,
         including the file name and extension
+    chunked_df : pandas.core.frame.DataFrame
+        the dataframe we wish to serialize as chunks
+    chunk_locations : np.ndarray, default None
+        2D numpy array with the pre-computed chunk start
+        and end indices. Shape is (-1, 2). Optional.
     &#34;&#34;&#34;
-    chunks = make_chunks(chunked_df)
+    chunks = make_chunks(chunked_df, chunk_locations)
     hdfs = pd.HDFStore(str(path))
     for i, chunk in enumerate(chunks):
         chunk.to_hdf(hdfs, &#34;chunk_{:d}&#34;.format(i), format=&#34;table&#34;)</code></pre>
@@ -996,37 +999,43 @@ original</dd>
 </details>
 </dd>
 <dt id="nowcastlib.datasets.serialize_as_chunks"><code class="name flex">
-<span>def <span class="ident">serialize_as_chunks</span></span>(<span>chunked_df, path)</span>
+<span>def <span class="ident">serialize_as_chunks</span></span>(<span>path, chunked_df, chunk_locations=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Serializes a sparse dataframe as contiguous
 chunks into an hdf5 file</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>chunked_df</code></strong> :&ensp;<code>pandas.core.frame.DataFrame</code></dt>
-<dd>the dataframe we wish to serialize as chunks</dd>
 <dt><strong><code>path</code></strong> :&ensp;<code>pathlib.PosixPath</code></dt>
 <dd>the path to which we wish to save our hdf5 file,
 including the file name and extension</dd>
+<dt><strong><code>chunked_df</code></strong> :&ensp;<code>pandas.core.frame.DataFrame</code></dt>
+<dd>the dataframe we wish to serialize as chunks</dd>
+<dt><strong><code>chunk_locations</code></strong> :&ensp;<code>np.ndarray</code>, default <code>None</code></dt>
+<dd>2D numpy array with the pre-computed chunk start
+and end indices. Shape is (-1, 2). Optional.</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def serialize_as_chunks(chunked_df, path):
+<pre><code class="python">def serialize_as_chunks(path, chunked_df, chunk_locations=None):
     &#34;&#34;&#34;
     Serializes a sparse dataframe as contiguous
     chunks into an hdf5 file
 
     Parameters
     ----------
-    chunked_df : pandas.core.frame.DataFrame
-        the dataframe we wish to serialize as chunks
     path : pathlib.PosixPath
         the path to which we wish to save our hdf5 file,
         including the file name and extension
+    chunked_df : pandas.core.frame.DataFrame
+        the dataframe we wish to serialize as chunks
+    chunk_locations : np.ndarray, default None
+        2D numpy array with the pre-computed chunk start
+        and end indices. Shape is (-1, 2). Optional.
     &#34;&#34;&#34;
-    chunks = make_chunks(chunked_df)
+    chunks = make_chunks(chunked_df, chunk_locations)
     hdfs = pd.HDFStore(str(path))
     for i, chunk in enumerate(chunks):
         chunk.to_hdf(hdfs, &#34;chunk_{:d}&#34;.format(i), format=&#34;table&#34;)</code></pre>

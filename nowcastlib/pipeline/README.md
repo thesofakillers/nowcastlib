@@ -19,12 +19,13 @@ evaluation step.
 ## Structs
 
 The `nowcastlib.pipeline` submodule includes the `nowcastlib.pipeline.structs`
-module. These are custom classes that serve as skeletons for configuration
-options for setting up the various pipeline steps. To use the pipeline and any
-sub-pipeline within, users will use the top level `DataSet` class to specify
-their configuration, with the other structs being specified within.
-Configuration is intended to be provided in JSON format via a .json file.
-Example configuration files can be found in the
+module. These are custom classes that serve as skeletons for return types and
+more importantly as configuration options (from the `config` submodule) for
+setting up the various pipeline steps. To use the pipeline and any sub-pipeline
+within, users will use the top level `DataSet` class to specify their
+configuration, with the other structs being specified within. Configuration is
+intended to be provided in JSON format via a .json file. Example configuration
+files can be found in the
 [examples folder on github](https://github.com/thesofakillers/nowcastlib/tree/master/examples)
 under the naming convention `pipeline_{cli subcommand}.json`
 
@@ -38,6 +39,7 @@ the following sub-pipelines, shown here in their intended order of execution.
 1.  preprocessing
 2.  synchronization
 3.  postprocessing
+4.  splitprocessing
 
 While each of these steps can be run independently of the others, each step will
 implicitly run the processes of the previous steps leading up to it. For
@@ -48,6 +50,10 @@ the actual processing itself will also be kept to a minimum.
 
 Future iterations of the pipeline will aim to implement caching to avoid
 repeating previously computed processes.
+
+Future iterations of the pipeline will also aim to be more modular, avoiding the
+cascading nature of processing steps by allowing users to provide input files at
+later stages.
 
 ### Processing
 

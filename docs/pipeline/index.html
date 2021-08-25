@@ -39,13 +39,14 @@ practice the pipeline is intended to be run into 2 main steps:</p>
 output of the data wrangling step being fed into the model training and
 evaluation step.</p>
 <h2 id="structs">Structs</h2>
-<p>The <code><a title="nowcastlib.pipeline" href="#nowcastlib.pipeline">nowcastlib.pipeline</a></code> submodule includes the <code><a title="nowcastlib.pipeline.structs" href="structs.html">nowcastlib.pipeline.structs</a></code>
-module. These are custom classes that serve as skeletons for configuration
-options for setting up the various pipeline steps. To use the pipeline and any
-sub-pipeline within, users will use the top level <code>DataSet</code> class to specify
-their configuration, with the other structs being specified within.
-Configuration is intended to be provided in JSON format via a .json file.
-Example configuration files can be found in the
+<p>The <code><a title="nowcastlib.pipeline" href="#nowcastlib.pipeline">nowcastlib.pipeline</a></code> submodule includes the <code><a title="nowcastlib.pipeline.structs" href="structs/index.html">nowcastlib.pipeline.structs</a></code>
+module. These are custom classes that serve as skeletons for return types and
+more importantly as configuration options (from the <code>config</code> submodule) for
+setting up the various pipeline steps. To use the pipeline and any sub-pipeline
+within, users will use the top level <code>DataSet</code> class to specify their
+configuration, with the other structs being specified within. Configuration is
+intended to be provided in JSON format via a .json file. Example configuration
+files can be found in the
 <a href="https://github.com/thesofakillers/nowcastlib/tree/master/examples">examples folder on github</a>
 under the naming convention <code>pipeline_{cli subcommand}.json</code></p>
 <h2 id="data-wrangling">Data Wrangling</h2>
@@ -57,6 +58,7 @@ the following sub-pipelines, shown here in their intended order of execution.</p
 <li>preprocessing</li>
 <li>synchronization</li>
 <li>postprocessing</li>
+<li>splitprocessing</li>
 </ol>
 <p>While each of these steps can be run independently of the others, each step will
 implicitly run the processes of the previous steps leading up to it. For
@@ -66,6 +68,9 @@ course, if the configuration is minimal for these implicit previous steps, then
 the actual processing itself will also be kept to a minimum.</p>
 <p>Future iterations of the pipeline will aim to implement caching to avoid
 repeating previously computed processes.</p>
+<p>Future iterations of the pipeline will also aim to be more modular, avoiding the
+cascading nature of processing steps by allowing users to provide input files at
+later stages.</p>
 <h3 id="processing">Processing</h3>
 <p>The Nowcast Library Pipeline categorizes data processing in two types:</p>
 <ul>
@@ -117,27 +122,53 @@ reliant on the</p>
 Data processing and Model evaluation pipeline for the Nowcast Library
 .. include:: README.md
 &#34;&#34;&#34;
+import logging
 import pathlib
 import pandas as pd
-from . import structs
+from .structs import config
 from . import process
 from . import sync
+from . import features
 from . import split
+from . import standardize
+from . import utils
+
+logger = logging.getLogger(__name__)
 
 
-def pipe_dataset(config: structs.DataSet):
+def pipe_dataset(options: config.DataSet):
     &#34;&#34;&#34;
     Runs all configured data-wrangling steps of the
     Nowcast Library Pipeline on a set of data described
     by the input DataSet instance
     &#34;&#34;&#34;
     # preprocessing
-    preprocessed_dfs = process.preprocess.preprocess_dataset(config)
+    preprocessed_dfs = process.preprocess.preprocess_dataset(options)
     # syncing
-    chunked_df, chunk_locs = sync.synchronize_dataset(config, preprocessed_dfs)
-    # splitting and postprocessing
-    if config.split_options is not None:
-        process.postprocess.postprocess_dataset(config, (chunked_df, chunk_locs))</code></pre>
+    chunked_df, chunk_locs = sync.synchronize_dataset(options, preprocessed_dfs)
+    # postprocessing
+    postprocessed_df = process.postprocess.postprocess_dataset(options, chunked_df)
+    # add generated fields if necessary
+    if options.generated_fields is not None:
+        postprocessed_df = features.generate_fields(options, postprocessed_df)
+    # serializing postprocessing if necessary
+    if options.postprocessing_output is not None:
+        logger.info(&#34;Serializing postprocessing results...&#34;)
+        utils.handle_serialization(postprocessed_df, options.postprocessing_output)
+        logger.info(&#34;Serialization complete.&#34;)
+    # splitting
+    if options.split_options is not None:
+        outer_split, inner_split = split.split_dataset(
+            options, (postprocessed_df, chunk_locs)
+        )
+        # standardization (requires splits)
+        outer_split, inner_split = standardize.standardize_dataset(
+            options, outer_split, inner_split
+        )
+        # serialization
+        split.serialize_splits(
+            options.split_options.output_options, outer_split, inner_split
+        )</code></pre>
 </details>
 </section>
 <section>
@@ -147,6 +178,10 @@ def pipe_dataset(config: structs.DataSet):
 <dd>
 <div class="desc"><p>Command-Line interface functionality for preprocessing</p></div>
 </dd>
+<dt><code class="name"><a title="nowcastlib.pipeline.features" href="features/index.html">nowcastlib.pipeline.features</a></code></dt>
+<dd>
+<div class="desc"><p>module containing functionality related to feature engineering and selection</p></div>
+</dd>
 <dt><code class="name"><a title="nowcastlib.pipeline.process" href="process/index.html">nowcastlib.pipeline.process</a></code></dt>
 <dd>
 <div class="desc"><p>Functions for processing data</p></div>
@@ -155,10 +190,14 @@ def pipe_dataset(config: structs.DataSet):
 <dd>
 <div class="desc"><p>Functions for splitting data</p></div>
 </dd>
-<dt><code class="name"><a title="nowcastlib.pipeline.structs" href="structs.html">nowcastlib.pipeline.structs</a></code></dt>
+<dt><code class="name"><a title="nowcastlib.pipeline.standardize" href="standardize/index.html">nowcastlib.pipeline.standardize</a></code></dt>
+<dd>
+<div class="desc"><p>Module for standardization functionality</p></div>
+</dd>
+<dt><code class="name"><a title="nowcastlib.pipeline.structs" href="structs/index.html">nowcastlib.pipeline.structs</a></code></dt>
 <dd>
 <div class="desc"><p>Module containing custom structures used throughout the pipeline
-submodule to aid with configuration …</p></div>
+submodule.</p></div>
 </dd>
 <dt><code class="name"><a title="nowcastlib.pipeline.sync" href="sync/index.html">nowcastlib.pipeline.sync</a></code></dt>
 <dd>
@@ -176,7 +215,7 @@ submodule to aid with configuration …</p></div>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="nowcastlib.pipeline.pipe_dataset"><code class="name flex">
-<span>def <span class="ident">pipe_dataset</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.DataSet" href="structs.html#nowcastlib.pipeline.structs.DataSet">DataSet</a>)</span>
+<span>def <span class="ident">pipe_dataset</span></span>(<span>options: <a title="nowcastlib.pipeline.structs.config.DataSet" href="structs/config.html#nowcastlib.pipeline.structs.config.DataSet">DataSet</a>)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs all configured data-wrangling steps of the
@@ -186,19 +225,39 @@ by the input DataSet instance</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def pipe_dataset(config: structs.DataSet):
+<pre><code class="python">def pipe_dataset(options: config.DataSet):
     &#34;&#34;&#34;
     Runs all configured data-wrangling steps of the
     Nowcast Library Pipeline on a set of data described
     by the input DataSet instance
     &#34;&#34;&#34;
     # preprocessing
-    preprocessed_dfs = process.preprocess.preprocess_dataset(config)
+    preprocessed_dfs = process.preprocess.preprocess_dataset(options)
     # syncing
-    chunked_df, chunk_locs = sync.synchronize_dataset(config, preprocessed_dfs)
-    # splitting and postprocessing
-    if config.split_options is not None:
-        process.postprocess.postprocess_dataset(config, (chunked_df, chunk_locs))</code></pre>
+    chunked_df, chunk_locs = sync.synchronize_dataset(options, preprocessed_dfs)
+    # postprocessing
+    postprocessed_df = process.postprocess.postprocess_dataset(options, chunked_df)
+    # add generated fields if necessary
+    if options.generated_fields is not None:
+        postprocessed_df = features.generate_fields(options, postprocessed_df)
+    # serializing postprocessing if necessary
+    if options.postprocessing_output is not None:
+        logger.info(&#34;Serializing postprocessing results...&#34;)
+        utils.handle_serialization(postprocessed_df, options.postprocessing_output)
+        logger.info(&#34;Serialization complete.&#34;)
+    # splitting
+    if options.split_options is not None:
+        outer_split, inner_split = split.split_dataset(
+            options, (postprocessed_df, chunk_locs)
+        )
+        # standardization (requires splits)
+        outer_split, inner_split = standardize.standardize_dataset(
+            options, outer_split, inner_split
+        )
+        # serialization
+        split.serialize_splits(
+            options.split_options.output_options, outer_split, inner_split
+        )</code></pre>
 </details>
 </dd>
 </dl>
@@ -231,9 +290,11 @@ by the input DataSet instance</p></div>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
 <li><code><a title="nowcastlib.pipeline.cli" href="cli.html">nowcastlib.pipeline.cli</a></code></li>
+<li><code><a title="nowcastlib.pipeline.features" href="features/index.html">nowcastlib.pipeline.features</a></code></li>
 <li><code><a title="nowcastlib.pipeline.process" href="process/index.html">nowcastlib.pipeline.process</a></code></li>
 <li><code><a title="nowcastlib.pipeline.split" href="split/index.html">nowcastlib.pipeline.split</a></code></li>
-<li><code><a title="nowcastlib.pipeline.structs" href="structs.html">nowcastlib.pipeline.structs</a></code></li>
+<li><code><a title="nowcastlib.pipeline.standardize" href="standardize/index.html">nowcastlib.pipeline.standardize</a></code></li>
+<li><code><a title="nowcastlib.pipeline.structs" href="structs/index.html">nowcastlib.pipeline.structs</a></code></li>
 <li><code><a title="nowcastlib.pipeline.sync" href="sync/index.html">nowcastlib.pipeline.sync</a></code></li>
 <li><code><a title="nowcastlib.pipeline.utils" href="utils.html">nowcastlib.pipeline.utils</a></code></li>
 </ul>

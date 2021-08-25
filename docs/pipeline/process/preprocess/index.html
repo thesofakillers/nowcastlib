@@ -33,68 +33,70 @@ Functions for pre-processing of data.
 import logging
 from typing import Union
 import pandas as pd
-from nowcastlib.pipeline import structs
+from nowcastlib.pipeline.structs import config
 from nowcastlib.pipeline import utils as pipeline_utils
 from nowcastlib.pipeline.process import utils as process_utils
 
 logger = logging.getLogger(__name__)
 
 
-def preprocess_datasource(config: structs.DataSource):
+def preprocess_datasource(options: config.DataSource):
     &#34;&#34;&#34;
     Runs preprocessing on a given data source given options outlined
     in the input DataSource instance.
 
     Parameters
     ----------
-    config : nowcastlib.pipeline.structs.DataSource
+    options : nowcastlib.pipeline.structs.config.DataSource
 
     Returns
     -------
     pandas.core.frame.DataFrame
         the resulting processed dataframe
     &#34;&#34;&#34;
-    logger.debug(&#34;Preprocessing %s...&#34;, config.name)
-    index_field = next(field for field in config.fields if field.is_date)
+    logger.debug(&#34;Preprocessing %s...&#34;, options.name)
+    index_field = next(field for field in options.fields if field.is_date)
     logger.debug(&#34;Reading file...&#34;)
     data_df = pd.read_csv(
-        config.path,
-        usecols=[field.field_name for field in config.fields],
+        options.path,
+        usecols=[field.field_name for field in options.fields],
         index_col=index_field.field_name,
         parse_dates=False,
-        comment=config.comment_format,
+        comment=options.comment_format,
     )
     data_df.index = pd.to_datetime(data_df.index, format=index_field.date_format)
-    data_df = data_df[~data_df.index.duplicated(keep=&#34;last&#34;)]
+    data_df = data_df[  # pylint: disable=unsubscriptable-object
+        ~data_df.index.duplicated(keep=&#34;last&#34;)
+    ]
     data_df.sort_index(inplace=True)
-    for field in config.fields:
-        logger.debug(&#34;Processing field %s of %s...&#34;, field.field_name, config.name)
-        options = field.preprocessing_options
-        if options is not None:
+    for field in options.fields:
+        logger.debug(&#34;Processing field %s of %s...&#34;, field.field_name, options.name)
+        proc_options = field.preprocessing_options
+        if proc_options is not None:
             # next two lines handle whether user wishes to overwrite field or not
-            computed_field_name = process_utils.build_field_name(
-                options, field.field_name
+            computed_field_name = pipeline_utils.build_field_name(
+                proc_options, field.field_name
             )
             data_df[computed_field_name] = data_df[field.field_name].copy()
             data_df[computed_field_name] = process_utils.process_field(
-                data_df[computed_field_name], options, True
+                data_df[computed_field_name], proc_options, True
             )
     logger.debug(&#34;Dropping NaNs...&#34;)
     data_df = data_df.dropna()
-    if config.preprocessing_output is not None:
+    if options.preprocessing_output is not None:
         logger.debug(&#34;Serializing preprocessing output...&#34;)
-        pipeline_utils.handle_serialization(data_df, config.preprocessing_output)
+        pipeline_utils.handle_serialization(data_df, options.preprocessing_output)
     return data_df
 
 
-def preprocess_dataset(config: structs.DataSet):
+def preprocess_dataset(options: config.DataSet):
     &#34;&#34;&#34;
     Runs preprocessing on a given set of data sources given options outlined
     in the input DataSet instance.
 
     Parameters
     ----------
-    config : nowcastlib.pipeline.structs.DataSet
+    options : nowcastlib.pipeline.structs.config.DataSet
 
     Returns
     -------
@@ -103,7 +105,7 @@ def preprocess_dataset(config: structs.DataSet):
     &#34;&#34;&#34;
     logger.info(&#34;Preprocessing dataset...&#34;)
     processed_dfs = []
-    for ds_config in config.data_sources:
+    for ds_config in options.data_sources:
         processed_dfs.append(preprocess_datasource(ds_config))
     logger.info(&#34;Dataset preprocessing complete.&#34;)
     return processed_dfs</code></pre>
@@ -124,14 +126,14 @@ def preprocess_dataset(config: structs.DataSet):
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="nowcastlib.pipeline.process.preprocess.preprocess_datasource"><code class="name flex">
-<span>def <span class="ident">preprocess_datasource</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.DataSource" href="../../structs.html#nowcastlib.pipeline.structs.DataSource">DataSource</a>)</span>
+<span>def <span class="ident">preprocess_datasource</span></span>(<span>options: <a title="nowcastlib.pipeline.structs.config.DataSource" href="../../structs/config.html#nowcastlib.pipeline.structs.config.DataSource">DataSource</a>)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs preprocessing on a given data source given options outlined
 in the input DataSource instance.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.DataSource" href="../../structs.html#nowcastlib.pipeline.structs.DataSource">DataSource</a></code></dt>
+<dt><strong><code>options</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.config.DataSource" href="../../structs/config.html#nowcastlib.pipeline.structs.config.DataSource">DataSource</a></code></dt>
 <dd>&nbsp;</dd>
 </dl>
 <h2 id="returns">Returns</h2>
@@ -143,62 +145,64 @@ in the input DataSource instance.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def preprocess_datasource(config: structs.DataSource):
+<pre><code class="python">def preprocess_datasource(options: config.DataSource):
     &#34;&#34;&#34;
     Runs preprocessing on a given data source given options outlined
     in the input DataSource instance.
 
     Parameters
     ----------
-    config : nowcastlib.pipeline.structs.DataSource
+    options : nowcastlib.pipeline.structs.config.DataSource
 
     Returns
     -------
     pandas.core.frame.DataFrame
         the resulting processed dataframe
     &#34;&#34;&#34;
-    logger.debug(&#34;Preprocessing %s...&#34;, config.name)
-    index_field = next(field for field in config.fields if field.is_date)
+    logger.debug(&#34;Preprocessing %s...&#34;, options.name)
+    index_field = next(field for field in options.fields if field.is_date)
     logger.debug(&#34;Reading file...&#34;)
     data_df = pd.read_csv(
-        config.path,
-        usecols=[field.field_name for field in config.fields],
+        options.path,
+        usecols=[field.field_name for field in options.fields],
         index_col=index_field.field_name,
         parse_dates=False,
-        comment=config.comment_format,
+        comment=options.comment_format,
     )
     data_df.index = pd.to_datetime(data_df.index, format=index_field.date_format)
-    data_df = data_df[~data_df.index.duplicated(keep=&#34;last&#34;)]
+    data_df = data_df[  # pylint: disable=unsubscriptable-object
+        ~data_df.index.duplicated(keep=&#34;last&#34;)
+    ]
     data_df.sort_index(inplace=True)
-    for field in config.fields:
-        logger.debug(&#34;Processing field %s of %s...&#34;, field.field_name, config.name)
-        options = field.preprocessing_options
-        if options is not None:
+    for field in options.fields:
+        logger.debug(&#34;Processing field %s of %s...&#34;, field.field_name, options.name)
+        proc_options = field.preprocessing_options
+        if proc_options is not None:
             # next two lines handle whether user wishes to overwrite field or not
-            computed_field_name = process_utils.build_field_name(
-                options, field.field_name
+            computed_field_name = pipeline_utils.build_field_name(
+                proc_options, field.field_name
             )
             data_df[computed_field_name] = data_df[field.field_name].copy()
             data_df[computed_field_name] = process_utils.process_field(
-                data_df[computed_field_name], options, True
+                data_df[computed_field_name], proc_options, True
             )
     logger.debug(&#34;Dropping NaNs...&#34;)
     data_df = data_df.dropna()
-    if config.preprocessing_output is not None:
+    if options.preprocessing_output is not None:
         logger.debug(&#34;Serializing preprocessing output...&#34;)
-        pipeline_utils.handle_serialization(data_df, config.preprocessing_output)
+        pipeline_utils.handle_serialization(data_df, options.preprocessing_output)
     return data_df</code></pre>
 </details>
 </dd>
 <dt id="nowcastlib.pipeline.process.preprocess.preprocess_dataset"><code class="name flex">
-<span>def <span class="ident">preprocess_dataset</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.DataSet" href="../../structs.html#nowcastlib.pipeline.structs.DataSet">DataSet</a>)</span>
+<span>def <span class="ident">preprocess_dataset</span></span>(<span>options: <a title="nowcastlib.pipeline.structs.config.DataSet" href="../../structs/config.html#nowcastlib.pipeline.structs.config.DataSet">DataSet</a>)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Runs preprocessing on a given set of data sources given options outlined
 in the input DataSet instance.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.DataSet" href="../../structs.html#nowcastlib.pipeline.structs.DataSet">DataSet</a></code></dt>
+<dt><strong><code>options</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.config.DataSet" href="../../structs/config.html#nowcastlib.pipeline.structs.config.DataSet">DataSet</a></code></dt>
 <dd>&nbsp;</dd>
 </dl>
 <h2 id="returns">Returns</h2>
@@ -210,14 +214,14 @@ in the input DataSet instance.</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def preprocess_dataset(config: structs.DataSet):
+<pre><code class="python">def preprocess_dataset(options: config.DataSet):
     &#34;&#34;&#34;
     Runs preprocessing on a given set of data sources given options outlined
     in the input DataSet instance.
 
     Parameters
     ----------
-    config : nowcastlib.pipeline.structs.DataSet
+    options : nowcastlib.pipeline.structs.config.DataSet
 
     Returns
     -------
@@ -226,7 +230,7 @@ in the input DataSet instance.</p>
     &#34;&#34;&#34;
     logger.info(&#34;Preprocessing dataset...&#34;)
     processed_dfs = []
-    for ds_config in config.data_sources:
+    for ds_config in options.data_sources:
         processed_dfs.append(preprocess_datasource(ds_config))
     logger.info(&#34;Dataset preprocessing complete.&#34;)
     return processed_dfs</code></pre>

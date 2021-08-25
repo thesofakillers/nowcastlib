@@ -36,7 +36,7 @@ from typing import Optional, List
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from nowcastlib.pipeline import structs
+from nowcastlib.pipeline.structs import config
 from nowcastlib.pipeline.process import preprocess
 from nowcastlib.pipeline import utils
 from nowcastlib import datasets
@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 
 def handle_diag_plots(
-    config: structs.SyncOptions, dataframes: List[pd.core.frame.DataFrame]
+    options: config.SyncOptions, dataframes: List[pd.core.frame.DataFrame]
 ):
     &#34;&#34;&#34;
     Produces plots that can aid the user in noticing mistakes
@@ -55,7 +55,7 @@ def handle_diag_plots(
 
     Parameters
     ----------
-    config : nowcastlib.pipeline.structs.SyncOptions
+    options : nowcastlib.pipeline.structs.config.SyncOptions
     dataframes : list[pandas.core.frame.DataFrame]
         The set of dataframes one wishes to synchronize.
 
@@ -79,7 +79,7 @@ def handle_diag_plots(
             histtype=&#34;step&#34;,
             linewidth=1.5,
         )
-    ax1.axvline(config.sample_spacing, color=&#34;black&#34;, label=&#34;Selected Sample Spacing&#34;)
+    ax1.axvline(options.sample_spacing, color=&#34;black&#34;, label=&#34;Selected Sample Spacing&#34;)
     ax1.set_xlabel(&#34;Sample Spacing [s]&#34;)
     ax1.set_ylabel(&#34;Prevalence&#34;)
     ax1.set_title(
@@ -99,7 +99,7 @@ def handle_diag_plots(
 
 def handle_chunking(
     data_df: pd.core.frame.DataFrame,
-    config: structs.ChunkOptions,
+    options: config.ChunkOptions,
     column_names: Optional[List[str]] = None,
 ):
     &#34;&#34;&#34;
@@ -110,7 +110,7 @@ def handle_chunking(
     ----------
     data_df: pandas.core.frame.DataFrame
         the sparse dataframe to perform chunking on
-    config : nowcastlib.pipeline.structs.ChunkOptions
+    options : nowcastlib.pipeline.structs.config.ChunkOptions
         chunking configuration options
     column_names : list[str], default None
         the names of the columns to check for overlaps.
@@ -129,10 +129,10 @@ def handle_chunking(
     &#34;&#34;&#34;
     # find overlapping data, ignoring small gaps
     sample_spacing_secs = data_df.index.freq.delta.seconds
-    max_spacing_steps = np.floor((config.max_gap_size / sample_spacing_secs)).astype(
+    max_spacing_steps = np.floor((options.max_gap_size / sample_spacing_secs)).astype(
         int
     )
-    min_chunk_length = int(config.min_chunk_size / sample_spacing_secs)
+    min_chunk_length = int(options.min_chunk_size / sample_spacing_secs)
     final_mask, chunk_locs = datasets.compute_dataframe_mask(
         data_df, max_spacing_steps, min_chunk_length, 0, column_names
     )
@@ -144,7 +144,7 @@ def handle_chunking(
 
 
 def synchronize_dataset(
-    config: structs.DataSet, dataset: Optional[List[pd.core.frame.DataFrame]] = None
+    options: config.DataSet, dataset: Optional[List[pd.core.frame.DataFrame]] = None
 ):
     &#34;&#34;&#34;
     Synchronizes a set of data sources given options outlined
@@ -153,7 +153,7 @@ def synchronize_dataset(
 
     Parameters
     ----------
-    config : nowcastlib.pipeline.structs.DataSet
+    options : nowcastlib.pipeline.structs.config.DataSet
     dataset : list[pandas.core.frame.DataFrame], default None
         The set of dataframes one wishes to synchronize.
         If `None`, the preprocessing output produced by the
@@ -170,13 +170,13 @@ def synchronize_dataset(
         integer indices of the contiguous chunks of data
         in the input dataframe. Shape is (-1, 2).
     &#34;&#34;&#34;
-    sync_config = config.sync_options
+    sync_config = options.sync_options
     assert (
         sync_config is not None
-    ), &#34;`config.sync_options` must be defined to perform synchronization&#34;
+    ), &#34;`options.sync_options` must be defined to perform synchronization&#34;
     # avoid preprocessing if datasets are passed directly
     if dataset is None:
-        data_dfs = preprocess.preprocess_dataset(config)
+        data_dfs = preprocess.preprocess_dataset(options)
     else:
         data_dfs = dataset
     logger.info(&#34;Synchronizing dataset...&#34;)
@@ -232,7 +232,7 @@ def synchronize_dataset(
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="nowcastlib.pipeline.sync.handle_diag_plots"><code class="name flex">
-<span>def <span class="ident">handle_diag_plots</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.SyncOptions" href="../structs.html#nowcastlib.pipeline.structs.SyncOptions">SyncOptions</a>, dataframes: List[pandas.core.frame.DataFrame])</span>
+<span>def <span class="ident">handle_diag_plots</span></span>(<span>options: <a title="nowcastlib.pipeline.structs.config.SyncOptions" href="../structs/config.html#nowcastlib.pipeline.structs.config.SyncOptions">SyncOptions</a>, dataframes: List[pandas.core.frame.DataFrame])</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Produces plots that can aid the user in noticing mistakes
@@ -240,7 +240,7 @@ in their configuration before proceeding with the
 synchronization process</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.SyncOptions" href="../structs.html#nowcastlib.pipeline.structs.SyncOptions">SyncOptions</a></code></dt>
+<dt><strong><code>options</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.config.SyncOptions" href="../structs/config.html#nowcastlib.pipeline.structs.config.SyncOptions">SyncOptions</a></code></dt>
 <dd>&nbsp;</dd>
 <dt><strong><code>dataframes</code></strong> :&ensp;<code>list[pandas.core.frame.DataFrame]</code></dt>
 <dd>The set of dataframes one wishes to synchronize.</dd>
@@ -256,7 +256,7 @@ running the pipeline or not</dd>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def handle_diag_plots(
-    config: structs.SyncOptions, dataframes: List[pd.core.frame.DataFrame]
+    options: config.SyncOptions, dataframes: List[pd.core.frame.DataFrame]
 ):
     &#34;&#34;&#34;
     Produces plots that can aid the user in noticing mistakes
@@ -265,7 +265,7 @@ running the pipeline or not</dd>
 
     Parameters
     ----------
-    config : nowcastlib.pipeline.structs.SyncOptions
+    options : nowcastlib.pipeline.structs.config.SyncOptions
     dataframes : list[pandas.core.frame.DataFrame]
         The set of dataframes one wishes to synchronize.
 
@@ -289,7 +289,7 @@ running the pipeline or not</dd>
             histtype=&#34;step&#34;,
             linewidth=1.5,
         )
-    ax1.axvline(config.sample_spacing, color=&#34;black&#34;, label=&#34;Selected Sample Spacing&#34;)
+    ax1.axvline(options.sample_spacing, color=&#34;black&#34;, label=&#34;Selected Sample Spacing&#34;)
     ax1.set_xlabel(&#34;Sample Spacing [s]&#34;)
     ax1.set_ylabel(&#34;Prevalence&#34;)
     ax1.set_title(
@@ -308,7 +308,7 @@ running the pipeline or not</dd>
 </details>
 </dd>
 <dt id="nowcastlib.pipeline.sync.handle_chunking"><code class="name flex">
-<span>def <span class="ident">handle_chunking</span></span>(<span>data_df: pandas.core.frame.DataFrame, config: <a title="nowcastlib.pipeline.structs.ChunkOptions" href="../structs.html#nowcastlib.pipeline.structs.ChunkOptions">ChunkOptions</a>, column_names: Union[List[str], NoneType] = None)</span>
+<span>def <span class="ident">handle_chunking</span></span>(<span>data_df: pandas.core.frame.DataFrame, options: <a title="nowcastlib.pipeline.structs.config.ChunkOptions" href="../structs/config.html#nowcastlib.pipeline.structs.config.ChunkOptions">ChunkOptions</a>, column_names: Union[List[str], NoneType] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Finds overlapping chunks of data across dataframe columns,
@@ -317,7 +317,7 @@ taking into account gap size preferences.</p>
 <dl>
 <dt><strong><code>data_df</code></strong> :&ensp;<code>pandas.core.frame.DataFrame</code></dt>
 <dd>the sparse dataframe to perform chunking on</dd>
-<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.ChunkOptions" href="../structs.html#nowcastlib.pipeline.structs.ChunkOptions">ChunkOptions</a></code></dt>
+<dt><strong><code>options</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.config.ChunkOptions" href="../structs/config.html#nowcastlib.pipeline.structs.config.ChunkOptions">ChunkOptions</a></code></dt>
 <dd>chunking configuration options</dd>
 <dt><strong><code>column_names</code></strong> :&ensp;<code>list[str]</code>, default <code>None</code></dt>
 <dd>the names of the columns to check for overlaps.
@@ -340,7 +340,7 @@ in the input dataframe. Shape is (-1, 2).</dd>
 </summary>
 <pre><code class="python">def handle_chunking(
     data_df: pd.core.frame.DataFrame,
-    config: structs.ChunkOptions,
+    options: config.ChunkOptions,
     column_names: Optional[List[str]] = None,
 ):
     &#34;&#34;&#34;
@@ -351,7 +351,7 @@ in the input dataframe. Shape is (-1, 2).</dd>
     ----------
     data_df: pandas.core.frame.DataFrame
         the sparse dataframe to perform chunking on
-    config : nowcastlib.pipeline.structs.ChunkOptions
+    options : nowcastlib.pipeline.structs.config.ChunkOptions
         chunking configuration options
     column_names : list[str], default None
         the names of the columns to check for overlaps.
@@ -370,10 +370,10 @@ in the input dataframe. Shape is (-1, 2).</dd>
     &#34;&#34;&#34;
     # find overlapping data, ignoring small gaps
     sample_spacing_secs = data_df.index.freq.delta.seconds
-    max_spacing_steps = np.floor((config.max_gap_size / sample_spacing_secs)).astype(
+    max_spacing_steps = np.floor((options.max_gap_size / sample_spacing_secs)).astype(
         int
     )
-    min_chunk_length = int(config.min_chunk_size / sample_spacing_secs)
+    min_chunk_length = int(options.min_chunk_size / sample_spacing_secs)
     final_mask, chunk_locs = datasets.compute_dataframe_mask(
         data_df, max_spacing_steps, min_chunk_length, 0, column_names
     )
@@ -385,7 +385,7 @@ in the input dataframe. Shape is (-1, 2).</dd>
 </details>
 </dd>
 <dt id="nowcastlib.pipeline.sync.synchronize_dataset"><code class="name flex">
-<span>def <span class="ident">synchronize_dataset</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.DataSet" href="../structs.html#nowcastlib.pipeline.structs.DataSet">DataSet</a>, dataset: Union[List[pandas.core.frame.DataFrame], NoneType] = None)</span>
+<span>def <span class="ident">synchronize_dataset</span></span>(<span>options: <a title="nowcastlib.pipeline.structs.config.DataSet" href="../structs/config.html#nowcastlib.pipeline.structs.config.DataSet">DataSet</a>, dataset: Union[List[pandas.core.frame.DataFrame], NoneType] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Synchronizes a set of data sources given options outlined
@@ -393,7 +393,7 @@ in the input DataSet config instance. Optionally writes the
 results to disk.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.DataSet" href="../structs.html#nowcastlib.pipeline.structs.DataSet">DataSet</a></code></dt>
+<dt><strong><code>options</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.config.DataSet" href="../structs/config.html#nowcastlib.pipeline.structs.config.DataSet">DataSet</a></code></dt>
 <dd>&nbsp;</dd>
 <dt><strong><code>dataset</code></strong> :&ensp;<code>list[pandas.core.frame.DataFrame]</code>, default <code>None</code></dt>
 <dd>The set of dataframes one wishes to synchronize.
@@ -416,7 +416,7 @@ in the input dataframe. Shape is (-1, 2).</dd>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def synchronize_dataset(
-    config: structs.DataSet, dataset: Optional[List[pd.core.frame.DataFrame]] = None
+    options: config.DataSet, dataset: Optional[List[pd.core.frame.DataFrame]] = None
 ):
     &#34;&#34;&#34;
     Synchronizes a set of data sources given options outlined
@@ -425,7 +425,7 @@ in the input dataframe. Shape is (-1, 2).</dd>
 
     Parameters
     ----------
-    config : nowcastlib.pipeline.structs.DataSet
+    options : nowcastlib.pipeline.structs.config.DataSet
     dataset : list[pandas.core.frame.DataFrame], default None
         The set of dataframes one wishes to synchronize.
         If `None`, the preprocessing output produced by the
@@ -442,13 +442,13 @@ in the input dataframe. Shape is (-1, 2).</dd>
         integer indices of the contiguous chunks of data
         in the input dataframe. Shape is (-1, 2).
     &#34;&#34;&#34;
-    sync_config = config.sync_options
+    sync_config = options.sync_options
     assert (
         sync_config is not None
-    ), &#34;`config.sync_options` must be defined to perform synchronization&#34;
+    ), &#34;`options.sync_options` must be defined to perform synchronization&#34;
     # avoid preprocessing if datasets are passed directly
     if dataset is None:
-        data_dfs = preprocess.preprocess_dataset(config)
+        data_dfs = preprocess.preprocess_dataset(options)
     else:
         data_dfs = dataset
     logger.info(&#34;Synchronizing dataset...&#34;)

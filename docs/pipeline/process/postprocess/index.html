@@ -30,321 +30,52 @@
 <pre><code class="python">&#34;&#34;&#34;
 Functions for post-processing of data
 &#34;&#34;&#34;
-import sys
 import logging
-import pathlib
-from typing import Optional, List, Tuple
+from typing import Optional, List
 import numpy as np
 import pandas as pd
-import attr
-import cattr
-import sklearn.preprocessing as sklearn_pproc
-import matplotlib.pyplot as plt
-from nowcastlib.datasets import serialize_as_chunks
-from nowcastlib.pipeline import structs
+from nowcastlib.pipeline.structs import config
 from nowcastlib.pipeline import utils
 from nowcastlib.pipeline import sync
-from nowcastlib.pipeline import split
 from nowcastlib.pipeline.process import utils as process_utils
-from . import generate
 
-plt.ion()
 logger = logging.getLogger(__name__)
 # disable SettingWithCopy warning since it was catching False Positives
 pd.set_option(&#34;chained_assignment&#34;, None)
 
-cattr_cnvrtr = cattr.GenConverter(forbid_extra_keys=True)
-
-
-def generate_field(
-    data_df: pd.core.frame.DataFrame,
-    field_config: structs.GeneratedField,
-):
-    &#34;&#34;&#34;
-    generates a new field by applying the relevant generator function
-
-    Parameters
-    ----------
-    data_df : pandas.core.frame.DataFrame
-        the dataframe holding the data we can access
-    field_config : nowcastlib.pipeline.structs.GeneratedField
-    Returns
-    -------
-    pandas.core.series.Series
-        the resulting dataseries
-    &#34;&#34;&#34;
-    # convert tuple to list, safely
-    input_fields = [element for element in field_config.input_fields]
-    if (
-        field_config.gen_func == structs.GeneratorFunction.CUSTOM
-        or field_config.func_path is not None
-    ):
-        # TODO handle custom case
-        raise NotImplementedError(&#34;Custom generator functions are not yet supported&#34;)
-    else:
-        if &#34;index&#34; in input_fields:
-            input_df = data_df[
-                [field for field in input_fields if field != &#34;index&#34;]
-            ].assign(index=data_df.index)
-            # ensure column order matches input_fields order
-            input_df = input_df[input_fields]
-        else:
-            input_df = data_df[input_fields].copy()
-        # use the function_map dictionary to select the right generator function
-        func = generate.function_map[field_config.gen_func]
-    # prepare additional kwargs appropriately
-    additional_args = (
-        {} if field_config.additional_kwargs is None else field_config.additional_kwargs
-    )
-    # finally, generate the field with the function we picked earlier
-    return func(*[input_df[col] for col in input_df], **additional_args)
-
-
-def handle_diag_plots(
-    input_series: pd.core.series.Series,
-    configured_method: structs.StandardizationMethod,
-):
-    &#34;&#34;&#34;
-    Plots different rescalings of the input series,
-    asking the user for confirmation
-    &#34;&#34;&#34;
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(7, 7))
-    pwr_trnsformer = sklearn_pproc.PowerTransformer()
-    robust_trnsfrmr = sklearn_pproc.RobustScaler()
-    ax1.hist(input_series, bins=200, color=&#34;black&#34;)
-    ax1.set_title(&#34;Original Series&#34;)
-    ax2.hist(
-        pwr_trnsformer.fit_transform(input_series.to_numpy().reshape(-1, 1)),
-        bins=200,
-        color=&#34;darkblue&#34;
-        if configured_method == structs.StandardizationMethod.POWER
-        else &#34;darkgrey&#34;,
-    )
-    ax2.set_title(&#34;Power Transform&#34;)
-    ax3.hist(
-        robust_trnsfrmr.fit_transform(input_series.to_numpy().reshape(-1, 1)),
-        bins=200,
-        color=&#34;darkblue&#34;
-        if configured_method == structs.StandardizationMethod.ROBUST
-        else &#34;darkgrey&#34;,
-    )
-    ax3.set_title(&#34;Robust Scaling&#34;)
-    ax4.hist(
-        np.log(1 + (input_series - input_series.min())),
-        bins=200,
-        color=&#34;darkblue&#34;
-        if configured_method == structs.StandardizationMethod.LOGNORM
-        else &#34;darkgrey&#34;,
-    )
-    ax4.set_title(&#34;log(1 + (input_series - input_series.min()))&#34;)
-    fig.suptitle(&#34;Configured method shown in Blue&#34;)
-    fig.set_tight_layout(True)
-    logger.info(&#34;Press any button to exit. Use mouse to zoom and resize&#34;)
-    while True:
-        plt.draw()
-        if plt.waitforbuttonpress():
-            break
-    return utils.yes_or_no(
-        &#34;Are you satisfied with the selected Standardization Method?&#34;
-    )
-
-
-def standardize_field(
-    train_data: pd.core.series.Series,
-    test_data: pd.core.series.Series,
-    config: structs.StandardizationOptions,
-):
-    &#34;&#34;&#34;
-    Standardizes a field based on config options,
-    taking care not to leak information from the training set
-    to the testing set
-    &#34;&#34;&#34;
-    if config.diagnostic_plots is True:
-        continue_processing = handle_diag_plots(train_data, config.method)
-        if continue_processing is False:
-            logger.info(
-                &#34;Closing program prematurely to allow for configuration changes&#34;
-            )
-            sys.exit()
-    if config.method == structs.StandardizationMethod.LOGNORM:
-        return (
-            np.log(1 + (train_data - train_data.min())),
-            np.log(1 + (test_data - test_data.min())),
-        )
-    # handle transformer based methods
-    elif config.method == structs.StandardizationMethod.POWER:
-        transformer = sklearn_pproc.PowerTransformer()
-    elif config.method == structs.StandardizationMethod.ROBUST:
-        transformer = sklearn_pproc.RobustScaler()
-    # fit only on training data, to avoid information leakage
-    fitted_trnsfrmr = transformer.fit(train_data.to_numpy().reshape(-1, 1))
-    # use the fitted transformer for transforming both train and test data
-    return (
-        fitted_trnsfrmr.transform(train_data.to_numpy().reshape(-1, 1)),
-        fitted_trnsfrmr.transform(test_data.to_numpy().reshape(-1, 1)),
-    )
-
-
-def rename_protected_field(field: structs.RawField) -&gt; structs.RawField:
-    &#34;&#34;&#34;
-    Renames overwrite-protected fields so to obtain a list of fields that
-    are overwrite-able
-    &#34;&#34;&#34;
-    if field.preprocessing_options is not None:
-        if field.preprocessing_options.overwrite is False:
-            correct_name = process_utils.build_field_name(
-                field.preprocessing_options, field.field_name
-            )
-            return cattr.structure(
-                {
-                    &#34;field_name&#34;: correct_name,
-                    **attr.asdict(
-                        field,
-                        filter=lambda attrib, _: attrib.name != &#34;field_name&#34;,
-                    ),
-                },
-                structs.RawField,
-            )
-        else:
-            return field
-    else:
-        return field
-
-
-def postprocess_splits(
-    config: structs.DataSet,
-    train_dfs: List[pd.core.frame.DataFrame],
-    test_dfs: List[pd.core.frame.DataFrame],
-):
-    &#34;&#34;&#34;
-    Postprocesses a set of train-test splits given options outlined
-    in the input DataSet config instance.
-    &#34;&#34;&#34;
-    logger.info(&#34;Postprocessing dataset...&#34;)
-    # instantiate processed lists
-    proc_train_dfs = train_dfs.copy()
-    proc_test_dfs = test_dfs.copy()
-    # gather which fields to process into single list
-    raw_fields: List[structs.RawField] = [
-        field for source in config.data_sources for field in source.fields
-    ]
-    # rename overwrite-protected fields so to avoid acting on the original field
-    fields_to_process = [rename_protected_field(field) for field in raw_fields]
-    # start processing with processes that act the same on test and train dfs
-    for i, (train_df, test_df) in enumerate(zip(train_dfs, test_dfs)):
-        for field in fields_to_process:
-            logger.debug(&#34;Processing field %s...&#34;, field.field_name)
-            if field.postprocessing_options is not None:
-                proc_train_dfs[i][field.field_name] = process_utils.process_field(
-                    train_df[field.field_name],
-                    field.postprocessing_options,
-                    False,
-                )
-                proc_test_dfs[i][field.field_name] = process_utils.process_field(
-                    test_df[field.field_name],
-                    field.postprocessing_options,
-                    False,
-                )
-        # compute and process new fields if necessary
-        if config.generated_fields is not None:
-            for new_field in config.generated_fields:
-                logger.debug(&#34;Generating field %s...&#34;, new_field.target_name)
-                proc_train_dfs[i][new_field.target_name] = generate_field(
-                    train_df, new_field
-                )
-                proc_test_dfs[i][new_field.target_name] = generate_field(
-                    test_df, new_field
-                )
-                # standardize
-                if new_field.std_options is not None:
-
-                    logger.debug(&#34;Standardizing field %s...&#34;, new_field.target_name)
-                    (
-                        proc_train_dfs[i][new_field.target_name],
-                        proc_test_dfs[i][new_field.target_name],
-                    ) = standardize_field(
-                        proc_train_dfs[i][new_field.target_name],
-                        proc_test_dfs[i][new_field.target_name],
-                        new_field.std_options,
-                    )
-        # standardize processed raw fields _after_ using them for computing gen fields
-        for field in fields_to_process:
-            if field.std_options is not None:
-                logger.debug(&#34;Standardizing field %s...&#34;, field.field_name)
-                (
-                    proc_train_dfs[i][field.field_name],
-                    proc_test_dfs[i][field.field_name],
-                ) = standardize_field(
-                    proc_train_dfs[i][field.field_name],
-                    proc_test_dfs[i][field.field_name],
-                    field.std_options,
-                )
-    return proc_train_dfs, proc_test_dfs
-
-
-def serialize_splits(config, train_data, test_data, val_train_dfs, val_test_dfs):
-    &#34;&#34;&#34;
-    Creates directory structure and serializes
-    the dataframes as chunks to hdf5 files
-    &#34;&#34;&#34;
-    parent_dir = pathlib.Path(config.parent_path)
-    parent_dir.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
-    main_split = parent_dir / &#34;main_split&#34;
-    main_split.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
-    serialize_as_chunks(train_data, main_split / &#34;train_data.hdf5&#34;)
-    serialize_as_chunks(test_data, main_split / &#34;test_data.hdf5&#34;)
-    cv_split = parent_dir / &#34;cv_split&#34;
-    cv_split.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
-    for i, (train_df, test_df) in enumerate(zip(val_train_dfs, val_test_dfs)):
-        serialize_as_chunks(train_df, cv_split / &#34;train_data_{}.hdf5&#34;.format(i + 1))
-        serialize_as_chunks(test_df, cv_split / &#34;val_data_{}.hdf5&#34;.format(i + 1))
-
 
 def postprocess_dataset(
-    config: structs.DataSet,
-    synced_data: Optional[Tuple[pd.core.frame.DataFrame, np.ndarray]] = None,
-):
+    options: config.DataSet, data_df: Optional[pd.core.frame.DataFrame] = None
+) -&gt; pd.core.frame.DataFrame:
     &#34;&#34;&#34;
     Postprocesses a dataset given options outlined
     in the input DataSet config instance.
     &#34;&#34;&#34;
-    assert (
-        config.split_options is not None
-    ), &#34;`config.split_options` must be defined to perform postprocessing&#34;
-    # avoid syncing if synced info (dataframe and block locs) are provided
-    if synced_data is None:
-        chunked_df, chunk_locs = sync.synchronize_dataset(config)
+    # need to get data_df from syncing process if not provided
+    if data_df is None:
+        chunked_df, _ = sync.synchronize_dataset(options)
     else:
-        chunked_df = synced_data[0].copy()
-        chunk_locs = synced_data[1].copy()
-
-    # outer train and test split
-    (train_data, _), (test_data, _) = split.train_test_split_sparse(
-        chunked_df, config.split_options, chunk_locs
-    )
-    # postprocessing
-    [proc_train_data], [proc_test_data] = postprocess_splits(
-        config, [train_data], [test_data]
-    )
-    # inner train and validation split(s)
-    train_dfs, val_dfs = split.rep_holdout_split_sparse(
-        train_data, config.split_options.validation
-    )
-    # postprocessing
-    (
-        proc_val_train_dfs,
-        proc_val_test_dfs,
-    ) = postprocess_splits(config, train_dfs, val_dfs)
-    # serialize
-    if config.split_options.output_options is not None:
-        logger.info(&#34;Serializing postprocessing output as hdf5 chunks...&#34;)
-        serialize_splits(
-            config.split_options.output_options,
-            proc_train_data,
-            proc_test_data,
-            proc_val_train_dfs,
-            proc_val_test_dfs,
-        )</code></pre>
+        chunked_df = data_df.copy()
+    logger.info(&#34;Postprocessing dataset...&#34;)
+    # instantiate our processed result
+    proc_df = chunked_df.copy()
+    # gather which fields to process into single list
+    raw_fields: List[config.RawField] = [
+        field for source in options.data_sources for field in source.fields
+    ]
+    # rename overwrite-protected fields so to avoid acting on the original field
+    fields_to_process = [utils.rename_protected_field(field) for field in raw_fields]
+    # finally we may perform postprocessing
+    for field in fields_to_process:
+        logger.debug(&#34;Processing field %s...&#34;, field.field_name)
+        if field.postprocessing_options is not None:
+            proc_df[field.field_name] = process_utils.process_field(
+                chunked_df[field.field_name],
+                field.postprocessing_options,
+                False,
+            )
+    logger.info(&#34;Dataset postprocessing complete.&#34;)
+    return proc_df</code></pre>
 </details>
 </section>
 <section>
@@ -354,10 +85,6 @@ def postprocess_dataset(
 <dd>
 <div class="desc"><p>Command-Line interface functionality for preprocessing</p></div>
 </dd>
-<dt><code class="name"><a title="nowcastlib.pipeline.process.postprocess.generate" href="generate.html">nowcastlib.pipeline.process.postprocess.generate</a></code></dt>
-<dd>
-<div class="desc"><p>functions for generating new fields</p></div>
-</dd>
 </dl>
 </section>
 <section>
@@ -365,324 +92,8 @@ def postprocess_dataset(
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="nowcastlib.pipeline.process.postprocess.generate_field"><code class="name flex">
-<span>def <span class="ident">generate_field</span></span>(<span>data_df: pandas.core.frame.DataFrame, field_config: <a title="nowcastlib.pipeline.structs.GeneratedField" href="../../structs.html#nowcastlib.pipeline.structs.GeneratedField">GeneratedField</a>)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>generates a new field by applying the relevant generator function</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>data_df</code></strong> :&ensp;<code>pandas.core.frame.DataFrame</code></dt>
-<dd>the dataframe holding the data we can access</dd>
-<dt><strong><code>field_config</code></strong> :&ensp;<code><a title="nowcastlib.pipeline.structs.GeneratedField" href="../../structs.html#nowcastlib.pipeline.structs.GeneratedField">GeneratedField</a></code></dt>
-<dd>&nbsp;</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>pandas.core.series.Series</code></dt>
-<dd>the resulting dataseries</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def generate_field(
-    data_df: pd.core.frame.DataFrame,
-    field_config: structs.GeneratedField,
-):
-    &#34;&#34;&#34;
-    generates a new field by applying the relevant generator function
-
-    Parameters
-    ----------
-    data_df : pandas.core.frame.DataFrame
-        the dataframe holding the data we can access
-    field_config : nowcastlib.pipeline.structs.GeneratedField
-    Returns
-    -------
-    pandas.core.series.Series
-        the resulting dataseries
-    &#34;&#34;&#34;
-    # convert tuple to list, safely
-    input_fields = [element for element in field_config.input_fields]
-    if (
-        field_config.gen_func == structs.GeneratorFunction.CUSTOM
-        or field_config.func_path is not None
-    ):
-        # TODO handle custom case
-        raise NotImplementedError(&#34;Custom generator functions are not yet supported&#34;)
-    else:
-        if &#34;index&#34; in input_fields:
-            input_df = data_df[
-                [field for field in input_fields if field != &#34;index&#34;]
-            ].assign(index=data_df.index)
-            # ensure column order matches input_fields order
-            input_df = input_df[input_fields]
-        else:
-            input_df = data_df[input_fields].copy()
-        # use the function_map dictionary to select the right generator function
-        func = generate.function_map[field_config.gen_func]
-    # prepare additional kwargs appropriately
-    additional_args = (
-        {} if field_config.additional_kwargs is None else field_config.additional_kwargs
-    )
-    # finally, generate the field with the function we picked earlier
-    return func(*[input_df[col] for col in input_df], **additional_args)</code></pre>
-</details>
-</dd>
-<dt id="nowcastlib.pipeline.process.postprocess.handle_diag_plots"><code class="name flex">
-<span>def <span class="ident">handle_diag_plots</span></span>(<span>input_series: pandas.core.series.Series, configured_method: <a title="nowcastlib.pipeline.structs.StandardizationMethod" href="../../structs.html#nowcastlib.pipeline.structs.StandardizationMethod">StandardizationMethod</a>)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Plots different rescalings of the input series,
-asking the user for confirmation</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def handle_diag_plots(
-    input_series: pd.core.series.Series,
-    configured_method: structs.StandardizationMethod,
-):
-    &#34;&#34;&#34;
-    Plots different rescalings of the input series,
-    asking the user for confirmation
-    &#34;&#34;&#34;
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(7, 7))
-    pwr_trnsformer = sklearn_pproc.PowerTransformer()
-    robust_trnsfrmr = sklearn_pproc.RobustScaler()
-    ax1.hist(input_series, bins=200, color=&#34;black&#34;)
-    ax1.set_title(&#34;Original Series&#34;)
-    ax2.hist(
-        pwr_trnsformer.fit_transform(input_series.to_numpy().reshape(-1, 1)),
-        bins=200,
-        color=&#34;darkblue&#34;
-        if configured_method == structs.StandardizationMethod.POWER
-        else &#34;darkgrey&#34;,
-    )
-    ax2.set_title(&#34;Power Transform&#34;)
-    ax3.hist(
-        robust_trnsfrmr.fit_transform(input_series.to_numpy().reshape(-1, 1)),
-        bins=200,
-        color=&#34;darkblue&#34;
-        if configured_method == structs.StandardizationMethod.ROBUST
-        else &#34;darkgrey&#34;,
-    )
-    ax3.set_title(&#34;Robust Scaling&#34;)
-    ax4.hist(
-        np.log(1 + (input_series - input_series.min())),
-        bins=200,
-        color=&#34;darkblue&#34;
-        if configured_method == structs.StandardizationMethod.LOGNORM
-        else &#34;darkgrey&#34;,
-    )
-    ax4.set_title(&#34;log(1 + (input_series - input_series.min()))&#34;)
-    fig.suptitle(&#34;Configured method shown in Blue&#34;)
-    fig.set_tight_layout(True)
-    logger.info(&#34;Press any button to exit. Use mouse to zoom and resize&#34;)
-    while True:
-        plt.draw()
-        if plt.waitforbuttonpress():
-            break
-    return utils.yes_or_no(
-        &#34;Are you satisfied with the selected Standardization Method?&#34;
-    )</code></pre>
-</details>
-</dd>
-<dt id="nowcastlib.pipeline.process.postprocess.standardize_field"><code class="name flex">
-<span>def <span class="ident">standardize_field</span></span>(<span>train_data: pandas.core.series.Series, test_data: pandas.core.series.Series, config: <a title="nowcastlib.pipeline.structs.StandardizationOptions" href="../../structs.html#nowcastlib.pipeline.structs.StandardizationOptions">StandardizationOptions</a>)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Standardizes a field based on config options,
-taking care not to leak information from the training set
-to the testing set</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def standardize_field(
-    train_data: pd.core.series.Series,
-    test_data: pd.core.series.Series,
-    config: structs.StandardizationOptions,
-):
-    &#34;&#34;&#34;
-    Standardizes a field based on config options,
-    taking care not to leak information from the training set
-    to the testing set
-    &#34;&#34;&#34;
-    if config.diagnostic_plots is True:
-        continue_processing = handle_diag_plots(train_data, config.method)
-        if continue_processing is False:
-            logger.info(
-                &#34;Closing program prematurely to allow for configuration changes&#34;
-            )
-            sys.exit()
-    if config.method == structs.StandardizationMethod.LOGNORM:
-        return (
-            np.log(1 + (train_data - train_data.min())),
-            np.log(1 + (test_data - test_data.min())),
-        )
-    # handle transformer based methods
-    elif config.method == structs.StandardizationMethod.POWER:
-        transformer = sklearn_pproc.PowerTransformer()
-    elif config.method == structs.StandardizationMethod.ROBUST:
-        transformer = sklearn_pproc.RobustScaler()
-    # fit only on training data, to avoid information leakage
-    fitted_trnsfrmr = transformer.fit(train_data.to_numpy().reshape(-1, 1))
-    # use the fitted transformer for transforming both train and test data
-    return (
-        fitted_trnsfrmr.transform(train_data.to_numpy().reshape(-1, 1)),
-        fitted_trnsfrmr.transform(test_data.to_numpy().reshape(-1, 1)),
-    )</code></pre>
-</details>
-</dd>
-<dt id="nowcastlib.pipeline.process.postprocess.rename_protected_field"><code class="name flex">
-<span>def <span class="ident">rename_protected_field</span></span>(<span>field: <a title="nowcastlib.pipeline.structs.RawField" href="../../structs.html#nowcastlib.pipeline.structs.RawField">RawField</a>) ‑> <a title="nowcastlib.pipeline.structs.RawField" href="../../structs.html#nowcastlib.pipeline.structs.RawField">RawField</a></span>
-</code></dt>
-<dd>
-<div class="desc"><p>Renames overwrite-protected fields so to obtain a list of fields that
-are overwrite-able</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def rename_protected_field(field: structs.RawField) -&gt; structs.RawField:
-    &#34;&#34;&#34;
-    Renames overwrite-protected fields so to obtain a list of fields that
-    are overwrite-able
-    &#34;&#34;&#34;
-    if field.preprocessing_options is not None:
-        if field.preprocessing_options.overwrite is False:
-            correct_name = process_utils.build_field_name(
-                field.preprocessing_options, field.field_name
-            )
-            return cattr.structure(
-                {
-                    &#34;field_name&#34;: correct_name,
-                    **attr.asdict(
-                        field,
-                        filter=lambda attrib, _: attrib.name != &#34;field_name&#34;,
-                    ),
-                },
-                structs.RawField,
-            )
-        else:
-            return field
-    else:
-        return field</code></pre>
-</details>
-</dd>
-<dt id="nowcastlib.pipeline.process.postprocess.postprocess_splits"><code class="name flex">
-<span>def <span class="ident">postprocess_splits</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.DataSet" href="../../structs.html#nowcastlib.pipeline.structs.DataSet">DataSet</a>, train_dfs: List[pandas.core.frame.DataFrame], test_dfs: List[pandas.core.frame.DataFrame])</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Postprocesses a set of train-test splits given options outlined
-in the input DataSet config instance.</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def postprocess_splits(
-    config: structs.DataSet,
-    train_dfs: List[pd.core.frame.DataFrame],
-    test_dfs: List[pd.core.frame.DataFrame],
-):
-    &#34;&#34;&#34;
-    Postprocesses a set of train-test splits given options outlined
-    in the input DataSet config instance.
-    &#34;&#34;&#34;
-    logger.info(&#34;Postprocessing dataset...&#34;)
-    # instantiate processed lists
-    proc_train_dfs = train_dfs.copy()
-    proc_test_dfs = test_dfs.copy()
-    # gather which fields to process into single list
-    raw_fields: List[structs.RawField] = [
-        field for source in config.data_sources for field in source.fields
-    ]
-    # rename overwrite-protected fields so to avoid acting on the original field
-    fields_to_process = [rename_protected_field(field) for field in raw_fields]
-    # start processing with processes that act the same on test and train dfs
-    for i, (train_df, test_df) in enumerate(zip(train_dfs, test_dfs)):
-        for field in fields_to_process:
-            logger.debug(&#34;Processing field %s...&#34;, field.field_name)
-            if field.postprocessing_options is not None:
-                proc_train_dfs[i][field.field_name] = process_utils.process_field(
-                    train_df[field.field_name],
-                    field.postprocessing_options,
-                    False,
-                )
-                proc_test_dfs[i][field.field_name] = process_utils.process_field(
-                    test_df[field.field_name],
-                    field.postprocessing_options,
-                    False,
-                )
-        # compute and process new fields if necessary
-        if config.generated_fields is not None:
-            for new_field in config.generated_fields:
-                logger.debug(&#34;Generating field %s...&#34;, new_field.target_name)
-                proc_train_dfs[i][new_field.target_name] = generate_field(
-                    train_df, new_field
-                )
-                proc_test_dfs[i][new_field.target_name] = generate_field(
-                    test_df, new_field
-                )
-                # standardize
-                if new_field.std_options is not None:
-
-                    logger.debug(&#34;Standardizing field %s...&#34;, new_field.target_name)
-                    (
-                        proc_train_dfs[i][new_field.target_name],
-                        proc_test_dfs[i][new_field.target_name],
-                    ) = standardize_field(
-                        proc_train_dfs[i][new_field.target_name],
-                        proc_test_dfs[i][new_field.target_name],
-                        new_field.std_options,
-                    )
-        # standardize processed raw fields _after_ using them for computing gen fields
-        for field in fields_to_process:
-            if field.std_options is not None:
-                logger.debug(&#34;Standardizing field %s...&#34;, field.field_name)
-                (
-                    proc_train_dfs[i][field.field_name],
-                    proc_test_dfs[i][field.field_name],
-                ) = standardize_field(
-                    proc_train_dfs[i][field.field_name],
-                    proc_test_dfs[i][field.field_name],
-                    field.std_options,
-                )
-    return proc_train_dfs, proc_test_dfs</code></pre>
-</details>
-</dd>
-<dt id="nowcastlib.pipeline.process.postprocess.serialize_splits"><code class="name flex">
-<span>def <span class="ident">serialize_splits</span></span>(<span>config, train_data, test_data, val_train_dfs, val_test_dfs)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Creates directory structure and serializes
-the dataframes as chunks to hdf5 files</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def serialize_splits(config, train_data, test_data, val_train_dfs, val_test_dfs):
-    &#34;&#34;&#34;
-    Creates directory structure and serializes
-    the dataframes as chunks to hdf5 files
-    &#34;&#34;&#34;
-    parent_dir = pathlib.Path(config.parent_path)
-    parent_dir.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
-    main_split = parent_dir / &#34;main_split&#34;
-    main_split.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
-    serialize_as_chunks(train_data, main_split / &#34;train_data.hdf5&#34;)
-    serialize_as_chunks(test_data, main_split / &#34;test_data.hdf5&#34;)
-    cv_split = parent_dir / &#34;cv_split&#34;
-    cv_split.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
-    for i, (train_df, test_df) in enumerate(zip(val_train_dfs, val_test_dfs)):
-        serialize_as_chunks(train_df, cv_split / &#34;train_data_{}.hdf5&#34;.format(i + 1))
-        serialize_as_chunks(test_df, cv_split / &#34;val_data_{}.hdf5&#34;.format(i + 1))</code></pre>
-</details>
-</dd>
 <dt id="nowcastlib.pipeline.process.postprocess.postprocess_dataset"><code class="name flex">
-<span>def <span class="ident">postprocess_dataset</span></span>(<span>config: <a title="nowcastlib.pipeline.structs.DataSet" href="../../structs.html#nowcastlib.pipeline.structs.DataSet">DataSet</a>, synced_data: Union[Tuple[pandas.core.frame.DataFrame, numpy.ndarray], NoneType] = None)</span>
+<span>def <span class="ident">postprocess_dataset</span></span>(<span>options: <a title="nowcastlib.pipeline.structs.config.DataSet" href="../../structs/config.html#nowcastlib.pipeline.structs.config.DataSet">DataSet</a>, data_df: Union[pandas.core.frame.DataFrame, NoneType] = None) ‑> pandas.core.frame.DataFrame</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Postprocesses a dataset given options outlined
@@ -692,50 +103,37 @@ in the input DataSet config instance.</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def postprocess_dataset(
-    config: structs.DataSet,
-    synced_data: Optional[Tuple[pd.core.frame.DataFrame, np.ndarray]] = None,
-):
+    options: config.DataSet, data_df: Optional[pd.core.frame.DataFrame] = None
+) -&gt; pd.core.frame.DataFrame:
     &#34;&#34;&#34;
     Postprocesses a dataset given options outlined
     in the input DataSet config instance.
     &#34;&#34;&#34;
-    assert (
-        config.split_options is not None
-    ), &#34;`config.split_options` must be defined to perform postprocessing&#34;
-    # avoid syncing if synced info (dataframe and block locs) are provided
-    if synced_data is None:
-        chunked_df, chunk_locs = sync.synchronize_dataset(config)
+    # need to get data_df from syncing process if not provided
+    if data_df is None:
+        chunked_df, _ = sync.synchronize_dataset(options)
     else:
-        chunked_df = synced_data[0].copy()
-        chunk_locs = synced_data[1].copy()
-
-    # outer train and test split
-    (train_data, _), (test_data, _) = split.train_test_split_sparse(
-        chunked_df, config.split_options, chunk_locs
-    )
-    # postprocessing
-    [proc_train_data], [proc_test_data] = postprocess_splits(
-        config, [train_data], [test_data]
-    )
-    # inner train and validation split(s)
-    train_dfs, val_dfs = split.rep_holdout_split_sparse(
-        train_data, config.split_options.validation
-    )
-    # postprocessing
-    (
-        proc_val_train_dfs,
-        proc_val_test_dfs,
-    ) = postprocess_splits(config, train_dfs, val_dfs)
-    # serialize
-    if config.split_options.output_options is not None:
-        logger.info(&#34;Serializing postprocessing output as hdf5 chunks...&#34;)
-        serialize_splits(
-            config.split_options.output_options,
-            proc_train_data,
-            proc_test_data,
-            proc_val_train_dfs,
-            proc_val_test_dfs,
-        )</code></pre>
+        chunked_df = data_df.copy()
+    logger.info(&#34;Postprocessing dataset...&#34;)
+    # instantiate our processed result
+    proc_df = chunked_df.copy()
+    # gather which fields to process into single list
+    raw_fields: List[config.RawField] = [
+        field for source in options.data_sources for field in source.fields
+    ]
+    # rename overwrite-protected fields so to avoid acting on the original field
+    fields_to_process = [utils.rename_protected_field(field) for field in raw_fields]
+    # finally we may perform postprocessing
+    for field in fields_to_process:
+        logger.debug(&#34;Processing field %s...&#34;, field.field_name)
+        if field.postprocessing_options is not None:
+            proc_df[field.field_name] = process_utils.process_field(
+                chunked_df[field.field_name],
+                field.postprocessing_options,
+                False,
+            )
+    logger.info(&#34;Dataset postprocessing complete.&#34;)
+    return proc_df</code></pre>
 </details>
 </dd>
 </dl>
@@ -757,17 +155,10 @@ in the input DataSet config instance.</p></div>
 <li><h3><a href="#header-submodules">Sub-modules</a></h3>
 <ul>
 <li><code><a title="nowcastlib.pipeline.process.postprocess.cli" href="cli.html">nowcastlib.pipeline.process.postprocess.cli</a></code></li>
-<li><code><a title="nowcastlib.pipeline.process.postprocess.generate" href="generate.html">nowcastlib.pipeline.process.postprocess.generate</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="nowcastlib.pipeline.process.postprocess.generate_field" href="#nowcastlib.pipeline.process.postprocess.generate_field">generate_field</a></code></li>
-<li><code><a title="nowcastlib.pipeline.process.postprocess.handle_diag_plots" href="#nowcastlib.pipeline.process.postprocess.handle_diag_plots">handle_diag_plots</a></code></li>
-<li><code><a title="nowcastlib.pipeline.process.postprocess.standardize_field" href="#nowcastlib.pipeline.process.postprocess.standardize_field">standardize_field</a></code></li>
-<li><code><a title="nowcastlib.pipeline.process.postprocess.rename_protected_field" href="#nowcastlib.pipeline.process.postprocess.rename_protected_field">rename_protected_field</a></code></li>
-<li><code><a title="nowcastlib.pipeline.process.postprocess.postprocess_splits" href="#nowcastlib.pipeline.process.postprocess.postprocess_splits">postprocess_splits</a></code></li>
-<li><code><a title="nowcastlib.pipeline.process.postprocess.serialize_splits" href="#nowcastlib.pipeline.process.postprocess.serialize_splits">serialize_splits</a></code></li>
 <li><code><a title="nowcastlib.pipeline.process.postprocess.postprocess_dataset" href="#nowcastlib.pipeline.process.postprocess.postprocess_dataset">postprocess_dataset</a></code></li>
 </ul>
 </li>
