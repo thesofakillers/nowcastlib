@@ -3,9 +3,9 @@ Command-Line interface functionality for splitting and related processes
 """
 import json
 import argparse
+from typing import Union
 import cattr
-from nowcastlib.pipeline import split
-from nowcastlib.pipeline import standardize
+from nowcastlib.pipeline import split, standardize, utils
 from nowcastlib.pipeline.structs import config
 
 
@@ -30,6 +30,9 @@ def run(args):
     with open(args.config) as json_file:
         options = json.load(json_file)
     cattr_cnvrtr = cattr.GenConverter(forbid_extra_keys=True)
+    cattr_cnvrtr.register_structure_hook(
+        Union[int, float, str], utils.disambiguate_intfloatstr
+    )
     dataset_config = cattr_cnvrtr.structure(options, config.DataSet)
     # splitting
     if dataset_config.split_options is not None:
