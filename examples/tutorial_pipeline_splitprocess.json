@@ -1,0 +1,66 @@
+{
+    "split_options": {
+        "train_split": 0.8,
+        "validation": {
+            "train_extent": 0.7,
+            "val_extent": 0.1,
+            "iterations": 3
+        },
+        "output_options": {
+            "parent_path": "output/example_datapipe/split_output",
+            "overwrite": true,
+            "create_parents": true
+        }
+    },
+    "sync_options": {
+        "sample_spacing": 60,
+        "chunk_options": {
+            "max_gap_size": 600,
+            "min_chunk_size": 3600
+        },
+        "diagnostic_plots": false
+    },
+    "data_sources": [
+        {
+            "name": "lso_dimm",
+            "path": "data/LSO/lasilla_dimm.csv",
+            "fields": [
+                {
+                    "field_name": "Date time",
+                    "is_date": true
+                },
+                {
+                    "field_name": "DIMM Seeing [arcsec]",
+                    "postprocessing_options": {
+                        "smooth_options": {
+                            "window_size": 10,
+                            "units": "min"
+                        }
+                    },
+                    "std_options": {
+                        "method": "robust",
+                        "diagnostic_plots": false
+                    }
+                }
+            ],
+            "comment_format": "#"
+        },
+        {
+            "name": "lso_meteo",
+            "path": "data/LSO/lasilla_meteo.csv",
+            "fields": [
+                {
+                    "field_name": "Date time",
+                    "is_date": true
+                },
+                {
+                    "field_name": "Wind Speed at 10m [m/s]"
+                },
+                {
+                    "field_name": "Wind Direction at 10m [deg]"
+                }
+            ],
+            "comment_format": "#"
+        }
+    ]
+}
