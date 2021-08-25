@@ -43,7 +43,7 @@ def run(args):
     proc_df = postprocess.postprocess_dataset(dataset_config)
     # add generated fields if necessary
     if dataset_config.generated_fields is not None:
-        proc_df = features.generate_fields(options, proc_df)
+        proc_df = features.generate_fields(dataset_config, proc_df)
     if dataset_config.postprocessing_output is not None:
         logger.info("Serializing postprocessing results...")
         utils.handle_serialization(proc_df, dataset_config.postprocessing_output)
