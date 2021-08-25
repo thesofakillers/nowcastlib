@@ -22,12 +22,12 @@ def postprocess_dataset(
     Postprocesses a dataset given options outlined
     in the input DataSet config instance.
     """
-    logger.info("Postprocessing dataset...")
     # need to get data_df from syncing process if not provided
     if data_df is None:
         chunked_df, _ = sync.synchronize_dataset(options)
     else:
         chunked_df = data_df.copy()
+    logger.info("Postprocessing dataset...")
     # instantiate our processed result
     proc_df = chunked_df.copy()
     # gather which fields to process into single list
@@ -45,4 +45,5 @@ def postprocess_dataset(
                 field.postprocessing_options,
                 False,
             )
+    logger.info("Dataset postprocessing complete.")
     return proc_df
