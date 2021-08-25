@@ -17,7 +17,7 @@ pd.set_option("chained_assignment", None)
 
 def postprocess_dataset(
     options: config.DataSet, data_df: Optional[pd.core.frame.DataFrame] = None
-):
+) -> pd.core.frame.DataFrame:
     """
     Postprocesses a dataset given options outlined
     in the input DataSet config instance.
