@@ -1,14 +1,18 @@
 """
 Command-Line interface functionality for preprocessing
 """
+import logging
 import json
 from typing import Union
 import argparse
 import cattr
 from nowcastlib.pipeline.structs import config
-from nowcastlib.pipeline.utils import disambiguate_intfloatstr
+from nowcastlib.pipeline import utils
 from nowcastlib.pipeline.process import postprocess
 from nowcastlib.pipeline import features
+
+
+logger = logging.getLogger(__name__)
 
 
 def configure_parser(action_object):
@@ -33,11 +37,15 @@ def run(args):
         options = json.load(json_file)
     cattr_cnvrtr = cattr.GenConverter(forbid_extra_keys=True)
     cattr_cnvrtr.register_structure_hook(
-        Union[int, float, str], disambiguate_intfloatstr
+        Union[int, float, str], utils.disambiguate_intfloatstr
     )
     dataset_config = cattr_cnvrtr.structure(options, config.DataSet)
-    proc_df =  postprocess.postprocess_dataset(dataset_config)
+    proc_df = postprocess.postprocess_dataset(dataset_config)
     # add generated fields if necessary
     if dataset_config.generated_fields is not None:
         proc_df = features.generate_fields(options, proc_df)
+    if dataset_config.postprocessing_output is not None:
+        logger.info("Serializing postprocessing results...")
+        utils.handle_serialization(proc_df, dataset_config.postprocessing_output)
+        logger.info("Serialization complete.")
     return proc_df
