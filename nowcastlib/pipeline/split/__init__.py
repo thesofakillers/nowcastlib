@@ -1,6 +1,7 @@
 """
 Functions for splitting data
 """
+import logging
 import pathlib
 from typing import Optional, Tuple, List
 import numpy as np
@@ -9,6 +10,9 @@ from sklearn.model_selection import TimeSeriesSplit
 from nowcastlib.pipeline import structs
 from nowcastlib.pipeline import sync
 from nowcastlib import datasets
+
+
+logger = logging.getLogger(__name__)
 
 
 def serialize_splits(
@@ -20,6 +24,7 @@ def serialize_splits(
     Creates directory structure and serializes
     the dataframes as chunks to hdf5 files
     """
+    logger.info("Serializing splits...")
     parent_dir = pathlib.Path(config.parent_path)
     parent_dir.mkdir(parents=config.create_parents, exist_ok=config.overwrite)
     # outer split
@@ -42,6 +47,7 @@ def serialize_splits(
         datasets.serialize_as_chunks(
             cv_split / "val_data_{}.hdf5".format(i + 1), test_tuple[0]
         )
+    logger.info("Split serialization complete.")
 
 
 def train_test_split_sparse(
@@ -165,12 +171,16 @@ def split_dataset(
     else:
         chunked_df = sparse_data[0].copy()
         chunk_locs = sparse_data[1].copy()
+    logger.info("Splitting dataset...")
+    logger.debug("Performing outer split...")
     # outer train and test split
     outer_train_data, outer_test_data = train_test_split_sparse(
         chunked_df, config.split_options, chunk_locs
     )
+    logger.debug("Performing inner split...")
     # inner train and validation split(s)
     inner_train_data, inner_val_data = rep_holdout_split_sparse(
         config.split_options.validation, *outer_train_data
     )
+    logger.info("Dataset splitting complete...")
     return (outer_train_data, outer_test_data), (inner_train_data, inner_val_data)

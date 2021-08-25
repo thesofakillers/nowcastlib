@@ -113,7 +113,7 @@ def standardize_splits(
     std_test_dfs : List[pandas.core.frame.DataFrame]
         List of the newly standardized test dataframes
     """
-    logger.info("Postprocessing dataset...")
+    logger.info("Standardizing splits...")
     # instantiate standardized dfs
     std_train_dfs = train_dfs.copy()
     std_test_dfs = test_dfs.copy()
@@ -150,6 +150,7 @@ def standardize_splits(
                     std_test_dfs[i][field.field_name],
                     field.std_options,
                 )
+    logger.info("Standardization complete.")
     return std_train_dfs, std_test_dfs
 
 
