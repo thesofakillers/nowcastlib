@@ -4,8 +4,8 @@ Command-Line interface functionality for synchronization
 import json
 import argparse
 import cattr
-from nowcastlib.pipeline import structs
-import nowcastlib.pipeline.sync as sync
+from nowcastlib.pipeline.structs import config
+from nowcastlib.pipeline import sync
 
 
 def configure_parser(action_object):
@@ -27,7 +27,7 @@ def configure_parser(action_object):
 def run(args):
     """runs appropriate function based on provided cli args"""
     with open(args.config) as json_file:
-        config = json.load(json_file)
+        options = json.load(json_file)
     cattr_cnvrtr = cattr.GenConverter(forbid_extra_keys=True)
-    dataset_config = cattr_cnvrtr.structure(config, structs.DataSet)
+    dataset_config = cattr_cnvrtr.structure(options, config.DataSet)
     return sync.synchronize_dataset(dataset_config)
