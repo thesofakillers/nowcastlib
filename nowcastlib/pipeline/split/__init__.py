@@ -123,8 +123,8 @@ def rep_holdout_split_sparse(
     train_data: List[structs.SparseData] = []
     val_data: List[structs.SparseData] = []
     for train_idxs, val_idxs in tscv.split(sparse_df):
-        train_data.append((sparse_df.iloc[train_idxs], np.empty((-1, 2))))
-        val_data.append((sparse_df.iloc[val_idxs], np.empty((-1, 2))))
+        train_data.append((sparse_df.iloc[train_idxs], np.empty((1, 2))))
+        val_data.append((sparse_df.iloc[val_idxs], np.empty((1, 2))))
     return train_data, val_data
     # TODO update and return chunk_locations, instead of np.empty()
 
