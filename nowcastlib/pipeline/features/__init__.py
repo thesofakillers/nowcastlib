@@ -52,15 +52,15 @@ def generate_field(
     return func(*[input_df[col] for col in input_df], **additional_args)
 
 
-def generate_fields(config: config.DataSet, data_df: pd.core.frame.DataFrame):
+def generate_fields(options: config.DataSet, data_df: pd.core.frame.DataFrame):
     """
     Augments an input dataframe with additional fields
     generated from the existing fields and auxiliary data
     """
     proc_df = data_df.copy()
-    if config.generated_fields is not None:
+    if options.generated_fields is not None:
         logger.info("Generating additional fields...")
-        for new_field in config.generated_fields:
+        for new_field in options.generated_fields:
             logger.debug("Generating field %s...", new_field.target_name)
             proc_df[new_field.target_name] = generate_field(data_df, new_field)
     return proc_df
