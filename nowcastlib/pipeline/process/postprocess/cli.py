@@ -8,6 +8,7 @@ import cattr
 from nowcastlib.pipeline.structs import config
 from nowcastlib.pipeline.utils import disambiguate_intfloatstr
 from nowcastlib.pipeline.process import postprocess
+from nowcastlib.pipeline import features
 
 
 def configure_parser(action_object):
@@ -35,4 +36,8 @@ def run(args):
         Union[int, float, str], disambiguate_intfloatstr
     )
     dataset_config = cattr_cnvrtr.structure(options, config.DataSet)
-    return postprocess.postprocess_dataset(dataset_config)
+    proc_df =  postprocess.postprocess_dataset(dataset_config)
+    # add generated fields if necessary
+    if dataset_config.generated_fields is not None:
+        proc_df = features.generate_fields(options, proc_df)
+    return proc_df
