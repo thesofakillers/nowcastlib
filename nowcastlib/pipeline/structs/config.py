@@ -581,6 +581,10 @@ class DataSet:
     Configurations options for synchronizing the `data_sources`.
     \nIf `None`, no synchronization will be performed
     """
+    postprocessing_output: Optional[SerializationOptions] = attrib(default=None)
+    """
+    Configuration options for serializing postprocessing results
+    """
     split_options: Optional[SplitOptions] = attrib(default=None)
     """
     Configurations options for handling data splitting.
